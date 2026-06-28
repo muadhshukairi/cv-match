@@ -50,11 +50,17 @@ Follow this process:
    doesn't actually have. If an important skill from the job description is
    genuinely missing from their background, put it in missing_keywords
    instead of fabricating it into the CV.
+6. Score improved_match_score honestly based on real overlap between the
+   rewritten CV and the job description — reordering and rephrasing existing
+   true content can genuinely raise the score, but it should rarely reach
+   100, since missing_keywords (skills the candidate doesn't truly have)
+   still represent a real gap.
 
 Respond with ONLY valid JSON, no markdown fences, no commentary, matching exactly this schema:
 
 {
   "match_score": <integer 0-100, how well the ORIGINAL unedited CV matched the job description before any rewriting>,
+  "improved_match_score": <integer 0-100, how well the REWRITTEN cv (the generated_cv below) matches the job description after your improvements — this should be honestly higher than match_score if your rewrite genuinely improved alignment, but do not inflate it; base it on real keyword and qualification overlap>,
   "missing_keywords": [<up to 6 important job-description keywords/skills genuinely absent from the candidate's background>],
   "generated_cv": {
     "professional_summary": "<3 sentences, ATS-friendly, leads with the strongest matches to this job>",
