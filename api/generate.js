@@ -22,76 +22,25 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    const prompt = `You are an expert CV writer. Tailor this candidate's CV to the job description below.
-Respond with ONLY valid JSON, no markdown fences, no commentary, matching exactly this schema:
+    const prompt = `You are an expert CV writer and ATS (Applicant Tracking System) optimization specialist.
+Your goal is to maximize this candidate's chances of passing an automated
+keyword filter AND impressing a human reviewer for THIS SPECIFIC job — while
+staying 100% truthful to their real background.
 
-{
-  "match_score": <integer 0-100>,
-  "missing_keywords": [<up to 6 strings>],
-  "generated_cv": {
-    "professional_summary": "<3 sentences, ATS-friendly>",
-    "skills": [<up to 10 strings>],
-    "experience": [{"title": "...", "company": "...", "dates": "...", "bullets": [<3-5 improved, achievement-oriented bullets>]}],
-    "education": [<plain strings>]
-  },
-  "cover_letter": "<3-4 paragraphs, plain text>",
-  "interview_questions": [<8-10 strings>]
-}
+Follow this process:
 
-CANDIDATE'S CURRENT CV:
-"""
-${cvText.slice(0, 8000)}
-"""
-
-TARGET JOB DESCRIPTION:
-"""
-${jobDescription.slice(0, 4000)}
-"""
-
-Target country: ${country || 'Not specified'}. Experience level: ${level || 'mid'}.
-Keep all content honest and grounded in the original CV — improve phrasing and keyword
-alignment, never invent employers, titles, or qualifications that aren't implied by the original.`;
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: process.env.AI_MODEL || 'claude-sonnet-4-6',
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      res.status(502).json({ error: 'AI request failed', detail: errText });
-      return;
-    }
-
-    const data = await response.json();
-    const textBlock = (data.content || []).find((c) => c.type === 'text');
-    if (!textBlock) {
-      res.status(502).json({ error: 'No content returned from AI' });
-      return;
-    }
-
-    const fenced = textBlock.text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    const jsonString = (fenced ? fenced[1] : textBlock.text).trim();
-
-    let result;
-    try {
-      result = JSON.parse(jsonString);
-    } catch (e) {
-      res.status(502).json({ error: 'Could not parse AI response as JSON' });
-      return;
-    }
-
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: 'Unexpected server error', detail: err.message });
-  }
-};
+1. Read the job description carefully and identify its most important
+   required skills, qualifications, and the exact phrases/terminology it
+   uses (e.g. "stakeholder management", "P&L ownership", "Agile delivery").
+2. Rewrite the professional summary so it leads with the strongest genuine
+   matches between the candidate's background and this job, using the job
+   posting's own terminology wherever the candidate truthfully has that
+   skill or experience (mirror their exact wording, don't just paraphrase
+   it — ATS keyword matching is often literal).
+3. Reorder AND rewrite the skills list so the skills most relevant to this
+   specific job appear first. Where the candidate has a matching skill,
+   phrase it using the exact term from the job description rather than a
+   synonym.
+4. For each role in the experience section, rewrite the bullet points to be
+   achievement-oriented and quantified, and REORDER them within that role so
+   the bullets most
