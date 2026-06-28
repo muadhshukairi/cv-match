@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CV Match AI — Create a Job-Matching CV in Minutes</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  @media print {
+    .no-print { display: none !important; }
+  }
+  body { background: #ffffff; }
+</style>
+</head>
+<body class="text-slate-900">
+
+  <!-- Header -->
+  <header class="border-b border-slate-200 no-print">
+    <div class="mx-auto max-w-3xl px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-7 h-7 rounded-md bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">CV</span>
+        <span class="font-semibold text-lg tracking-tight">CV Match <span class="text-indigo-600">AI</span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- FORM VIEW -->
+  <main id="form-view">
+    <section class="mx-auto max-w-2xl px-6 pt-14 pb-8 text-center">
+      <p class="text-sm font-medium text-indigo-600 mb-3">Free MVP · No login needed</p>
+      <h1 class="text-4xl font-semibold tracking-tight leading-tight">Create a Job-Matching CV in Minutes</h1>
+      <p class="mt-4 text-slate-500 text-lg">Upload your CV, paste the job description, and let AI tailor your summary, bullet points, skills, cover letter, and interview prep to the role.</p>
+    </section>
+
+    <section class="mx-auto max-w-2xl px-6 pb-24">
+      <div class="rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-7">
+
+        <div>
+          <label class="block text-sm font-medium mb-2">1. Upload your current CV</label>
+          <input id="file-input" type="file" accept=".pdf,.docx,.txt" class="hidden" />
+          <button id="upload-btn" type="button" class="w-full rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-400 transition-colors py-8 flex flex-col items-center gap-2 text-slate-500">
+            <span class="text-2xl">📄</span>
+            <span id="upload-label" class="font-medium text-slate-900">Click to upload</span>
+            <span id="upload-sub" class="text-xs">PDF, DOCX or TXT</span>
+          </button>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">2. Paste the job description</label>
+          <textarea id="job-description" rows="7" placeholder="Paste the full job posting here…" class="w-full rounded-xl border border-slate-200 p-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">3. Target country</label>
+            <select id="country" class="w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option>Oman</option><option>UAE</option><option>Saudi Arabia</option><option>Qatar</option>
+              <option>Bahrain</option><option>Kuwait</option><option>United Kingdom</option>
+              <option>United States</option><option>Canada</option><option>Australia</option>
+              <option>Germany</option><option>India</option><option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Experience level</label>
+            <select id="level" class="w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="entry">Entry level</option>
+              <option value="mid" selected>Mid level</option>
+              <option value="senior">Senior</option>
+              <option value="executive">Executive</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="error-box" class="hidden text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-4 py-3"></div>
+
+        <button id="generate-btn" class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-4 transition-colors disabled:opacity-50">
+          Generate CV
+        </button>
+        <p class="text-center text-xs text-slate-400">Usually takes 15–30 seconds.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- RESULT VIEW -->
+  <main id="result-view" class="hidden">
+    <section class="mx-auto max-w-2xl px-6 py-12 space-y-8">
+      <button id="back-btn" class="text-sm text-indigo-600 font-medium no-print">← Generate another CV</button>
+
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div id="score-ring" class="w-16 h-16 rounded-full flex items-center justify-center font-bold text-lg shrink-0">
+            <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-sm" id="score-number">0</div>
+          </div>
+          <div>
+            <p class="font-medium text-slate-900">Job match score</p>
+            <p class="text-sm text-slate-500">Original CV vs. the job description</p>
+          </div>
+        </div>
+        <button id="download-btn" class="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 transition-colors no-print">
+          Download CV as PDF
+        </button>
+      </div>
+
+      <div id="missing-keywords-card" class="rounded-2xl border border-slate-200 p-6 hidden">
+        <h2 class="font-semibold text-lg mb-3">Missing keywords</h2>
+        <div id="missing-keywords" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-6">
+        <h2 class="font-semibold text-lg mb-3">Improved CV preview</h2>
+        <h3 class="text-sm font-semibold text-slate-600 mt-4 mb-1">Professional summary</h3>
+        <p id="summary" class="text-sm leading-relaxed text-slate-700"></p>
+
+        <h3 class="text-sm font-semibold text-slate-600 mt-5 mb-2">Skills</h3>
+        <div id="skills" class="flex flex-wrap gap-2"></div>
+
+        <h3 class="text-sm font-semibold text-slate-600 mt-5 mb-2">Experience</h3>
+        <div id="experience" class="space-y-4"></div>
+
+        <div id="education-wrap" class="hidden">
+          <h3 class="text-sm font-semibold text-slate-600 mt-5 mb-2">Education</h3>
+          <ul id="education" class="space-y-1"></ul>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-6">
+        <h2 class="font-semibold text-lg mb-3">Cover letter</h2>
+        <p id="cover-letter" class="text-sm leading-relaxed text-slate-700 whitespace-pre-line"></p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 p-6 no-print">
+        <h2 class="font-semibold text-lg mb-3">Likely interview questions</h2>
+        <ol id="interview-questions" class="list-decimal pl-5 space-y-2"></ol>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const fileInput = document.getElementById('file-input');
+    const uploadBtn = document.getElementById('upload-btn');
+    const uploadLabel = document.getElementById('upload-label');
+    const uploadSub = document.getElementById('upload-sub');
+    const errorBox = document.getElementById('error-box');
+    const generateBtn = document.getElementById('generate-btn');
+    const formView = document.getElementById('form-view');
+    const resultView = document.getElementById('result-view');
+    const backBtn = document.getElementById('back-btn');
+    const downloadBtn = document.getElementById('download-btn');
+
+    let cvText = '';
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.remove('hidden');
+    }
+    function clearError() {
+      errorBox.classList.add('hidden');
+      errorBox.textContent = '';
+    }
+
+    uploadBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      clearError();
+      uploadLabel.textContent = 'Reading your CV…';
+
+      try {
+        const name = file.name.toLowerCase();
+        if (name.endsWith('.pdf')) {
+          const buffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+          let text = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map((it) => it.str).join(' ') + '\n';
+          }
+          cvText = text.trim();
+        } else if (name.endsWith('.docx')) {
+          const buffer = await file.arrayBuffer();
+          const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+          cvText = result.value.trim();
+        } else if (name.endsWith('.txt')) {
+          cvText = (await file.text()).trim();
+        } else {
+          throw new Error('Please upload a PDF, DOCX, or TXT file.');
+        }
+
+        if (!cvText) throw new Error('Could not find any text in that file.');
+
+        uploadLabel.textContent = file.name + ' ✓';
+        uploadSub.textContent = 'Click to choose a different file';
+      } catch (err) {
+        showError(err.message || 'Could not read that file.');
+        uploadLabel.textContent = 'Click to upload';
+        uploadSub.textContent = 'PDF, DOCX or TXT';
+        cvText = '';
+      }
+    });
+
+    generateBtn.addEventListener('click', async () => {
+      clearError();
+      const jobDescription = document.getElementById('job-description').value.trim();
+      const country = document.getElementById('country').value;
+      const level = document.getElementById('level').value;
+
+      if (!cvText) return showError('Please upload your CV first.');
+      if (!jobDescription) return showError('Please paste the job description.');
+
+      generateBtn.disabled = true;
+      generateBtn.textContent = 'Generating your CV…';
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cvText, jobDescription, country, level }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed.');
+        renderResult(data);
+        formView.classList.add('hidden');
+        resultView.classList.remove('hidden');
+        window.scrollTo(0, 0);
+      } catch (err) {
+        showError(err.message || 'Something went wrong. Please try again.');
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate CV';
+      }
+    });
+
+    backBtn.addEventListener('click', () => {
+      resultView.classList.add('hidden');
+      formView.classList.remove('hidden');
+    });
+
+    downloadBtn.addEventListener('click', () => window.print());
+
+    function renderResult(data) {
+      const score = data.match_score || 0;
+      const color = score >= 75 ? '#16a34a' : score >= 50 ? '#d97706' : '#dc2626';
+      document.getElementById('score-ring').style.background = `conic-gradient(${color} ${score * 3.6}deg, #e5e7eb 0deg)`;
+      document.getElementById('score-number').textContent = score;
+
+      const mk = document.getElementById('missing-keywords');
+      mk.innerHTML = '';
+      if (data.missing_keywords && data.missing_keywords.length) {
+        document.getElementById('missing-keywords-card').classList.remove('hidden');
+        data.missing_keywords.forEach((k) => {
+          const span = document.createElement('span');
+          span.className = 'text-sm bg-amber-50 text-amber-700 border border-amber-100 rounded-full px-3 py-1';
+          span.textContent = k;
+          mk.appendChild(span);
+        });
+      } else {
+        document.getElementById('missing-keywords-card').classList.add('hidden');
+      }
+
+      const cv = data.generated_cv || {};
+      document.getElementById('summary').textContent = cv.professional_summary || '';
+
+      const skillsEl = document.getElementById('skills');
+      skillsEl.innerHTML = '';
+      (cv.skills || []).forEach((s) => {
+        const span = document.createElement('span');
+        span.className = 'text-sm bg-indigo-50 text-indigo-700 rounded-full px-3 py-1';
+        span.textContent = s;
+        skillsEl.appendChild(span);
+      });
+
+      const expEl = document.getElementById('experience');
+      expEl.innerHTML = '';
+      (cv.experience || []).forEach((role) => {
+        const div = document.createElement('div');
+        const bullets = (role.bullets || []).map((b) => `<li class="text-sm text-slate-700 leading-relaxed">${escapeHtml(b)}</li>`).join('');
+        div.innerHTML = `
+          <p class="font-medium text-sm">${escapeHtml(role.title || '')} — ${escapeHtml(role.company || '')}</p>
+          <p class="text-xs text-slate-400 mb-1">${escapeHtml(role.dates || '')}</p>
+          <ul class="list-disc pl-5 space-y-1">${bullets}</ul>
+        `;
+        expEl.appendChild(div);
+      });
+
+      const eduWrap = document.getElementById('education-wrap');
+      const eduEl = document.getElementById('education');
+      eduEl.innerHTML = '';
+      if (cv.education && cv.education.length) {
+        eduWrap.classList.remove('hidden');
+        cv.education.forEach((e) => {
+          const li = document.createElement('li');
+          li.className = 'text-sm text-slate-700';
+          li.textContent = e;
+          eduEl.appendChild(li);
+        });
+      } else {
+        eduWrap.classList.add('hidden');
+      }
+
+      document.getElementById('cover-letter').textContent = data.cover_letter || '';
+
+      const iqEl = document.getElementById('interview-questions');
+      iqEl.innerHTML = '';
+      (data.interview_questions || []).forEach((q) => {
+        const li = document.createElement('li');
+        li.className = 'text-sm text-slate-700 leading-relaxed';
+        li.textContent = q;
+        iqEl.appendChild(li);
+      });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
