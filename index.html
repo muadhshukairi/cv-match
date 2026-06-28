@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CV Match AI — Create a Job-Matching CV in Minutes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Fraunces', 'serif'],
+          sans: ['Inter', 'sans-serif'],
+        },
+      },
+    },
+  };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  body { background: #FAFAF9; }
+
+  /* ---- hero signature mockup ---- */
+  .stack-card {
+    position: absolute;
+    width: 230px;
+    border-radius: 14px;
+    background: white;
+    box-shadow: 0 12px 30px -8px rgba(28,28,27,0.18), 0 2px 6px rgba(28,28,27,0.06);
+  }
+  .stack-line { height: 6px; border-radius: 3px; background: #E7E5E4; }
+
+  /* ---- print: only show the cv document, nothing else ---- */
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white !important; }
+    #cv-document { box-shadow: none !important; border: none !important; margin: 0 !important; }
+    @page { margin: 0.55in; }
+  }
+
+  /* ===================== CV DOCUMENT THEMES ===================== */
+  #cv-document { background: white; }
+
+  /* ---- Classic: traditional single column, serif headers, ATS-plain ---- */
+  .tpl-classic { font-family: 'Inter', sans-serif; color: #1c1c1b; }
+  .tpl-classic .doc-name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 30px; letter-spacing: 0.2px; }
+  .tpl-classic .doc-rule { border-top: 2px solid #1c1c1b; margin-top: 8px; margin-bottom: 22px; }
+  .tpl-classic .doc-section-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid #d6d3d1; padding-bottom: 6px; margin-top: 22px; margin-bottom: 10px; }
+  .tpl-classic .doc-skills { font-size: 13.5px; line-height: 1.7; color: #3a3a38; }
+  .tpl-classic .doc-role-title { font-weight: 600; font-size: 14px; }
+  .tpl-classic .doc-role-meta { font-size: 12px; color: #6b6864; margin-bottom: 4px; }
+  .tpl-classic .doc-bullets { font-size: 13.5px; line-height: 1.65; }
+
+  /* ---- Modern: emerald sidebar + main column ---- */
+  .tpl-modern { font-family: 'Inter', sans-serif; color: #1c1c1b; display: grid; grid-template-columns: 34% 66%; gap: 0; }
+  .tpl-modern .doc-sidebar { background: #ECF6F1; padding: 28px 22px; border-radius: 12px 0 0 12px; }
+  .tpl-modern .doc-main { padding: 28px 26px; }
+  .tpl-modern .doc-name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 24px; line-height: 1.2; color: #0b4636; }
+  .tpl-modern .doc-tagline { font-size: 12px; color: #0F6F5C; text-transform: uppercase; letter-spacing: 1.2px; margin-top: 6px; font-weight: 600; }
+  .tpl-modern .doc-section-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 1.3px; color: #0b4636; margin-top: 20px; margin-bottom: 8px; }
+  .tpl-modern .doc-sidebar .doc-section-title:first-of-type { margin-top: 26px; }
+  .tpl-modern .doc-skill-chip { display: inline-block; background: white; color: #0b4636; border: 1px solid #cfe8da; font-size: 11.5px; padding: 3px 9px; border-radius: 999px; margin: 0 4px 6px 0; }
+  .tpl-modern .doc-role-title { font-weight: 600; font-size: 14px; }
+  .tpl-modern .doc-role-meta { font-size: 11.5px; color: #6b6864; margin-bottom: 4px; }
+  .tpl-modern .doc-bullets { font-size: 13px; line-height: 1.6; }
+  .tpl-modern .doc-summary { font-size: 13px; line-height: 1.65; color: #2c2c2a; }
+
+  /* ---- Minimal: airy, no boxes, all sans ---- */
+  .tpl-minimal { font-family: 'Inter', sans-serif; color: #1c1c1b; padding: 6px 4px; }
+  .tpl-minimal .doc-name { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: -0.3px; }
+  .tpl-minimal .doc-rule { display: none; }
+  .tpl-minimal .doc-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #8a8782; font-weight: 600; margin-top: 26px; margin-bottom: 10px; }
+  .tpl-minimal .doc-skills { font-size: 13.5px; line-height: 1.8; color: #3a3a38; }
+  .tpl-minimal .doc-role-title { font-weight: 600; font-size: 14px; }
+  .tpl-minimal .doc-role-meta { font-size: 12px; color: #9b9893; margin-bottom: 5px; }
+  .tpl-minimal .doc-bullets { font-size: 13.5px; line-height: 1.75; }
+  .tpl-minimal .doc-bullets li::marker { color: #c9c6c0; }
+</style>
+</head>
+<body class="text-stone-900">
+
+  <!-- Header -->
+  <header class="border-b border-stone-200 no-print">
+    <div class="mx-auto max-w-5xl px-6 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-7 h-7 rounded-md bg-emerald-700 flex items-center justify-center text-white font-display font-bold text-sm">CV</span>
+        <span class="font-display font-semibold text-lg tracking-tight">CV Match <span class="text-emerald-700">AI</span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- FORM VIEW -->
+  <main id="form-view">
+    <section class="mx-auto max-w-5xl px-6 pt-16 pb-14 grid md:grid-cols-2 gap-12 items-center">
+      <div>
+        <p class="text-sm font-medium text-emerald-700 mb-3 tracking-wide">FREE · NO LOGIN NEEDED</p>
+        <h1 class="font-display text-5xl font-semibold tracking-tight leading-[1.08]">
+          Turn your CV into the one that gets the interview.
+        </h1>
+        <p class="mt-5 text-stone-500 text-lg leading-relaxed">
+          Upload what you have, paste the job description, and let AI rewrite your
+          summary, bullet points, skills, and write your cover letter — tailored
+          to that exact role.
+        </p>
+        <a href="#start" class="inline-block mt-7 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-medium px-7 py-3.5 transition-colors">
+          Get started — it's free
+        </a>
+      </div>
+
+      <!-- signature visual: before / after stacked cards -->
+      <div class="relative h-72 hidden md:block">
+        <div class="stack-card" style="left:10px; top:30px; transform:rotate(-7deg); padding:20px; opacity:0.9;">
+          <div class="stack-line w-2/3 mb-3"></div>
+          <div class="stack-line w-full mb-2"></div>
+          <div class="stack-line w-full mb-2"></div>
+          <div class="stack-line w-5/6 mb-5"></div>
+          <div class="stack-line w-full mb-2"></div>
+          <div class="stack-line w-4/5 mb-2"></div>
+          <div class="stack-line w-full mb-2"></div>
+        </div>
+        <div class="stack-card" style="left:90px; top:0; transform:rotate(4deg); padding:20px;">
+          <div class="h-2 w-10 bg-emerald-600 rounded-full mb-3"></div>
+          <div class="h-2.5 rounded bg-stone-800 w-3/4 mb-3"></div>
+          <div class="stack-line w-full mb-2" style="background:#cfe8da;"></div>
+          <div class="stack-line w-5/6 mb-4" style="background:#cfe8da;"></div>
+          <div class="flex gap-1.5 mb-3">
+            <span class="text-[9px] bg-emerald-50 text-emerald-700 rounded-full px-2 py-1">Strategy</span>
+            <span class="text-[9px] bg-emerald-50 text-emerald-700 rounded-full px-2 py-1">SQL</span>
+          </div>
+          <div class="stack-line w-full mb-2"></div>
+          <div class="stack-line w-4/5 mb-2"></div>
+        </div>
+        <div class="absolute" style="left:48px; top:115px;">
+          <span class="bg-stone-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-full shadow-md">Tailored by AI →</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="start" class="mx-auto max-w-2xl px-6 pb-24">
+      <div class="rounded-2xl border border-stone-200 shadow-sm p-6 sm:p-8 space-y-7 bg-white">
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Your name <span class="text-stone-400">(shown on the exported CV)</span></label>
+          <input id="candidate-name" type="text" placeholder="e.g. Sara Al Balushi" class="w-full rounded-xl border border-stone-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">1. Upload your current CV</label>
+          <input id="file-input" type="file" accept=".pdf,.docx,.txt" class="hidden" />
+          <button id="upload-btn" type="button" class="w-full rounded-xl border-2 border-dashed border-stone-200 hover:border-emerald-500 transition-colors py-8 flex flex-col items-center gap-2 text-stone-500">
+            <span class="text-2xl">📄</span>
+            <span id="upload-label" class="font-medium text-stone-900">Click to upload</span>
+            <span id="upload-sub" class="text-xs">PDF, DOCX or TXT</span>
+          </button>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">2. Paste the job description</label>
+          <textarea id="job-description" rows="7" placeholder="Paste the full job posting here…" class="w-full rounded-xl border border-stone-200 p-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 resize-none"></textarea>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">3. Target country</label>
+            <select id="country" class="w-full rounded-xl border border-stone-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+              <option>Oman</option><option>UAE</option><option>Saudi Arabia</option><option>Qatar</option>
+              <option>Bahrain</option><option>Kuwait</option><option>United Kingdom</option>
+              <option>United States</option><option>Canada</option><option>Australia</option>
+              <option>Germany</option><option>India</option><option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Experience level</label>
+            <select id="level" class="w-full rounded-xl border border-stone-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+              <option value="entry">Entry level</option>
+              <option value="mid" selected>Mid level</option>
+              <option value="senior">Senior</option>
+              <option value="executive">Executive</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="error-box" class="hidden text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg px-4 py-3"></div>
+
+        <button id="generate-btn" class="w-full rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-4 transition-colors disabled:opacity-50">
+          Generate CV
+        </button>
+        <p class="text-center text-xs text-stone-400">Usually takes 15–30 seconds.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- RESULT VIEW -->
+  <main id="result-view" class="hidden">
+    <section class="mx-auto max-w-3xl px-6 py-12 space-y-8">
+      <button id="back-btn" class="text-sm text-emerald-700 font-medium no-print">← Generate another CV</button>
+
+      <div class="flex flex-wrap items-center justify-between gap-4 no-print">
+        <div class="flex items-center gap-6">
+          <div class="flex items-center gap-3">
+            <div id="score-ring" class="w-14 h-14 rounded-full flex items-center justify-center font-bold text-base shrink-0">
+              <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-sm" id="score-number">0</div>
+            </div>
+            <div>
+              <p class="font-medium text-stone-900 text-sm">Before</p>
+              <p class="text-xs text-stone-500">Original CV match</p>
+            </div>
+          </div>
+          <span class="text-stone-300 text-xl">→</span>
+          <div class="flex items-center gap-3">
+            <div id="score-ring-after" class="w-14 h-14 rounded-full flex items-center justify-center font-bold text-base shrink-0">
+              <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-sm" id="score-number-after">0</div>
+            </div>
+            <div>
+              <p class="font-medium text-stone-900 text-sm">After</p>
+              <p class="text-xs text-stone-500">Improved CV match</p>
+            </div>
+          </div>
+        </div>
+        <button id="download-btn" class="rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-medium px-6 py-3 transition-colors">
+          Download CV as PDF
+        </button>
+      </div>
+
+      <div id="missing-keywords-card" class="rounded-2xl border border-stone-200 p-6 hidden no-print">
+        <h2 class="font-display font-semibold text-lg mb-3">Missing keywords</h2>
+        <div id="missing-keywords" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Template picker -->
+      <div class="no-print">
+        <h2 class="font-display font-semibold text-lg mb-3">Choose a CV template</h2>
+        <div class="grid grid-cols-3 gap-3" id="template-picker">
+          <button data-tpl="tpl-classic" class="tpl-option rounded-xl border-2 border-emerald-600 p-3 text-left">
+            <div class="h-16 rounded bg-stone-100 mb-2 flex flex-col gap-1 p-2">
+              <div class="h-1.5 bg-stone-800 w-1/2 rounded"></div>
+              <div class="h-1 bg-stone-300 w-full rounded mt-1"></div>
+              <div class="h-1 bg-stone-300 w-5/6 rounded"></div>
+            </div>
+            <p class="text-xs font-medium">Classic</p>
+            <p class="text-[11px] text-stone-400">Traditional, ATS-friendly</p>
+          </button>
+          <button data-tpl="tpl-modern" class="tpl-option rounded-xl border-2 border-stone-200 p-3 text-left">
+            <div class="h-16 rounded bg-stone-100 mb-2 flex gap-1 p-2">
+              <div class="w-1/3 bg-emerald-100 rounded"></div>
+              <div class="flex-1 flex flex-col gap-1">
+                <div class="h-1.5 bg-stone-800 w-2/3 rounded"></div>
+                <div class="h-1 bg-stone-300 w-full rounded mt-1"></div>
+              </div>
+            </div>
+            <p class="text-xs font-medium">Modern</p>
+            <p class="text-[11px] text-stone-400">Sidebar layout, color accent</p>
+          </button>
+          <button data-tpl="tpl-minimal" class="tpl-option rounded-xl border-2 border-stone-200 p-3 text-left">
+            <div class="h-16 rounded bg-stone-100 mb-2 flex flex-col gap-1.5 p-2">
+              <div class="h-1.5 bg-stone-700 w-1/2 rounded"></div>
+              <div class="h-0.5 bg-stone-300 w-full rounded mt-2"></div>
+              <div class="h-0.5 bg-stone-300 w-5/6 rounded"></div>
+            </div>
+            <p class="text-xs font-medium">Minimal</p>
+            <p class="text-[11px] text-stone-400">Airy, no color</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- The actual exportable CV document -->
+      <div id="cv-document" class="tpl-classic rounded-2xl border border-stone-200 shadow-sm p-8">
+        <div class="doc-header">
+          <div class="doc-name" id="doc-name">Your Name</div>
+          <div class="doc-tagline" id="doc-tagline" style="display:none;"></div>
+        </div>
+        <div class="doc-rule"></div>
+
+        <div class="doc-section-title">Professional Summary</div>
+        <p class="doc-summary" id="doc-summary"></p>
+
+        <div class="doc-section-title">Skills</div>
+        <div id="doc-skills-classic" class="doc-skills"></div>
+        <div id="doc-skills-modern" class="hidden"></div>
+
+        <div class="doc-section-title">Experience</div>
+        <div id="doc-experience" class="space-y-4"></div>
+
+        <div id="doc-education-wrap" class="hidden">
+          <div class="doc-section-title">Education</div>
+          <ul id="doc-education" class="space-y-1 text-sm"></ul>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-stone-200 p-6 no-print">
+        <h2 class="font-display font-semibold text-lg mb-3">Cover letter</h2>
+        <p id="cover-letter" class="text-sm leading-relaxed text-stone-700 whitespace-pre-line"></p>
+      </div>
+
+      <div class="rounded-2xl border border-stone-200 p-6 no-print">
+        <h2 class="font-display font-semibold text-lg mb-3">Likely interview questions</h2>
+        <ol id="interview-questions" class="list-decimal pl-5 space-y-2"></ol>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const fileInput = document.getElementById('file-input');
+    const uploadBtn = document.getElementById('upload-btn');
+    const uploadLabel = document.getElementById('upload-label');
+    const uploadSub = document.getElementById('upload-sub');
+    const errorBox = document.getElementById('error-box');
+    const generateBtn = document.getElementById('generate-btn');
+    const formView = document.getElementById('form-view');
+    const resultView = document.getElementById('result-view');
+    const backBtn = document.getElementById('back-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const cvDocument = document.getElementById('cv-document');
+
+    let cvText = '';
+    let lastResult = null;
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.remove('hidden');
+    }
+    function clearError() {
+      errorBox.classList.add('hidden');
+      errorBox.textContent = '';
+    }
+
+    uploadBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      clearError();
+      uploadLabel.textContent = 'Reading your CV…';
+
+      try {
+        const name = file.name.toLowerCase();
+        if (name.endsWith('.pdf')) {
+          const buffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+          let text = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map((it) => it.str).join(' ') + '\n';
+          }
+          cvText = text.trim();
+        } else if (name.endsWith('.docx')) {
+          const buffer = await file.arrayBuffer();
+          const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+          cvText = result.value.trim();
+        } else if (name.endsWith('.txt')) {
+          cvText = (await file.text()).trim();
+        } else {
+          throw new Error('Please upload a PDF, DOCX, or TXT file.');
+        }
+
+        if (!cvText) throw new Error('Could not find any text in that file.');
+
+        uploadLabel.textContent = file.name + ' ✓';
+        uploadSub.textContent = 'Click to choose a different file';
+      } catch (err) {
+        showError(err.message || 'Could not read that file.');
+        uploadLabel.textContent = 'Click to upload';
+        uploadSub.textContent = 'PDF, DOCX or TXT';
+        cvText = '';
+      }
+    });
+
+    generateBtn.addEventListener('click', async () => {
+      clearError();
+      const jobDescription = document.getElementById('job-description').value.trim();
+      const country = document.getElementById('country').value;
+      const level = document.getElementById('level').value;
+
+      if (!cvText) return showError('Please upload your CV first.');
+      if (!jobDescription) return showError('Please paste the job description.');
+
+      generateBtn.disabled = true;
+      generateBtn.textContent = 'Generating your CV…';
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cvText, jobDescription, country, level }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed.');
+        lastResult = data;
+        renderResult(data);
+        formView.classList.add('hidden');
+        resultView.classList.remove('hidden');
+        window.scrollTo(0, 0);
+      } catch (err) {
+        showError(err.message || 'Something went wrong. Please try again.');
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate CV';
+      }
+    });
+
+    backBtn.addEventListener('click', () => {
+      resultView.classList.add('hidden');
+      formView.classList.remove('hidden');
+    });
+
+    downloadBtn.addEventListener('click', () => window.print());
+
+    // --- template switching ---
+    document.querySelectorAll('.tpl-option').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tpl-option').forEach((b) => b.classList.remove('border-emerald-600'));
+        document.querySelectorAll('.tpl-option').forEach((b) => b.classList.add('border-stone-200'));
+        btn.classList.remove('border-stone-200');
+        btn.classList.add('border-emerald-600');
+
+        cvDocument.classList.remove('tpl-classic', 'tpl-modern', 'tpl-minimal');
+        cvDocument.classList.add(btn.dataset.tpl);
+        renderDocLayout(btn.dataset.tpl);
+      });
+    });
+
+    function renderDocLayout(tpl) {
+      // Modern uses a sidebar grid; rebuild the inner structure for it.
+      if (tpl === 'tpl-modern') {
+        buildModernLayout();
+      } else {
+        buildStandardLayout();
+      }
+    }
+
+    function buildStandardLayout() {
+      cvDocument.innerHTML = `
+        <div class="doc-header">
+          <div class="doc-name" id="doc-name"></div>
+        </div>
+        <div class="doc-rule"></div>
+        <div class="doc-section-title">Professional Summary</div>
+        <p class="doc-summary" id="doc-summary"></p>
+        <div class="doc-section-title">Skills</div>
+        <div id="doc-skills" class="doc-skills"></div>
+        <div class="doc-section-title">Experience</div>
+        <div id="doc-experience" class="space-y-4"></div>
+        <div id="doc-education-wrap" class="hidden">
+          <div class="doc-section-title">Education</div>
+          <ul id="doc-education" class="space-y-1 text-sm"></ul>
+        </div>
+      `;
+      fillDocument();
+    }
+
+    function buildModernLayout() {
+      cvDocument.innerHTML = `
+        <div class="doc-sidebar">
+          <div class="doc-name" id="doc-name"></div>
+          <div class="doc-tagline">Tailored Candidate Profile</div>
+          <div class="doc-section-title">Skills</div>
+          <div id="doc-skills" class="doc-skills"></div>
+          <div id="doc-education-wrap" class="hidden">
+            <div class="doc-section-title">Education</div>
+            <ul id="doc-education" class="space-y-1 text-sm"></ul>
+          </div>
+        </div>
+        <div class="doc-main">
+          <div class="doc-section-title">Professional Summary</div>
+          <p class="doc-summary" id="doc-summary"></p>
+          <div class="doc-section-title">Experience</div>
+          <div id="doc-experience" class="space-y-4"></div>
+        </div>
+      `;
+      fillDocument();
+    }
+
+    function fillDocument() {
+      if (!lastResult) return;
+      const cv = lastResult.generated_cv || {};
+      const name = document.getElementById('candidate-name').value.trim() || 'Your Name';
+      const isModern = cvDocument.classList.contains('tpl-modern');
+
+      document.getElementById('doc-name').textContent = name;
+      document.getElementById('doc-summary').textContent = cv.professional_summary || '';
+
+      const skillsEl = document.getElementById('doc-skills');
+      skillsEl.innerHTML = '';
+      if (isModern) {
+        (cv.skills || []).forEach((s) => {
+          const span = document.createElement('span');
+          span.className = 'doc-skill-chip';
+          span.textContent = s;
+          skillsEl.appendChild(span);
+        });
+      } else {
+        skillsEl.textContent = (cv.skills || []).join('  ·  ');
+      }
+
+      const expEl = document.getElementById('doc-experience');
+      expEl.innerHTML = '';
+      (cv.experience || []).forEach((role) => {
+        const div = document.createElement('div');
+        const bullets = (role.bullets || []).map((b) => `<li>${escapeHtml(b)}</li>`).join('');
+        div.innerHTML = `
+          <p class="doc-role-title">${escapeHtml(role.title || '')} — ${escapeHtml(role.company || '')}</p>
+          <p class="doc-role-meta">${escapeHtml(role.dates || '')}</p>
+          <ul class="doc-bullets list-disc pl-5">${bullets}</ul>
+        `;
+        expEl.appendChild(div);
+      });
+
+      const eduWrap = document.getElementById('doc-education-wrap');
+      const eduEl = document.getElementById('doc-education');
+      eduEl.innerHTML = '';
+      if (cv.education && cv.education.length) {
+        eduWrap.classList.remove('hidden');
+        cv.education.forEach((e) => {
+          const li = document.createElement('li');
+          li.textContent = e;
+          eduEl.appendChild(li);
+        });
+      } else {
+        eduWrap.classList.add('hidden');
+      }
+    }
+
+    function renderResult(data) {
+      const score = data.match_score || 0;
+      const color = score >= 75 ? '#0F6F5C' : score >= 50 ? '#B8862E' : '#B23A3A';
+      document.getElementById('score-ring').style.background = `conic-gradient(${color} ${score * 3.6}deg, #e7e5e4 0deg)`;
+      document.getElementById('score-number').textContent = score;
+
+      const afterScore = data.improved_match_score != null ? data.improved_match_score : score;
+      const afterColor = afterScore >= 75 ? '#0F6F5C' : afterScore >= 50 ? '#B8862E' : '#B23A3A';
+      document.getElementById('score-ring-after').style.background = `conic-gradient(${afterColor} ${afterScore * 3.6}deg, #e7e5e4 0deg)`;
+      document.getElementById('score-number-after').textContent = afterScore;
+
+      const mk = document.getElementById('missing-keywords');
+      mk.innerHTML = '';
+      if (data.missing_keywords && data.missing_keywords.length) {
+        document.getElementById('missing-keywords-card').classList.remove('hidden');
+        data.missing_keywords.forEach((k) => {
+          const span = document.createElement('span');
+          span.className = 'text-sm bg-amber-50 text-amber-700 border border-amber-100 rounded-full px-3 py-1';
+          span.textContent = k;
+          mk.appendChild(span);
+        });
+      } else {
+        document.getElementById('missing-keywords-card').classList.add('hidden');
+      }
+
+      document.getElementById('cover-letter').textContent = data.cover_letter || '';
+
+      const iqEl = document.getElementById('interview-questions');
+      iqEl.innerHTML = '';
+      (data.interview_questions || []).forEach((q) => {
+        const li = document.createElement('li');
+        li.className = 'text-sm text-stone-700 leading-relaxed';
+        li.textContent = q;
+        iqEl.appendChild(li);
+      });
+
+      // default to classic layout on a fresh result
+      cvDocument.classList.remove('tpl-classic', 'tpl-modern', 'tpl-minimal');
+      cvDocument.classList.add('tpl-classic');
+      buildStandardLayout();
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
