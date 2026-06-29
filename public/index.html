@@ -201,13 +201,25 @@
       <button id="back-btn" class="text-sm text-emerald-700 font-medium no-print">← Generate another CV</button>
 
       <div class="flex flex-wrap items-center justify-between gap-4 no-print">
-        <div class="flex items-center gap-4">
-          <div id="score-ring" class="w-16 h-16 rounded-full flex items-center justify-center font-bold text-lg shrink-0">
-            <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-sm" id="score-number">0</div>
+        <div class="flex items-center gap-6">
+          <div class="flex items-center gap-3">
+            <div id="score-ring" class="w-14 h-14 rounded-full flex items-center justify-center font-bold text-base shrink-0">
+              <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-sm" id="score-number">0</div>
+            </div>
+            <div>
+              <p class="font-medium text-stone-900 text-sm">Before</p>
+              <p class="text-xs text-stone-500">Original CV match</p>
+            </div>
           </div>
-          <div>
-            <p class="font-medium text-stone-900">Job match score</p>
-            <p class="text-sm text-stone-500">Original CV vs. the job description</p>
+          <span class="text-stone-300 text-xl">→</span>
+          <div class="flex items-center gap-3">
+            <div id="score-ring-after" class="w-14 h-14 rounded-full flex items-center justify-center font-bold text-base shrink-0">
+              <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-sm" id="score-number-after">0</div>
+            </div>
+            <div>
+              <p class="font-medium text-stone-900 text-sm">After</p>
+              <p class="text-xs text-stone-500">Improved CV match</p>
+            </div>
           </div>
         </div>
         <button id="download-btn" class="rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-medium px-6 py-3 transition-colors">
@@ -288,6 +300,17 @@
       <div class="rounded-2xl border border-stone-200 p-6 no-print">
         <h2 class="font-display font-semibold text-lg mb-3">Likely interview questions</h2>
         <ol id="interview-questions" class="list-decimal pl-5 space-y-2"></ol>
+      </div>
+
+      <div class="rounded-2xl border border-stone-200 p-6 no-print">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-1">
+          <h2 class="font-display font-semibold text-lg">Matching jobs <span id="jobs-country-label"></span></h2>
+          <button id="find-jobs-btn" class="rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-sm font-medium px-4 py-2.5 transition-colors">
+            Find open roles
+          </button>
+        </div>
+        <p class="text-sm text-stone-500 mb-4">Live listings pulled from Google for Jobs, LinkedIn, Indeed, Bayt and others.</p>
+        <div id="jobs-results" class="space-y-3"></div>
       </div>
     </section>
   </main>
@@ -398,6 +421,53 @@
       resultView.classList.add('hidden');
       formView.classList.remove('hidden');
     });
+
+    document.getElementById('find-jobs-btn').addEventListener('click', findMatchingJobs);
+
+    async function findMatchingJobs() {
+      if (!lastResult) return;
+      const btn = document.getElementById('find-jobs-btn');
+      const resultsEl = document.getElementById('jobs-results');
+      const country = document.getElementById('country').value;
+      const cv = lastResult.generated_cv || {};
+      const jobTitle = (cv.experience && cv.experience[0] && cv.experience[0].title) || document.getElementById('job-description').value.slice(0, 60);
+
+      btn.disabled = true;
+      btn.textContent = 'Searching…';
+      resultsEl.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/find-jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobTitle, skills: cv.skills || [], country }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Job search failed.');
+
+        if (!data.jobs || data.jobs.length === 0) {
+          resultsEl.innerHTML = `<p class="text-sm text-stone-500">No open roles found right now for "${escapeHtml(jobTitle)}" in ${escapeHtml(country)}. Try again later or broaden the search.</p>`;
+        } else {
+          data.jobs.forEach((j) => {
+            const card = document.createElement('div');
+            card.className = 'rounded-xl border border-stone-200 p-4 flex items-start justify-between gap-3';
+            card.innerHTML = `
+              <div>
+                <p class="font-medium text-sm">${escapeHtml(j.title || '')}</p>
+                <p class="text-xs text-stone-500 mt-0.5">${escapeHtml(j.company || '')} ${j.location ? '· ' + escapeHtml(j.location) : ''}</p>
+              </div>
+              ${j.apply_link ? `<a href="${j.apply_link}" target="_blank" rel="noopener" class="shrink-0 text-xs font-medium bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg px-3 py-2">View</a>` : ''}
+            `;
+            resultsEl.appendChild(card);
+          });
+        }
+      } catch (err) {
+        resultsEl.innerHTML = `<p class="text-sm text-red-700">${escapeHtml(err.message || 'Something went wrong searching for jobs.')}</p>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Find open roles';
+      }
+    }
 
     downloadBtn.addEventListener('click', () => window.print());
 
@@ -522,6 +592,11 @@
       document.getElementById('score-ring').style.background = `conic-gradient(${color} ${score * 3.6}deg, #e7e5e4 0deg)`;
       document.getElementById('score-number').textContent = score;
 
+      const afterScore = data.improved_match_score != null ? data.improved_match_score : score;
+      const afterColor = afterScore >= 75 ? '#0F6F5C' : afterScore >= 50 ? '#B8862E' : '#B23A3A';
+      document.getElementById('score-ring-after').style.background = `conic-gradient(${afterColor} ${afterScore * 3.6}deg, #e7e5e4 0deg)`;
+      document.getElementById('score-number-after').textContent = afterScore;
+
       const mk = document.getElementById('missing-keywords');
       mk.innerHTML = '';
       if (data.missing_keywords && data.missing_keywords.length) {
@@ -537,6 +612,10 @@
       }
 
       document.getElementById('cover-letter').textContent = data.cover_letter || '';
+
+      const jobsCountry = document.getElementById('country').value;
+      document.getElementById('jobs-country-label').textContent = jobsCountry ? `in ${jobsCountry}` : '';
+      document.getElementById('jobs-results').innerHTML = '';
 
       const iqEl = document.getElementById('interview-questions');
       iqEl.innerHTML = '';
