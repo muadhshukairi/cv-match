@@ -49,7 +49,7 @@ module.exports = async function handler(req, res) {
       ...(countryCode ? { country: countryCode } : {}),
     });
 
-    const response = await fetch(`https://jsearch.p.rapidapi.com/search?${params.toString()}`, {
+    const response = await fetch(`https://jsearch.p.rapidapi.com/search-v2?${params.toString()}`, {
       method: 'GET',
       headers: {
         'X-RapidAPI-Key': apiKey,
