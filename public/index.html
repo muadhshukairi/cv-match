@@ -478,7 +478,12 @@
         const res = await fetch('/api/find-jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobTitle, skills: cv.skills || [], country }),
+          body: JSON.stringify({
+            jobTitle,
+            skills: cv.skills || [],
+            education: cv.education || [],
+            country,
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error((data.error || 'Job search failed.') + (data.detail ? ' — ' + data.detail : ''));
