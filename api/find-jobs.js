@@ -64,7 +64,8 @@ module.exports = async function handler(req, res) {
     }
 
     const data = await response.json();
-    const jobs = (data.data || []).slice(0, 8).map((j) => ({
+    const jobList = (data.data && data.data.jobs) || data.data || [];
+    const jobs = jobList.slice(0, 8).map((j) => ({
       title: j.job_title,
       company: j.employer_name,
       location: [j.job_city, j.job_country].filter(Boolean).join(', ') || j.job_location || country,
