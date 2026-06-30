@@ -311,6 +311,11 @@
         </div>
         <p class="text-sm text-stone-500 mb-4">Live listings pulled from Google for Jobs, LinkedIn, Indeed, Bayt and others.</p>
         <div id="jobs-results" class="space-y-3"></div>
+
+        <div class="mt-5 pt-5 border-t border-stone-200">
+          <p class="text-xs font-medium text-stone-500 mb-2.5 uppercase tracking-wide">Also search directly on</p>
+          <div id="external-job-links" class="flex flex-wrap gap-2"></div>
+        </div>
       </div>
     </section>
   </main>
@@ -421,6 +426,39 @@
       resultView.classList.add('hidden');
       formView.classList.remove('hidden');
     });
+
+    function buildExternalJobLinks(jobTitle, country) {
+      const q = encodeURIComponent(jobTitle || 'jobs');
+      const countryQ = encodeURIComponent(country || '');
+      const links = [
+        {
+          label: 'Google for Jobs',
+          url: `https://www.google.com/search?q=${q}+jobs+${countryQ}&udm=8`,
+        },
+      ];
+
+      // Oman-specific government/national job portals — these don't offer a
+      // public search API, so we link directly into the site instead of
+      // pulling live results from them.
+      if (country === 'Oman') {
+        links.push(
+          { label: 'Kwader (mem.gov.om)', url: 'https://kwader.mem.gov.om/' },
+          { label: 'Tawteen.om', url: 'https://tawteen.om/find-jobs' }
+        );
+      }
+
+      const wrap = document.getElementById('external-job-links');
+      wrap.innerHTML = '';
+      links.forEach((l) => {
+        const a = document.createElement('a');
+        a.href = l.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.className = 'text-xs font-medium bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-full px-3 py-1.5 transition-colors';
+        a.textContent = l.label + ' ↗';
+        wrap.appendChild(a);
+      });
+    }
 
     document.getElementById('find-jobs-btn').addEventListener('click', findMatchingJobs);
 
@@ -616,6 +654,8 @@
       const jobsCountry = document.getElementById('country').value;
       document.getElementById('jobs-country-label').textContent = jobsCountry ? `in ${jobsCountry}` : '';
       document.getElementById('jobs-results').innerHTML = '';
+      const topRoleTitle = (data.generated_cv && data.generated_cv.experience && data.generated_cv.experience[0] && data.generated_cv.experience[0].title) || '';
+      buildExternalJobLinks(topRoleTitle, jobsCountry);
 
       const iqEl = document.getElementById('interview-questions');
       iqEl.innerHTML = '';
