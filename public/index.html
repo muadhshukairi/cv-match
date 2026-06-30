@@ -489,7 +489,8 @@
         if (!res.ok) throw new Error((data.error || 'Job search failed.') + (data.detail ? ' — ' + data.detail : ''));
 
         if (!data.jobs || data.jobs.length === 0) {
-          resultsEl.innerHTML = `<p class="text-sm text-stone-500">No open roles found right now for "${escapeHtml(jobTitle)}" in ${escapeHtml(country)}. Try again later or broaden the search.</p>`;
+          const usedQ = data.query_used || jobTitle;
+          resultsEl.innerHTML = `<p class="text-sm text-stone-500">No open roles found right now for "${escapeHtml(usedQ)}". Try again later, or use the direct search links below.</p>`;
         } else {
           data.jobs.forEach((j) => {
             const card = document.createElement('div');
