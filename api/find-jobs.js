@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { jobTitle, skills, country } = req.body || {};
+    const { jobTitle, skills, country, education, certifications } = req.body || {};
 
     if (!jobTitle) {
       res.status(400).json({ error: 'jobTitle is required' });
@@ -38,33 +38,78 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    const countryCode = COUNTRY_CODES[country] || '';
-    const topSkills = (skills || []).slice(0, 2).join(' ');
-    const query = `${jobTitle} ${topSkills} in ${country || ''}`.trim();
-
-    const params = new URLSearchParams({
-      query,
-      page: '1',
-      num_pages: '1',
-      ...(countryCode ? { country: countryCode } : {}),
-    });
-
-    const response = await fetch(`https://jsearch.p.rapidapi.com/search-v2?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'X-RapidAPI-Key': apiKey,
-        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
-      },
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      res.status(502).json({ error: 'Job search request failed', detail: errText });
-      return;
+    // Job titles can be long/specific ("Senior Project Engineer – O&M / Small
+    // Capex Department"), which real job search engines often match too
+    // narrowly or not at all. Strip it down to the core, more commonly-used
+    // role words.
+    function simplifyTitle(title) {
+      return (title || '')
+        .split(/[-–—/|]/)[0] // keep only the part before a dash/slash separator
+        .replace(/\b(senior|junior|lead|principal|associate|chief|head of)\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
 
-    const data = await response.json();
-    const jobList = (data.data && data.data.jobs) || data.data || [];
+    // Pull out the likely field/major from education entries (e.g.
+    // "B.Sc. Civil Engineering, Sultan Qaboos University" -> "Civil Engineering")
+    function extractField(educationEntries) {
+      if (!educationEntries || !educationEntries.length) return '';
+      const entry = educationEntries[0];
+      const match = entry.match(/(?:in|of)\s+([A-Za-z &]+?)(?:,|$)/i);
+      if (match) return match[1].trim();
+      // fallback: strip common degree prefixes, take what's left before a comma
+      return entry
+        .replace(/\b(b\.?sc\.?|m\.?sc\.?|bachelor'?s?|master'?s?|diploma|phd|degree)\b/gi, '')
+        .split(',')[0]
+        .trim();
+    }
+
+    const countryCode = COUNTRY_CODES[country] || '';
+    const coreTitle = simplifyTitle(jobTitle) || jobTitle;
+    const topSkills = (skills || []).slice(0, 3).join(' ');
+    const field = extractField(education);
+    const topCert = (certifications || [])[0] || '';
+
+    // Full query: role + skills + field/major + a certification, so the
+    // search reflects the whole candidate profile, not just their exact
+    // current job title.
+    const fullQueryParts = [coreTitle, topSkills, field, topCert, 'jobs in', country || ''].filter(Boolean);
+    const query = fullQueryParts.join(' ').trim();
+
+    async function searchJobs(searchQuery) {
+      const params = new URLSearchParams({
+        query: searchQuery,
+        page: '1',
+        num_pages: '1',
+        ...(countryCode ? { country: countryCode } : {}),
+      });
+
+      const response = await fetch(`https://jsearch.p.rapidapi.com/search-v2?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key': apiKey,
+          'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
+        },
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Job search request failed: ${errText}`);
+      }
+
+      const data = await response.json();
+      return (data.data && data.data.jobs) || data.data || [];
+    }
+
+    let jobList = await searchJobs(query);
+
+    // If the narrower search found nothing, broaden further: skills + field
+    // only, dropping the specific title entirely.
+    if (jobList.length === 0 && topSkills) {
+      const broaderQuery = `${topSkills} jobs in ${country || ''}`.trim();
+      jobList = await searchJobs(broaderQuery);
+    }
+
     const jobs = jobList.slice(0, 8).map((j) => ({
       title: j.job_title,
       company: j.employer_name,
