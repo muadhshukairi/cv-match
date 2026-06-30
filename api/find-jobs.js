@@ -64,24 +64,28 @@ module.exports = async function handler(req, res) {
         .trim();
     }
 
-    const countryCode = COUNTRY_CODES[country] || '';
     const coreTitle = simplifyTitle(jobTitle) || jobTitle;
-    const topSkills = (skills || []).slice(0, 3).join(' ');
+    const topSkills = (skills || []).slice(0, 2).join(' ');
     const field = extractField(education);
-    const topCert = (certifications || [])[0] || '';
 
-    // Full query: role + skills + field/major + a certification, so the
-    // search reflects the whole candidate profile, not just their exact
-    // current job title.
-    const fullQueryParts = [coreTitle, topSkills, field, topCert, 'jobs in', country || ''].filter(Boolean);
-    const query = fullQueryParts.join(' ').trim();
+    // Build a few progressively broader queries to try in order. Keeping
+    // each one short (a handful of words) works far better with real search
+    // engines than one long combined string. We deliberately do NOT pass a
+    // strict `country` filter param to the API — for smaller/less-indexed
+    // markets like Oman that filter can zero out real results that the
+    // natural-language "in <country>" phrase still finds.
+    const candidateQueries = [
+      [coreTitle, 'jobs in', country].filter(Boolean).join(' '),
+      [coreTitle, topSkills, 'jobs in', country].filter(Boolean).join(' '),
+      [field, topSkills, 'jobs in', country].filter(Boolean).join(' '),
+      [topSkills, 'jobs in', country].filter(Boolean).join(' '),
+    ].filter((q) => q.replace(/jobs in/i, '').trim().length > 0);
 
     async function searchJobs(searchQuery) {
       const params = new URLSearchParams({
         query: searchQuery,
         page: '1',
         num_pages: '1',
-        ...(countryCode ? { country: countryCode } : {}),
       });
 
       const response = await fetch(`https://jsearch.p.rapidapi.com/search-v2?${params.toString()}`, {
@@ -101,13 +105,12 @@ module.exports = async function handler(req, res) {
       return (data.data && data.data.jobs) || data.data || [];
     }
 
-    let jobList = await searchJobs(query);
-
-    // If the narrower search found nothing, broaden further: skills + field
-    // only, dropping the specific title entirely.
-    if (jobList.length === 0 && topSkills) {
-      const broaderQuery = `${topSkills} jobs in ${country || ''}`.trim();
-      jobList = await searchJobs(broaderQuery);
+    let jobList = [];
+    let queryUsed = '';
+    for (const candidate of candidateQueries) {
+      jobList = await searchJobs(candidate);
+      queryUsed = candidate;
+      if (jobList.length > 0) break;
     }
 
     const jobs = jobList.slice(0, 8).map((j) => ({
@@ -119,7 +122,7 @@ module.exports = async function handler(req, res) {
       posted: j.job_posted_at_datetime_utc,
     }));
 
-    res.status(200).json({ jobs });
+    res.status(200).json({ jobs, query_used: queryUsed });
   } catch (err) {
     res.status(500).json({ error: 'Unexpected server error', detail: err.message });
   }
