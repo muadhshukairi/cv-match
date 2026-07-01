@@ -427,24 +427,45 @@
       formView.classList.remove('hidden');
     });
 
-    function buildExternalJobLinks(jobTitle, country) {
-      const q = encodeURIComponent(jobTitle || 'jobs');
+    function buildExternalJobLinks(jobTitle, skills, country) {
+      const coreTitle = (jobTitle || '').split(/[-–—/|]/)[0].trim();
+      const topSkills = (skills || []).slice(0, 2).join(' ');
+      const searchTerm = [coreTitle, topSkills].filter(Boolean).join(' ');
+      const q = encodeURIComponent(searchTerm);
       const countryQ = encodeURIComponent(country || '');
+
       const links = [
+        {
+          label: 'LinkedIn',
+          url: `https://www.linkedin.com/jobs/search/?keywords=${q}&location=${countryQ}`,
+        },
+        {
+          label: 'Indeed',
+          url: `https://www.indeed.com/jobs?q=${q}&l=${countryQ}`,
+        },
+        {
+          label: 'Bayt',
+          url: `https://www.bayt.com/en/jobs/?q=${q}`,
+        },
         {
           label: 'Google for Jobs',
           url: `https://www.google.com/search?q=${q}+jobs+${countryQ}&udm=8`,
         },
       ];
 
-      // Oman-specific government/national job portals — these don't offer a
-      // public search API, so we link directly into the site instead of
-      // pulling live results from them.
       if (country === 'Oman') {
         links.push(
           { label: 'Kwader (mem.gov.om)', url: 'https://kwader.mem.gov.om/' },
           { label: 'Tawteen.om', url: 'https://tawteen.om/find-jobs' }
         );
+      }
+
+      if (country === 'UAE') {
+        links.push({ label: 'GulfTalent', url: `https://www.gulftalent.com/jobs?search=${q}` });
+      }
+
+      if (['Oman','UAE','Saudi Arabia','Qatar','Bahrain','Kuwait'].includes(country)) {
+        links.push({ label: 'Naukrigulf', url: `https://www.naukrigulf.com/${encodeURIComponent(searchTerm.toLowerCase().replace(/\s+/g,'-'))}-jobs` });
       }
 
       const wrap = document.getElementById('external-job-links');
@@ -661,7 +682,7 @@
       document.getElementById('jobs-country-label').textContent = jobsCountry ? `in ${jobsCountry}` : '';
       document.getElementById('jobs-results').innerHTML = '';
       const topRoleTitle = (data.generated_cv && data.generated_cv.experience && data.generated_cv.experience[0] && data.generated_cv.experience[0].title) || '';
-      buildExternalJobLinks(topRoleTitle, jobsCountry);
+      buildExternalJobLinks(topRoleTitle, (data.generated_cv && data.generated_cv.skills) || [], jobsCountry);
 
       const iqEl = document.getElementById('interview-questions');
       iqEl.innerHTML = '';
