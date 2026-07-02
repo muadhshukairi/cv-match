@@ -574,8 +574,8 @@ async function runAutoSearch(){
       body:JSON.stringify({jobTitle:p.jobTitle,skills:p.topSkills||[],country:country,educationField:p.educationField||''}),
     });
     var d=await r2.json();
-    if(!r2.ok)throw new Error(d.error||'Job search failed');
-    if(!d.jobs||!d.jobs.length)throw new Error(t('noresults'));
+    if(!r2.ok)throw new Error(d.error||('Job search failed ('+r2.status+')'));
+    if(!d.jobs||!d.jobs.length)throw new Error(lang==='ar'?'لا توجد نتائج. جرّب دولة مختلفة.':'No jobs returned for query: '+d.query_used);
 
     JOBS=d.jobs.map(function(j,i){
       var pct=calcMatch(cvText,j.desc||'');
