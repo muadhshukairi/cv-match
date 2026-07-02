@@ -261,7 +261,7 @@ body{background:var(--bg);color:var(--t);font-family:var(--ff)}
         <input id="job-search-query" onkeydown="if(event.key==='Enter')doJobSearch()"
           style="flex:1;min-width:200px;background:var(--bg);color:var(--t);border:1px solid var(--b2);border-radius:10px;padding:11px 16px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s"
           onfocus="this.style.borderColor='var(--v)'" onblur="this.style.borderColor='var(--b2)'">
-        <select id="country-select" onchange="doJobSearch()"
+        <select id="country-select"
           style="background:var(--bg);color:var(--t);border:1px solid var(--b2);border-radius:10px;padding:11px 14px;font-size:13px;font-family:inherit;cursor:pointer;outline:none">
           <option>Oman</option><option>UAE</option><option>Saudi Arabia</option><option>Qatar</option><option>Bahrain</option><option>Kuwait</option>
         </select>
@@ -473,7 +473,20 @@ function daysAgoLabel(n){
   return '';
 }
 
-/* ── Job search — user-controlled query ── */
+/* ── Extract key skills from raw CV text ── */
+function extractSkills(txt){
+  // Common engineering/professional keywords to pick up from the CV
+  var keywords=['AutoCAD','Civil 3D','Primavera','MS Project','FIDIC','SCADA',
+    'PMP','NEBOSH','GIS','Project Management','Asset Management','O&M',
+    'Python','Excel','SQL','SAP','BIM','Revit','MATLAB','HSE',
+    'Procurement','Contracts','Operations','Maintenance','Construction'];
+  var found=[];
+  var lower=txt.toLowerCase();
+  keywords.forEach(function(k){ if(lower.includes(k.toLowerCase())) found.push(k); });
+  return found.slice(0,3);
+}
+
+/* ── Job search — triggered by Search button or Enter ── */
 function doJobSearch(){
   var query=(document.getElementById('job-search-query').value||'').trim();
   if(!query) return;
@@ -481,36 +494,40 @@ function doJobSearch(){
 }
 
 async function loadLiveJobs(query){
-  if(!query) return;
+  if(!query||jobsLoading) return;
   jobsLoading=true;
   document.getElementById('jobs-error').style.display='none';
   setJobsStatus(lang==='ar'?'جارٍ البحث…':'Searching…',true);
-  renderCards([]); // clear previous results
+  renderCards([]);
   try{
     var country=document.getElementById('country-select').value||'Oman';
+    var skills=extractSkills(cvText);
     var res=await fetch('/api/find-jobs',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({jobTitle:query,skills:[],country:country}),
+      body:JSON.stringify({jobTitle:query, skills:skills, country:country}),
     });
     var data=await res.json();
     if(!res.ok) throw new Error(data.error||'Search failed');
-    if(!data.jobs||!data.jobs.length) throw new Error(lang==='ar'?'لا توجد نتائج. جرّب كلمات مختلفة.':'No results. Try different keywords.');
+    if(!data.jobs||!data.jobs.length) throw new Error(
+      lang==='ar'?'لا توجد نتائج حديثة. جرّب كلمات مختلفة.':
+      'No recent results found. Try different keywords.'
+    );
     JOBS=data.jobs.map(function(j,i){
       var pct=calcMatch(cvText,j.desc||'');
       return {
-        id:    j.id||('r-'+i),
-        match: pct>=65?'high':pct>=40?'medium':'low',
-        pct:   pct,
-        en:    j.title||'',
-        ar:    j.title||'',
+        id:      j.id||('r'+i),
+        match:   pct>=65?'high':pct>=40?'medium':'low',
+        pct:     pct,
+        en:      j.title||'',
+        ar:      j.title||'',
         company: j.company||'',
-        loc:   j.location||country,
-        ten:   j.type||'Full-time',
-        tar:   (j.type||'').toLowerCase().includes('contract')?'عقد مؤقت':'دوام كامل',
-        url:   j.apply_link||'',
-        desc:  j.desc||'',
-        days_ago: j.days_ago,
+        loc:     j.location||country,
+        ten:     j.type||'Full-time',
+        tar:     (j.type||'').toLowerCase().includes('contract')?'عقد مؤقت':'دوام كامل',
+        url:     j.apply_link||'',
+        desc:    j.desc||'',
+        days_ago:j.days_ago,
       };
     }).sort(function(a,b){return b.pct-a.pct;});
     setJobsStatus('',false);
@@ -519,7 +536,7 @@ async function loadLiveJobs(query){
     JOBS=[];
     setJobsStatus('',false);
     var errEl=document.getElementById('jobs-error');
-    errEl.textContent=e.message||(lang==='ar'?'فشل البحث':'Search failed');
+    errEl.textContent=e.message;
     errEl.style.display='';
     renderCards([]);
   }finally{
