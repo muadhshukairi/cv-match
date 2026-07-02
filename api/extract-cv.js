@@ -21,6 +21,7 @@ Examples:
 
 Return ONLY valid JSON, no markdown fences:
 {
+  "candidateName": "<full name of the person — look carefully, may be ALL-CAPS or formatted unusually>",
   "jobTitle": "<their actual current job title from CV>",
   "searchTitle": "<primary broad job title for searching, 2-3 words, sector-agnostic>",
   "searchQueries": [<2-4 short search terms, each 1-3 words, covering ALL experience areas in this CV — e.g. ["Operations Administrator","Customer Service","Administrative Coordinator"]>],
@@ -45,7 +46,7 @@ ${cvText.slice(0, 7000)}
       },
       body: JSON.stringify({
         model: process.env.AI_MODEL || 'claude-sonnet-4-6',
-        max_tokens: 500,
+        max_tokens: 600,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
