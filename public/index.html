@@ -253,18 +253,24 @@ body{background:var(--bg);color:var(--t);font-family:var(--ff)}
 <!-- SCREEN 2: JOBS -->
 <main id="jobs-view" style="display:none">
   <div class="screen" style="max-width:840px;margin:0 auto;padding:28px 20px">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <div>
-        <h2 id="jobs-title" style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px"></h2>
-        <p id="jobs-sub" style="font-size:13px;color:var(--tM)"></p>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input id="search-input" oninput="filterJobs()" style="background:var(--card);color:var(--t);border:1px solid var(--b);border-radius:10px;padding:8px 14px;font-size:13px;font-family:inherit;width:160px;outline:none">
-        <select id="country-select" onchange="filterJobs()" style="background:var(--card);color:var(--t);border:1px solid var(--b);border-radius:10px;padding:8px 14px;font-size:13px;font-family:inherit;cursor:pointer;outline:none">
+
+    <!-- Search form — user controls this, not auto-extracted from CV -->
+    <div style="background:var(--card);border:1px solid var(--b2);border-radius:16px;padding:22px 24px;margin-bottom:20px">
+      <h2 id="jobs-title" style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:16px"></h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <input id="job-search-query" onkeydown="if(event.key==='Enter')doJobSearch()"
+          style="flex:1;min-width:200px;background:var(--bg);color:var(--t);border:1px solid var(--b2);border-radius:10px;padding:11px 16px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s"
+          onfocus="this.style.borderColor='var(--v)'" onblur="this.style.borderColor='var(--b2)'">
+        <select id="country-select" onchange="doJobSearch()"
+          style="background:var(--bg);color:var(--t);border:1px solid var(--b2);border-radius:10px;padding:11px 14px;font-size:13px;font-family:inherit;cursor:pointer;outline:none">
           <option>Oman</option><option>UAE</option><option>Saudi Arabia</option><option>Qatar</option><option>Bahrain</option><option>Kuwait</option>
         </select>
+        <button onclick="doJobSearch()" id="search-btn"
+          style="background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:10px;padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:opacity .15s"></button>
       </div>
+      <p id="jobs-sub" style="font-size:12px;color:var(--tD);margin-top:10px"></p>
     </div>
+
     <!-- Portal links -->
     <div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:7px;align-items:center">
       <span id="portals-label" style="font-size:10px;color:var(--tD);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-inline-end:4px"></span>
@@ -467,32 +473,41 @@ function daysAgoLabel(n){
   return '';
 }
 
-/* ── Load live jobs from API ── */
-async function loadLiveJobs(){
+/* ── Job search — user-controlled query ── */
+function doJobSearch(){
+  var query=(document.getElementById('job-search-query').value||'').trim();
+  if(!query) return;
+  loadLiveJobs(query);
+}
+
+async function loadLiveJobs(query){
+  if(!query) return;
   jobsLoading=true;
-  setJobsStatus(lang==='ar'?'جارٍ البحث عن الوظائف…':'Searching for live jobs…',true);
+  document.getElementById('jobs-error').style.display='none';
+  setJobsStatus(lang==='ar'?'جارٍ البحث…':'Searching…',true);
+  renderCards([]); // clear previous results
   try{
-    var title=detectTitle(cvText);
-    var country=document.getElementById('country-select')?document.getElementById('country-select').value:'Oman';
+    var country=document.getElementById('country-select').value||'Oman';
     var res=await fetch('/api/find-jobs',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({jobTitle:title,skills:[],country:country}),
+      body:JSON.stringify({jobTitle:query,skills:[],country:country}),
     });
     var data=await res.json();
-    if(!res.ok||!data.jobs||!data.jobs.length) throw new Error('no results');
+    if(!res.ok) throw new Error(data.error||'Search failed');
+    if(!data.jobs||!data.jobs.length) throw new Error(lang==='ar'?'لا توجد نتائج. جرّب كلمات مختلفة.':'No results. Try different keywords.');
     JOBS=data.jobs.map(function(j,i){
       var pct=calcMatch(cvText,j.desc||'');
       return {
-        id:    j.id||('live-'+i),
+        id:    j.id||('r-'+i),
         match: pct>=65?'high':pct>=40?'medium':'low',
         pct:   pct,
         en:    j.title||'',
-        ar:    j.title||'',  // JSearch returns English titles
+        ar:    j.title||'',
         company: j.company||'',
         loc:   j.location||country,
         ten:   j.type||'Full-time',
-        tar:   j.type==='Contract'?'عقد مؤقت':'دوام كامل',
+        tar:   (j.type||'').toLowerCase().includes('contract')?'عقد مؤقت':'دوام كامل',
         url:   j.apply_link||'',
         desc:  j.desc||'',
         days_ago: j.days_ago,
@@ -501,9 +516,11 @@ async function loadLiveJobs(){
     setJobsStatus('',false);
     renderCards(JOBS);
   }catch(e){
-    // If API fails or no RAPIDAPI_KEY, show a clear message
-    setJobsStatus(lang==='ar'?'تعذّر تحميل الوظائف. تحقق من RAPIDAPI_KEY في متغيرات بيئة Vercel.':'Could not load live jobs. Check RAPIDAPI_KEY in Vercel environment variables.',false);
     JOBS=[];
+    setJobsStatus('',false);
+    var errEl=document.getElementById('jobs-error');
+    errEl.textContent=e.message||(lang==='ar'?'فشل البحث':'Search failed');
+    errEl.style.display='';
     renderCards([]);
   }finally{
     jobsLoading=false;
@@ -538,7 +555,7 @@ function setLang(l){
   document.getElementById('btn-ar').style.cssText="font-size:13px;font-weight:700;padding:5px 12px;border:none;cursor:pointer;font-family:'Cairo',sans-serif;background:"+(l==='ar'?'var(--v)':'transparent')+';color:'+(l==='ar'?'#fff':'var(--tD)');
   applyText();
   var jv=document.getElementById('jobs-view');
-  if(jv.style.display!=='none'){filterJobs();}
+  if(jv.style.display!=='none'){renderCards(JOBS);}
   var rv=document.getElementById('result-view');
   if(lastResult&&rv.style.display!=='none'){renderResult(lastResult);}
 }
@@ -548,7 +565,9 @@ function applyText(){
   setText('hero-sub','heroSub'); setText('feat1','feat1'); setText('feat2','feat2'); setText('feat3','feat3');
   setText('upload-label','uploadLabel'); setText('upload-sub','uploadSub'); setText('sample-btn','sampleBtn');
   setText('jobs-title','jobsTitle'); setText('portals-label','portalsLabel');
-  setAttr('search-input','placeholder','filterPh');
+  setAttr('job-search-query','placeholder',lang==='ar'?'اكتب المسمى الوظيفي…':'Job title or keywords…');
+  var sb=document.getElementById('search-btn');
+  if(sb) sb.textContent=lang==='ar'?'🔍 بحث':'🔍 Search';
   setText('tailored-for','tailoredFor'); setText('lbl-before','beforeLabel'); setText('sub-before','originalCv');
   setText('lbl-after','afterLabel'); setText('sub-after','rewrittenCv'); setText('improved-lbl','improvedLbl');
   setText('btn-dl-pdf','dlPdf'); setText('btn-dl-word','dlWord');
@@ -571,7 +590,19 @@ function showJobs(){
   document.getElementById('header-right').innerHTML=
     '<div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#6D28D9,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800">'+((detectedName||'?')[0])+'</div><span style="font-size:13px;color:var(--tM)"><strong style="color:var(--t)">'+esc(detectedName||'You')+'</strong></span></div>'+
     '<button onclick="showUpload()" style="font-size:12px;color:var(--tD);background:var(--card);border:1px solid var(--b);border-radius:8px;padding:5px 12px;cursor:pointer;font-family:inherit">'+t('newCv')+'</button>';
-  filterJobs();
+  // Pre-fill search with detected title, then auto-search
+  var qInput=document.getElementById('job-search-query');
+  if(qInput&&!qInput.value){
+    var suggested=detectTitle(cvText);
+    qInput.value=suggested;
+  }
+  // Update search button label
+  var sbtn=document.getElementById('search-btn');
+  if(sbtn) sbtn.textContent=lang==='ar'?'🔍 بحث':'🔍 Search';
+  // Auto-run search on first load
+  if(JOBS.length===0&&document.getElementById('job-search-query').value){
+    loadLiveJobs(document.getElementById('job-search-query').value);
+  }
 }
 function showResult(){
   hide('form-view'); hide('jobs-view'); show('result-view');
@@ -607,7 +638,10 @@ document.getElementById('file-input').addEventListener('change',async function(e
     if(!cvText) throw new Error(t('errFile'));
     detectedName=detectName(cvText);
     document.getElementById('upload-label').textContent=file.name+' ✓'+(detectedName?' ('+detectedName+')':'');
-    setTimeout(function(){showJobs();loadLiveJobs();},500);
+    JOBS=[];
+    var qEl=document.getElementById('job-search-query');
+    if(qEl) qEl.value=''; // clear so showJobs() re-detects title and auto-searches
+    setTimeout(function(){showJobs();},500);
   }catch(err){
     document.getElementById('error-box').textContent=err.message||t('errFile');
     document.getElementById('error-box').style.display='';
@@ -627,18 +661,16 @@ function detectName(tx){
 function useSample(){
   cvText=lang==='ar'?SAMPLE_AR:SAMPLE_EN;
   detectedName=lang==='ar'?'مُعاذ الشكيري':'Muadh Al Shukairi';
+  JOBS=[];
+  var q=document.getElementById('job-search-query');
+  if(q) q.value=''; // clear so showJobs() re-detects and auto-searches
   showJobs();
-  loadLiveJobs();
 }
 
 /* ── Job cards ── */
 function filterJobs(){
-  var q=(document.getElementById('search-input').value||'').toLowerCase();
-  var list=JOBS.filter(function(j){
-    var title=(lang==='ar'?j.ar:j.en).toLowerCase();
-    return !q||title.includes(q)||j.company.toLowerCase().includes(q);
-  });
-  renderCards(list);
+  // Client-side filter on already-loaded results
+  renderCards(JOBS);
 }
 
 function renderCards(jobs){
@@ -701,7 +733,7 @@ async function doTailor(jobId){
     var errEl=document.getElementById('jobs-error');
     errEl.textContent=err.message||t('errFail');
     errEl.style.display='';
-    tailoring=false; filterJobs();
+    tailoring=false; renderCards(JOBS);
   }
 }
 
