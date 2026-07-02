@@ -478,24 +478,38 @@ function calcMatch(cv,desc){
 /* ══ Seniority filter — removes over/under-qualified titles ════════════════════
    Prevents "Operations Manager" showing up for an "Administrator" candidate.
 ═══════════════════════════════════════════════════════════════════════════════ */
-var SENIOR_TITLES = ['manager','director','head of','vp ','vice president','chief','president','coo','ceo','cto','cfo','general manager','regional manager','country manager'];
-var JUNIOR_TITLES = ['intern','trainee','graduate','entry level','junior','assistant'];
+// Keywords that mark a NON-management individual contributor role
+var IC_TITLES = ['administrator','officer','coordinator','specialist','analyst',
+  'inspector','technician','clerk','assistant','executive','supervisor',
+  'advisor','consultant','representative','associate','operator'];
+// Keywords that mark a management/leadership role
+var MGT_TITLES = ['manager','director','head of','vp','vice president',
+  'chief','president','coo','ceo','cto','cfo','general manager'];
 
-function titleSeniorityOk(jobTitle, profileLevel) {
+function isICRole(title) {
+  var t = (title||'').toLowerCase();
+  for(var i=0;i<IC_TITLES.length;i++) if(t.includes(IC_TITLES[i])) return true;
+  return false;
+}
+function isMgtRole(title) {
+  var t = (title||'').toLowerCase();
+  for(var i=0;i<MGT_TITLES.length;i++) if(t.includes(MGT_TITLES[i])) return true;
+  return false;
+}
+
+function titleSeniorityOk(jobTitle, profileLevel, candidateSearchTitle) {
   var jt = (jobTitle || '').toLowerCase();
-  var level = (profileLevel || 'mid').toLowerCase();
+  var cs = (candidateSearchTitle || '').toLowerCase();
 
-  // If candidate is admin/junior/mid — exclude senior management titles
-  if (level === 'junior' || level === 'mid') {
-    for (var i = 0; i < SENIOR_TITLES.length; i++) {
-      if (jt.includes(SENIOR_TITLES[i])) return false;
-    }
-  }
-  // If candidate is senior/lead — exclude entry-level titles
-  if (level === 'senior' || level === 'lead') {
-    for (var i = 0; i < JUNIOR_TITLES.length; i++) {
-      if (jt.includes(JUNIOR_TITLES[i])) return false;
-    }
+  // If candidate is in an IC/admin role → block management-level job titles
+  if (isICRole(cs) && isMgtRole(jt)) return false;
+
+  // If candidate is management level → block pure IC/admin job titles
+  if (isMgtRole(cs) && isICRole(jt) && !jt.includes('senior')) return false;
+
+  // Also use seniorityLevel as extra filter for interns
+  if ((profileLevel||'').toLowerCase() === 'junior') {
+    if (['intern','trainee','graduate'].some(function(w){return jt.includes(w);})) return false;
   }
   return true;
 }
@@ -596,14 +610,14 @@ async function runAutoSearch(){
     setJobSub(t('searching')+country+'…',true);
     var r2=await fetch('/api/find-jobs',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({jobTitle:p.jobTitle,searchTitle:p.searchTitle||p.jobTitle,skills:p.topSkills||[],country:country,educationField:p.educationField||''}),
+      body:JSON.stringify({jobTitle:p.jobTitle,searchTitle:p.searchTitle||p.jobTitle,searchQueries:p.searchQueries||[],skills:p.topSkills||[],country:country,educationField:p.educationField||''}),
     });
     var d=await r2.json();
     if(!r2.ok)throw new Error(d.error||('Job search failed ('+r2.status+')'));
     if(!d.jobs||!d.jobs.length)throw new Error(lang==='ar'?'لا توجد نتائج. جرّب دولة مختلفة.':'No jobs returned for query: '+d.query_used);
 
     JOBS=d.jobs
-    .filter(function(j){ return titleSeniorityOk(j.title, cvProfile?cvProfile.seniorityLevel:'mid'); })
+    .filter(function(j){ return titleSeniorityOk(j.title, cvProfile?cvProfile.seniorityLevel:'mid', cvProfile?cvProfile.searchTitle:''); })
     .map(function(j,i){
       var pct=calcMatch(cvText,j.desc||'');
       return {
