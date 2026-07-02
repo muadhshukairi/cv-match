@@ -475,6 +475,31 @@ function calcMatch(cv,desc){
   return Math.min(Math.max(Math.round(hits/dW.length*100),15),92);
 }
 
+/* ══ Seniority filter — removes over/under-qualified titles ════════════════════
+   Prevents "Operations Manager" showing up for an "Administrator" candidate.
+═══════════════════════════════════════════════════════════════════════════════ */
+var SENIOR_TITLES = ['manager','director','head of','vp ','vice president','chief','president','coo','ceo','cto','cfo','general manager','regional manager','country manager'];
+var JUNIOR_TITLES = ['intern','trainee','graduate','entry level','junior','assistant'];
+
+function titleSeniorityOk(jobTitle, profileLevel) {
+  var jt = (jobTitle || '').toLowerCase();
+  var level = (profileLevel || 'mid').toLowerCase();
+
+  // If candidate is admin/junior/mid — exclude senior management titles
+  if (level === 'junior' || level === 'mid') {
+    for (var i = 0; i < SENIOR_TITLES.length; i++) {
+      if (jt.includes(SENIOR_TITLES[i])) return false;
+    }
+  }
+  // If candidate is senior/lead — exclude entry-level titles
+  if (level === 'senior' || level === 'lead') {
+    for (var i = 0; i < JUNIOR_TITLES.length; i++) {
+      if (jt.includes(JUNIOR_TITLES[i])) return false;
+    }
+  }
+  return true;
+}
+
 /* ══ Days-ago badge ═════════════════════════════════════════════════════════ */
 function dAgo(n){
   if(n===null||n===undefined)return '';
@@ -577,7 +602,9 @@ async function runAutoSearch(){
     if(!r2.ok)throw new Error(d.error||('Job search failed ('+r2.status+')'));
     if(!d.jobs||!d.jobs.length)throw new Error(lang==='ar'?'لا توجد نتائج. جرّب دولة مختلفة.':'No jobs returned for query: '+d.query_used);
 
-    JOBS=d.jobs.map(function(j,i){
+    JOBS=d.jobs
+    .filter(function(j){ return titleSeniorityOk(j.title, cvProfile?cvProfile.seniorityLevel:'mid'); })
+    .map(function(j,i){
       var pct=calcMatch(cvText,j.desc||'');
       return {
         id:j.id||('r'+i),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
