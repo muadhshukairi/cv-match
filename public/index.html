@@ -466,13 +466,50 @@ function showProfileTags(p){
   }).join('');
 }
 
-/* ══ Match score ════════════════════════════════════════════════════════════ */
-function calcMatch(cv,desc){
-  var cvW=new Set(cv.toLowerCase().split(/\W+/).filter(function(w){return w.length>3;}));
-  var dW=(desc||'').toLowerCase().split(/\W+/).filter(function(w){return w.length>3;});
-  if(!dW.length)return 40;
-  var hits=dW.filter(function(w){return cvW.has(w);}).length;
-  return Math.min(Math.max(Math.round(hits/dW.length*100),15),92);
+/* ══ Match score — weighted: skills match + keyword overlap ════════════════ */
+var STOP_WORDS=new Set(['the','and','for','with','this','that','from','into','about',
+  'are','was','were','been','will','has','have','had','can','may','should','must',
+  'which','who','when','where','how','all','any','each','their','also','both',
+  'such','more','than','then','within','through','across','between','over','under',
+  'they','them','these','those','there','here','some','most','very','just','only',
+  'able','work','will','shall','ensure','provide','support','assist','manage',
+  'required','experience','minimum','years','role','position','candidate','apply']);
+
+function calcMatch(cv, desc, profile) {
+  if(!desc) return 25;
+  var cvL = cv.toLowerCase();
+  var dL  = desc.toLowerCase();
+
+  // Part 1 — skills from extracted profile (weighted 50%)
+  var skills = (profile && profile.topSkills) || [];
+  var skillScore = 0;
+  if(skills.length) {
+    var skillHits = skills.filter(function(s){
+      return dL.includes((s||'').toLowerCase().trim());
+    }).length;
+    skillScore = Math.round(skillHits / skills.length * 100);
+  }
+
+  // Part 2 — meaningful keyword overlap (weighted 50%)
+  // Filter: length > 4, not a stop word
+  var cvW = new Set(cvL.split(/\W+/).filter(function(w){
+    return w.length > 4 && !STOP_WORDS.has(w);
+  }));
+  var dW = dL.split(/\W+/).filter(function(w){
+    return w.length > 4 && !STOP_WORDS.has(w);
+  });
+  var kwScore = 0;
+  if(dW.length) {
+    var hits = dW.filter(function(w){ return cvW.has(w); }).length;
+    kwScore = Math.round(hits / dW.length * 100);
+  }
+
+  // Weighted combination
+  var score = skills.length
+    ? Math.round(skillScore * 0.5 + kwScore * 0.5)
+    : kwScore;
+
+  return Math.min(Math.max(score, 10), 92);
 }
 
 /* ══ Seniority filter — removes over/under-qualified titles ════════════════════
@@ -621,7 +658,7 @@ async function runAutoSearch(){
     JOBS=d.jobs
     .filter(function(j){ return titleSeniorityOk(j.title, cvProfile?cvProfile.seniorityLevel:'mid', cvProfile?cvProfile.searchTitle:''); })
     .map(function(j,i){
-      var pct=calcMatch(cvText,j.desc||'');
+      var pct=calcMatch(cvText,j.desc||'',cvProfile);
       return {
         id:j.id||('r'+i),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
         en:j.title||'',ar:j.title||'',
@@ -671,6 +708,14 @@ function onCountryChange(){
   }).finally(function(){busy=false;});
 }
 
+/* ══ Oman national-only detection ══════════════════════════════════════════ */
+function isOmaniOnly(title, desc) {
+  var t = ((title||'')+' '+(desc||'')).toLowerCase();
+  return t.includes('omani national') || t.includes('only omani') ||
+         t.includes('omani only')     || t.includes('nationals only') ||
+         t.includes('omanis only')    || t.includes('oman national');
+}
+
 /* ══ Job cards ══════════════════════════════════════════════════════════════ */
 function renderCards(jobs){
   var wrap=document.getElementById('job-cards');
@@ -699,6 +744,7 @@ function renderCards(jobs){
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap">'+
           '<span style="font-weight:700;font-size:14.5px;color:var(--t)">'+esc(lang==='ar'?j.ar:j.en)+'</span>'+
           '<span style="font-size:10.5px;color:var(--tD);background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px">'+esc(lang==='ar'?j.tar:j.ten)+'</span>'+
+          (isOmaniOnly(j.en,j.desc)?'<span style="font-size:10.5px;background:rgba(0,100,0,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);border-radius:999px;padding:2px 8px;font-weight:600" title="Omani nationals only">🇴🇲 '+(lang='ar'?'عُماني فقط':'Omani only')+'</span>':'')+
           badge+
         '</div>'+
         '<div style="font-size:12.5px;color:var(--tM);margin-bottom:12px">'+esc(j.company)+' · '+esc(j.loc)+'</div>'+
