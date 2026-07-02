@@ -418,6 +418,8 @@ function t(k){return (T[lang]&&T[lang][k])||T.en[k]||k;}
 
 /* ── State ── */
 var lang='en',cvText='',detectedName='',lastResult=null,currentJob=null,currentTpl='executive',tailoring=false;
+var JOBS=[]; // filled by loadLiveJobs() after CV upload
+var jobsLoading=false;
 
 var TPLS=[
   {id:'executive',label:'Executive',sub:'Navy & gold',   hBg:'#0f1f4b',acct:'#C9A84C'},
@@ -432,16 +434,93 @@ var TPLS=[
   {id:'titanium', label:'Titanium', sub:'Sleek mono',    hBg:'#18181b',acct:'#a1a1aa'},
 ];
 
-var JOBS=[
-  {id:'j1',match:'high',   pct:87,en:'Senior Project Manager – Infrastructure',ar:'مدير مشاريع أول – بنية تحتية',company:'Galfar Engineering',loc:'Muscat, Oman',ten:'Full-time',tar:'دوام كامل',url:'https://www.linkedin.com/company/galfar/jobs/',desc:'Lead large-scale civil infrastructure projects. 8+ years PM, PMP preferred. Stakeholder management, budgeting, MS Project, AutoCAD, FIDIC contracts.'},
-  {id:'j2',match:'high',   pct:83,en:'O&M Engineer – Water Networks',ar:'مهندس تشغيل وصيانة – شبكات المياه',company:'Nama Water Services',loc:'Muscat, Oman',ten:'Full-time',tar:'دوام كامل',url:'https://www.linkedin.com/company/nama-water-services/jobs/',desc:'Operate and maintain water distribution networks. BSc Civil/Mechanical. SCADA, asset management, PAEW standards.'},
-  {id:'j3',match:'high',   pct:78,en:'Civil Engineer – Wastewater Projects',ar:'مهندس مدني – مشاريع الصرف الصحي',company:'Haya Water',loc:'Muscat, Oman',ten:'Full-time',tar:'دوام كامل',url:'https://www.linkedin.com/company/haya-water/jobs/',desc:'Design and supervise wastewater infrastructure. 5+ years, AutoCAD, Civil 3D. Oman environmental and DIAM standards.'},
-  {id:'j4',match:'medium', pct:62,en:'Project Controls Engineer',ar:'مهندس ضبط مشاريع',company:'Petrofac Oman',loc:'Muscat, Oman',ten:'Contract',tar:'عقد مؤقت',url:'https://www.linkedin.com/company/petrofac/jobs/',desc:'Develop project schedules and cost reports. Primavera P6 essential. Oil & gas or utilities background preferred.'},
-  {id:'j5',match:'medium', pct:55,en:'Asset Management Specialist',ar:'أخصائي إدارة أصول',company:'OIA – Oman Investment Auth.',loc:'Muscat, Oman',ten:'Full-time',tar:'دوام كامل',url:'https://kwader.mem.gov.om/',desc:'Manage infrastructure asset lifecycle. Engineering + MBA preferred. Strong analytical skills.'},
-  {id:'j6',match:'medium', pct:48,en:'HSE Manager – Construction',ar:'مدير صحة وسلامة وبيئة',company:'Renaissance Services',loc:'Muscat, Oman',ten:'Full-time',tar:'دوام كامل',url:'https://www.linkedin.com/company/renaissance-services/jobs/',desc:'Lead HSE programs on construction sites. NEBOSH/IOSH certified. 7+ years HSE in heavy industry.'},
-  {id:'j7',match:'low',    pct:32,en:'Contracts Engineer',ar:'مهندس عقود',company:'Oman Oil Company',loc:'Muscat, Oman',ten:'Full-time',tar:'دوام كامل',url:'https://www.linkedin.com/company/oman-oil-company/jobs/',desc:'Draft, negotiate and manage engineering services contracts. FIDIC essential. Strong negotiation skills.'},
-  {id:'j8',match:'low',    pct:26,en:'Mechanical Engineer – Utilities',ar:'مهندس ميكانيكا – مرافق',company:'PDO – Petroleum Dev. Oman',loc:'Muscat, Oman',ten:'Full-time',tar:'دوام كامل',url:'https://www.pdo.co.om/en/join-us/Pages/default.aspx',desc:'Support mechanical maintenance on utility systems. 3+ years oil & gas experience.'},
-];
+/* ── Client-side match scoring ── */
+function calcMatch(cv,desc){
+  var cvW=new Set(cv.toLowerCase().split(/\W+/).filter(function(w){return w.length>3;}));
+  var dW=(desc||'').toLowerCase().split(/\W+/).filter(function(w){return w.length>3;});
+  if(!dW.length) return 40;
+  var hits=dW.filter(function(w){return cvW.has(w);}).length;
+  var raw=Math.round(hits/dW.length*100);
+  return Math.min(Math.max(raw,15),92);
+}
+
+/* ── Extract job title from CV text ── */
+function detectTitle(txt){
+  var lines=txt.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  for(var i=1;i<Math.min(7,lines.length);i++){
+    var l=lines[i];
+    if(l.length>8&&l.length<90&&!l.includes('@')&&!/^\+?\d/.test(l)&&!/^(Muscat|Dubai|Riyadh|Doha|Abu|مسقط|دبي)/i.test(l)){
+      return l.split(/[|·–—]/)[0].trim();
+    }
+  }
+  return 'Engineer';
+}
+
+/* ── Days ago label ── */
+function daysAgoLabel(n){
+  if(n===null||n===undefined) return '';
+  if(n===0) return lang==='ar'?'نُشر اليوم':'Today';
+  if(n===1) return lang==='ar'?'منذ يوم':'1d ago';
+  if(n<7)   return lang==='ar'?'منذ '+n+' أيام':n+'d ago';
+  if(n<14)  return lang==='ar'?'هذا الأسبوع':'This week';
+  if(n<31)  return lang==='ar'?'هذا الشهر':Math.floor(n/7)+'w ago';
+  return '';
+}
+
+/* ── Load live jobs from API ── */
+async function loadLiveJobs(){
+  jobsLoading=true;
+  setJobsStatus(lang==='ar'?'جارٍ البحث عن الوظائف…':'Searching for live jobs…',true);
+  try{
+    var title=detectTitle(cvText);
+    var country=document.getElementById('country-select')?document.getElementById('country-select').value:'Oman';
+    var res=await fetch('/api/find-jobs',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jobTitle:title,skills:[],country:country}),
+    });
+    var data=await res.json();
+    if(!res.ok||!data.jobs||!data.jobs.length) throw new Error('no results');
+    JOBS=data.jobs.map(function(j,i){
+      var pct=calcMatch(cvText,j.desc||'');
+      return {
+        id:    j.id||('live-'+i),
+        match: pct>=65?'high':pct>=40?'medium':'low',
+        pct:   pct,
+        en:    j.title||'',
+        ar:    j.title||'',  // JSearch returns English titles
+        company: j.company||'',
+        loc:   j.location||country,
+        ten:   j.type||'Full-time',
+        tar:   j.type==='Contract'?'عقد مؤقت':'دوام كامل',
+        url:   j.apply_link||'',
+        desc:  j.desc||'',
+        days_ago: j.days_ago,
+      };
+    }).sort(function(a,b){return b.pct-a.pct;});
+    setJobsStatus('',false);
+    renderCards(JOBS);
+  }catch(e){
+    // If API fails or no RAPIDAPI_KEY, show a clear message
+    setJobsStatus(lang==='ar'?'تعذّر تحميل الوظائف. تحقق من RAPIDAPI_KEY في متغيرات بيئة Vercel.':'Could not load live jobs. Check RAPIDAPI_KEY in Vercel environment variables.',false);
+    JOBS=[];
+    renderCards([]);
+  }finally{
+    jobsLoading=false;
+  }
+}
+
+function setJobsStatus(msg,loading){
+  var sub=document.getElementById('jobs-sub');
+  if(!sub) return;
+  if(loading){
+    sub.innerHTML='<span style="display:inline-flex;align-items:center;gap:6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="animation:spin .7s linear infinite"><circle cx="12" cy="12" r="9" stroke="#2D1F4E" stroke-width="3"/><path d="M12 3a9 9 0 0 1 9 9" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round"/></svg>'+esc(msg)+'</span>';
+  }else if(msg){
+    sub.innerHTML='<span style="color:var(--red)">'+esc(msg)+'</span>';
+  }else{
+    sub.textContent=JOBS.length+' '+(lang==='ar'?'وظيفة حديثة':'live jobs')+' · '+(lang==='ar'?'مرتبة حسب التوافق':'sorted by compatibility');
+  }
+}
 
 var SAMPLE_EN='Muadh Al Shukairi\nSenior Project Engineer – O&M / Water Networks\nMuscat, Oman\n\nEXPERIENCE\nSenior Project Engineer | Nama Water & Wastewater | 2018–Present\n- Managed feasibility assessments for 40+ sewer connection requests monthly\n- Led teams coordinating with DIAM, PAEW and municipality stakeholders\n- Reduced project delivery time by 23% through process re-engineering\n- Oversaw capex for sewer extension projects up to OMR 500K\n\nProject Engineer | Galfar Engineering | 2014–2018\n- Supervised civil works on 8 wastewater treatment plant upgrades (OMR 18M)\n- Managed subcontractors and enforced FIDIC contract terms\n- Prepared monthly S-curves, progress reports, earned value analyses\n\nEDUCATION\nB.Sc. Civil Engineering | Sultan Qaboos University | 2014\n\nSKILLS\nProject Management · AutoCAD · Civil 3D · FIDIC Contracts · Asset Management\nMS Project · Primavera P6 · O&M Planning · Stakeholder Coordination · GIS\n\nCERTIFICATIONS\nPMP – Project Management Professional | NEBOSH International General Certificate';
 
@@ -528,7 +607,7 @@ document.getElementById('file-input').addEventListener('change',async function(e
     if(!cvText) throw new Error(t('errFile'));
     detectedName=detectName(cvText);
     document.getElementById('upload-label').textContent=file.name+' ✓'+(detectedName?' ('+detectedName+')':'');
-    setTimeout(function(){showJobs();},500);
+    setTimeout(function(){showJobs();loadLiveJobs();},500);
   }catch(err){
     document.getElementById('error-box').textContent=err.message||t('errFile');
     document.getElementById('error-box').style.display='';
@@ -549,6 +628,7 @@ function useSample(){
   cvText=lang==='ar'?SAMPLE_AR:SAMPLE_EN;
   detectedName=lang==='ar'?'مُعاذ الشكيري':'Muadh Al Shukairi';
   showJobs();
+  loadLiveJobs();
 }
 
 /* ── Job cards ── */
@@ -581,6 +661,7 @@ function renderCards(jobs){
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;flex-wrap:wrap">'+
           '<span style="font-weight:700;font-size:14.5px;color:var(--t)">'+esc(title)+'</span>'+
           '<span style="font-size:10.5px;color:var(--tD);background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px">'+esc(type)+'</span>'+
+          (j.days_ago!==null&&j.days_ago!==undefined?'<span style="font-size:10.5px;color:var(--g);background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:999px;padding:2px 8px;font-weight:600">'+esc(daysAgoLabel(j.days_ago))+'</span>':'')+
         '</div>'+
         '<div style="font-size:12.5px;color:var(--tM);margin-bottom:12px">'+esc(j.company)+' · '+esc(j.loc)+'</div>'+
         '<div>'+
