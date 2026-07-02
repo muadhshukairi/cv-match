@@ -225,7 +225,7 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
       </div>
     </div>
     <!-- Portal links -->
-    <div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:7px;align-items:center">
+    <div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:12px 16px;margin-bottom:20px;display:none;flex-wrap:wrap;gap:7px;align-items:center">
       <span id="t-portals" style="font-size:10px;color:var(--tD);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-inline-end:4px"></span>
       <a href="https://www.linkedin.com/jobs/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none;transition:color .15s,border-color .15s">LinkedIn ↗</a>
       <a href="https://www.indeed.com/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none;transition:color .15s,border-color .15s">Indeed ↗</a>
@@ -665,7 +665,7 @@ async function runAutoSearch(){
         company:j.company||'',loc:j.location||country,
         ten:j.type||'Full-time',
         tar:(j.type||'').toLowerCase().includes('contract')?'عقد مؤقت':'دوام كامل',
-        url:j.apply_link||'',desc:j.desc||'',days_ago:j.days_ago,
+        url:j.apply_link||'',desc:j.desc||'',days_ago:j.days_ago,source:j.source||'',
       };
     }).sort(function(a,b){return b.pct-a.pct;});
 
@@ -746,6 +746,7 @@ function renderCards(jobs){
           '<span style="font-size:10.5px;color:var(--tD);background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px">'+esc(lang==='ar'?j.tar:j.ten)+'</span>'+
           (isOmaniOnly(j.en,j.desc)?'<span style="font-size:10.5px;background:rgba(0,100,0,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);border-radius:999px;padding:2px 8px;font-weight:600" title="Omani nationals only">🇴🇲 '+(lang='ar'?'عُماني فقط':'Omani only')+'</span>':'')+
           badge+
+          (j.source?'<span style="font-size:10px;color:var(--tD);background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px">via '+esc(j.source)+'</span>':'')+
         '</div>'+
         '<div style="font-size:12.5px;color:var(--tM);margin-bottom:12px">'+esc(j.company)+' · '+esc(j.loc)+'</div>'+
         '<div>'+
