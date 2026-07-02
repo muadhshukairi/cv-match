@@ -53,7 +53,7 @@ module.exports = async function handler(req, res) {
     }
 
     const data = JSON.parse(responseText);
-    const raw  = data.data || [];
+    const raw = (data.data && data.data.jobs) || data.data || [];
 
     function daysAgo(iso) {
       if (!iso) return null;
