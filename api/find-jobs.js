@@ -1,10 +1,12 @@
 // /api/find-jobs.js — Seerah AI
-// Fetches live, recent job postings via JSearch API.
-// Key fix: date_posted=month ensures no stale results.
+// Original search method: simple query + country code param on /search endpoint.
+// This was working better than the progressive /search-v2 approach.
 
 const COUNTRY_CODES = {
-  Oman:'om', UAE:'ae', 'Saudi Arabia':'sa',
-  Qatar:'qa', Bahrain:'bh', Kuwait:'kw',
+  Oman: 'om', UAE: 'ae', 'Saudi Arabia': 'sa',
+  Qatar: 'qa', Bahrain: 'bh', Kuwait: 'kw',
+  'United Kingdom': 'gb', 'United States': 'us',
+  Canada: 'ca', Australia: 'au', Germany: 'de', India: 'in',
 };
 
 module.exports = async function handler(req, res) {
@@ -27,74 +29,60 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    // Strip seniority prefixes to broaden the search
-    function coreTitle(t) {
-      return (t || '')
-        .split(/[-–—/|]/)[0]
-        .replace(/\b(senior|junior|lead|principal|associate|chief|head of)\b/gi, '')
-        .replace(/\s+/g, ' ').trim();
+    const countryCode = COUNTRY_CODES[country] || '';
+    const topSkills   = (Array.isArray(skills) ? skills : []).slice(0, 2).join(' ');
+
+    // Original simple query that worked: title + skills + "in country"
+    const query = [jobTitle, topSkills, country ? `in ${country}` : '']
+      .filter(Boolean).join(' ').trim();
+
+    const params = new URLSearchParams({
+      query,
+      page:      '1',
+      num_pages: '1',
+      date_posted: 'month',   // only jobs from the last 30 days
+      ...(countryCode ? { country: countryCode } : {}),
+    });
+
+    const response = await fetch(
+      `https://jsearch.p.rapidapi.com/search?${params.toString()}`,
+      {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key':  apiKey,
+          'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errText = await response.text();
+      res.status(502).json({ error: 'Job search failed', detail: errText });
+      return;
     }
 
-    const core   = coreTitle(jobTitle) || jobTitle;
-    const skills2 = (Array.isArray(skills) ? skills : []).slice(0, 2).join(' ');
+    const data = await response.json();
+    const raw  = data.data || [];
 
-    // Progressive queries: specific → broader
-    const queries = [
-      `${core} jobs in ${country}`,
-      `${core} ${skills2} jobs in ${country}`,
-      `${core} jobs`,
-    ].filter(q => q.replace(/jobs(?: in \w+)?/i,'').trim().length > 0);
-
-    async function search(query) {
-      const params = new URLSearchParams({
-        query,
-        page: '1',
-        num_pages: '2',
-        date_posted: 'month',   // ← ONLY jobs posted in the last 30 days
-      });
-
-      const r = await fetch(
-        `https://jsearch.p.rapidapi.com/search-v2?${params}`,
-        {
-          headers: {
-            'X-RapidAPI-Key': apiKey,
-            'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
-          },
-        }
-      );
-      if (!r.ok) throw new Error(`JSearch ${r.status}`);
-      const d = await r.json();
-      return (d.data && d.data.jobs) || d.data || [];
-    }
-
-    let raw = [], queryUsed = '';
-    for (const q of queries) {
-      raw = await search(q);
-      queryUsed = q;
-      if (raw.length > 0) break;
-    }
-
-    // Calculate days since posted
     function daysAgo(iso) {
       if (!iso) return null;
-      const ms = Date.now() - new Date(iso).getTime();
-      return Math.max(0, Math.floor(ms / 86400000));
+      return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
     }
 
-    const jobs = raw.slice(0, 8).map(j => ({
-      id:          j.job_id,
-      title:       j.job_title        || '',
-      company:     j.employer_name    || '',
-      location:    [j.job_city, j.job_country].filter(Boolean).join(', ') || country,
-      type:        j.job_employment_type || 'Full-time',
-      desc:        (j.job_description || '').slice(0, 3000),  // ← crucial for AI tailoring
-      apply_link:  j.job_apply_link   || j.job_google_link || '',
+    const jobs = raw.slice(0, 8).map((j) => ({
+      id:          j.job_id || '',
+      title:       j.job_title            || '',
+      company:     j.employer_name        || '',
+      location:    [j.job_city, j.job_country].filter(Boolean).join(', ') || country || '',
+      type:        j.job_employment_type  || 'Full-time',
+      desc:        (j.job_description     || '').slice(0, 3000),
+      apply_link:  j.job_apply_link       || j.job_google_link || '',
       posted_at:   j.job_posted_at_datetime_utc || null,
       days_ago:    daysAgo(j.job_posted_at_datetime_utc),
     }));
 
-    res.status(200).json({ jobs, query_used: queryUsed });
+    res.status(200).json({ jobs, query_used: query });
   } catch (err) {
-    res.status(500).json({ error: 'Job search failed', detail: err.message });
+    res.status(500).json({ error: 'Unexpected server error', detail: err.message });
   }
 };
