@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
     const params = new URLSearchParams({ query, page: '1', num_pages: '1' });
 
     const response = await fetch(
-      `https://jsearch.p.rapidapi.com/search?${params.toString()}`,
+      `https://jsearch.p.rapidapi.com/search-v2?${params.toString()}`,
       {
         method: 'GET',
         headers: {
