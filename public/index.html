@@ -456,7 +456,7 @@ function setJobSub(msg,loading){
 function showProfileTags(p){
   var el=document.getElementById('profile-tags');if(!el||!p)return;
   var tags=[];
-  if(p.jobTitle)        tags.push('💼 '+p.jobTitle);
+  if(p.jobTitle)        tags.push('💼 '+p.jobTitle+(p.searchTitle&&p.searchTitle!==p.jobTitle?' → '+p.searchTitle:''));
   if(p.yearsExperience) tags.push('📅 '+p.yearsExperience+(lang==='ar'?' سنوات':' yrs'));
   if(p.educationField)  tags.push('🎓 '+p.educationField);
   (p.certifications||[]).forEach(function(c){if(c)tags.push('✓ '+c);});
@@ -571,7 +571,7 @@ async function runAutoSearch(){
     setJobSub(t('searching')+country+'…',true);
     var r2=await fetch('/api/find-jobs',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({jobTitle:p.jobTitle,skills:p.topSkills||[],country:country,educationField:p.educationField||''}),
+      body:JSON.stringify({jobTitle:p.jobTitle,searchTitle:p.searchTitle||p.jobTitle,skills:p.topSkills||[],country:country,educationField:p.educationField||''}),
     });
     var d=await r2.json();
     if(!r2.ok)throw new Error(d.error||('Job search failed ('+r2.status+')'));
