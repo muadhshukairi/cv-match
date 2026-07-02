@@ -1,0 +1,9 @@
+{
+  "name": "cv-match-ai",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "docx": "^8.5.0",
+    "stripe": "^14.25.0"
+  }
+}
