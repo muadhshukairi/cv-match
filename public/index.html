@@ -1,200 +1,160 @@
 <!doctype html>
 <html lang="en" dir="ltr" id="root">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>سيرة | Seerah AI — Find Jobs. Tailor Your CV.</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>سيرة | Seerah AI — Tailor Your CV. Land the Job.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,400..900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#080612;--card:#0F0B1F;--cardH:#160F2E;--b:#1E1535;--b2:#2D1F4E;
-  --v:#8B5CF6;--vd:#6D28D9;--vDim:rgba(139,92,246,.12);--vGlow:rgba(139,92,246,.28);
+  --bg:#080612;--card:#0F0B1F;--cardH:#160F2E;
+  --b:#1E1535;--b2:#2D1F4E;
+  --v:#8B5CF6;--vd:#6D28D9;--vDim:rgba(139,92,246,.12);
   --g:#10B981;--gold:#F59E0B;--red:#EF4444;
   --t:#F1F5F9;--tM:#94A3B8;--tD:#475569;
-  --ff:'Inter',sans-serif;--ffa:'Cairo',sans-serif;--ffd:'Fraunces',serif;
 }
-body{background:var(--bg);color:var(--t);font-family:var(--ff)}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes barIn{from{width:0}}
-@keyframes screenIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.screen{animation:screenIn .35s ease both}
+@keyframes screenIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.screen{animation:screenIn .3s ease both}
 .a1{animation:fadeUp .5s .05s ease both;opacity:0}
 .a2{animation:fadeUp .5s .15s ease both;opacity:0}
 .a3{animation:fadeUp .5s .25s ease both;opacity:0}
-.a4{animation:fadeUp .5s .35s ease both;opacity:0}
 .jcard{transition:transform .2s,box-shadow .2s}
-.jcard:hover{transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,0,0,.55),0 0 0 1px rgba(139,92,246,.18)}
+.jcard:hover{transform:translateY(-2px);box-shadow:0 14px 44px rgba(0,0,0,.55),0 0 0 1px rgba(139,92,246,.18)}
 .uz{transition:border-color .2s,background .2s}
 .uz:hover{border-color:var(--v)!important;background:var(--vDim)!important}
 .topt{transition:border-color .15s,transform .15s;cursor:pointer}
-.topt:hover{transform:scale(1.07)}
+.topt:hover{transform:scale(1.06)}
 .bp{transition:transform .15s,box-shadow .15s;cursor:pointer}
-.bp:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(109,40,217,.55)!important}
-.el{transition:color .15s,border-color .15s}
+.bp:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(109,40,217,.5)!important}
 .el:hover{color:var(--v)!important;border-color:var(--v)!important}
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px}
-@media print{.no-print{display:none!important}body{background:#fff!important}#cv-document{box-shadow:none!important;border:none!important;border-radius:0!important}@page{margin:.55in}}
+@media print{.no-print{display:none!important}body{background:#fff!important}#cv-doc{box-shadow:none!important;border:none!important;border-radius:0!important}@page{margin:.55in}}
 
-/* ── CV Template styles ── */
-.tpl-executive{font-family:var(--ff);color:#1a1a2e}
-.tpl-executive .cv-hdr{background:#0f1f4b;color:#fff;padding:22px 26px 16px}
-.tpl-executive .cv-name{font-family:var(--ffd);font-size:24px;font-weight:800;color:#fff;letter-spacing:-.3px}
-.tpl-executive .cv-role{font-size:10px;color:#C9A84C;text-transform:uppercase;letter-spacing:2px;margin-top:4px;font-weight:600}
-.tpl-executive .cv-rule{height:3px;background:linear-gradient(90deg,#C9A84C,#e8c97a,#C9A84C)}
-.tpl-executive .cv-body{background:#fff;padding:16px 26px 22px}
-.tpl-executive .cv-st{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:2.5px;color:#0f1f4b;border-bottom:1px solid #C9A84C44;padding-bottom:4px;margin:14px 0 8px}
-.tpl-executive .cv-chip{font-size:10.5px;background:#eef1f9;color:#0f1f4b;border:1px solid #c4cce8;border-radius:999px;padding:2px 9px;font-weight:600;display:inline-block;margin:0 4px 5px 0}
-.tpl-executive .cv-rt{font-weight:700;font-size:12.5px;color:#0f1f4b}
-.tpl-executive .cv-rm{font-size:10.5px;color:#6b7a99;margin-bottom:4px}
-.tpl-executive .cv-bl{font-size:11.5px;line-height:1.65;padding-inline-start:14px}
-.tpl-executive .cv-bl li{margin-bottom:2px}
-.tpl-executive .cv-bl li::marker{color:#C9A84C}
+/* CV template base */
+.cv{font-family:'Inter',sans-serif;font-size:12px;line-height:1.65}
+.cv.ar{font-family:'Cairo',sans-serif}
+.cv-hdr{padding:22px 26px 16px}
+.cv-body{padding:16px 26px 22px}
+.cv-rule{height:3px}
+.cv-name{font-family:'Fraunces',serif;font-size:24px;font-weight:800;letter-spacing:-.3px}
+.cv-role{font-size:10px;text-transform:uppercase;letter-spacing:2px;margin-top:4px;font-weight:600}
+.cv-st{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:2.5px;padding-bottom:4px;margin:14px 0 8px}
+.cv-rt{font-weight:700;font-size:12.5px;margin-bottom:2px}
+.cv-rd{font-size:10.5px;opacity:.5;margin-bottom:4px}
+.cv-bl{padding-inline-start:14px}
+.cv-bl li{margin-bottom:2px;font-size:11.5px}
+.cv-chip{font-size:10.5px;border-radius:999px;padding:2px 9px;display:inline-block;margin:0 4px 5px 0;font-weight:600;border:1px solid}
 
-.tpl-zurich{font-family:var(--ff);color:#1a1a1a;display:grid;grid-template-columns:5px 1fr}
+/* Template: executive */
+.tpl-executive .cv-hdr{background:#0f1f4b;color:#fff;border-radius:10px 10px 0 0}
+.tpl-executive .cv-role{color:#C9A84C}
+.tpl-executive .cv-rule{background:linear-gradient(90deg,#C9A84C,#e8c97a,#C9A84C)}
+.tpl-executive .cv-body{background:#fff;color:#1a1a2e}
+.tpl-executive .cv-st{color:#0f1f4b;border-bottom:1px solid #C9A84C44}
+.tpl-executive .cv-chip{background:#eef1f9;color:#0f1f4b;border-color:#c4cce8}
+.tpl-executive .cv-rt{color:#0f1f4b}
+/* Template: zurich */
+.tpl-zurich{display:grid;grid-template-columns:5px 1fr}
 .tpl-zurich .cv-bar{background:#c0392b;border-radius:10px 0 0 10px}
-.tpl-zurich .cv-inner{padding:20px 22px 24px;background:#fff}
-.tpl-zurich .cv-name{font-family:var(--ff);font-size:22px;font-weight:900;letter-spacing:-1px}
-.tpl-zurich .cv-role{font-size:10.5px;color:#c0392b;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin:3px 0 12px}
-.tpl-zurich .cv-rule{border-top:1px solid #e5e5e5;margin:0 0 12px}
-.tpl-zurich .cv-st{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:2.5px;color:#c0392b;margin:14px 0 8px}
-.tpl-zurich .cv-rt{font-weight:700;font-size:12.5px}
-.tpl-zurich .cv-rm{font-size:10.5px;color:#888;margin-bottom:4px}
-.tpl-zurich .cv-bl{font-size:11.5px;line-height:1.65;padding-inline-start:14px}
-.tpl-zurich .cv-bl li::marker{color:#c0392b}
-.tpl-zurich .cv-plain{font-size:12px;line-height:1.8;color:#333}
-
-.tpl-ember{font-family:var(--ff);color:#2d1f14;background:#fdf8f3}
-.tpl-ember .cv-hdr{padding:22px 24px 16px;border-bottom:2px solid #e8d5c4}
-.tpl-ember .cv-name{font-family:var(--ffd);font-size:26px;font-weight:700;color:#2d1f14}
-.tpl-ember .cv-role{font-size:10.5px;color:#b05e3a;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}
-.tpl-ember .cv-body{padding:16px 24px 22px}
-.tpl-ember .cv-st{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:2.5px;color:#b05e3a;border-bottom:1px solid #e8d5c444;padding-bottom:4px;margin:14px 0 8px}
-.tpl-ember .cv-chip{font-size:10.5px;background:#f5ece4;color:#b05e3a;border:1px solid #e8d5c4;border-radius:999px;padding:2px 9px;display:inline-block;margin:0 4px 5px 0}
-.tpl-ember .cv-rt{font-weight:700;font-size:12.5px}
-.tpl-ember .cv-rm{font-size:10.5px;color:#a07860;margin-bottom:4px}
-.tpl-ember .cv-bl{font-size:11.5px;line-height:1.7;padding-inline-start:14px}
-.tpl-ember .cv-bl li::marker{color:#b05e3a}
-
-.tpl-slate{font-family:var(--ff);display:grid;grid-template-columns:38% 62%}
+.tpl-zurich .cv-inner{padding:20px 22px 24px;background:#fff;color:#1a1a1a}
+.tpl-zurich .cv-name{font-family:'Inter',sans-serif;font-size:22px;font-weight:900;letter-spacing:-1px}
+.tpl-zurich .cv-role{color:#c0392b}
+.tpl-zurich .cv-rule{border-top:1px solid #e5e5e5;margin:0 0 12px;height:0}
+.tpl-zurich .cv-st{color:#c0392b}
+.tpl-zurich .cv-chip{background:transparent;color:#333;border-color:transparent}
+/* Template: ember */
+.tpl-ember{background:#fdf8f3;color:#2d1f14}
+.tpl-ember .cv-hdr{border-bottom:2px solid #e8d5c4}
+.tpl-ember .cv-name{font-size:26px;font-weight:700;color:#2d1f14}
+.tpl-ember .cv-role{color:#b05e3a}
+.tpl-ember .cv-body{background:#fdf8f3}
+.tpl-ember .cv-st{color:#b05e3a;border-bottom:1px solid #e8d5c444}
+.tpl-ember .cv-chip{background:#f5ece4;color:#b05e3a;border-color:#e8d5c4}
+/* Template: slate */
+.tpl-slate{display:grid;grid-template-columns:38% 62%}
 .tpl-slate .cv-sidebar{background:#1e293b;color:#e2e8f0;padding:22px 18px;border-radius:10px 0 0 10px}
-.tpl-slate .cv-name{font-family:var(--ffd);font-size:20px;font-weight:800;color:#fff;line-height:1.15}
-.tpl-slate .cv-role{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;margin:4px 0 16px;font-weight:600}
-.tpl-slate .cv-rule{border-top:1px solid #334155;margin:0 0 12px}
-.tpl-slate .cv-st-side{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#38bdf8;margin:16px 0 8px}
-.tpl-slate .cv-chip-side{font-size:10.5px;color:#e2e8f0;display:block;padding:2px 0;line-height:1.6}
+.tpl-slate .cv-sidebar .cv-name{color:#fff;font-size:20px}
+.tpl-slate .cv-sidebar .cv-role{color:#94a3b8}
+.tpl-slate .cv-sidebar .cv-st{color:#38bdf8}
 .tpl-slate .cv-main{background:#fff;color:#0f172a;padding:22px 20px}
-.tpl-slate .cv-st{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#0ea5e9;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin:14px 0 8px}
-.tpl-slate .cv-rt{font-weight:700;font-size:12.5px;color:#0f172a}
-.tpl-slate .cv-rm{font-size:10.5px;color:#64748b;margin-bottom:4px}
-.tpl-slate .cv-bl{font-size:11.5px;line-height:1.65;padding-inline-start:14px}
-.tpl-slate .cv-bl li::marker{color:#0ea5e9}
-
-.tpl-pearl{font-family:var(--ff);color:#111;background:#f8f8f8}
-.tpl-pearl .cv-hdr{background:#111;padding:22px 26px 16px;border-radius:10px 10px 0 0}
-.tpl-pearl .cv-name{font-family:var(--ffd);font-size:24px;font-weight:800;color:#fff}
-.tpl-pearl .cv-role{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:2px;margin-top:4px}
-.tpl-pearl .cv-rule{height:2px;background:#111}
-.tpl-pearl .cv-body{padding:16px 26px 22px}
-.tpl-pearl .cv-st{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:2.5px;color:#111;margin:14px 0 8px}
-.tpl-pearl .cv-chip{font-size:10.5px;background:#111;color:#fff;border-radius:4px;padding:2px 9px;display:inline-block;margin:0 4px 5px 0;font-weight:600}
-.tpl-pearl .cv-rt{font-weight:700;font-size:12.5px}
-.tpl-pearl .cv-rm{font-size:10.5px;color:#666;margin-bottom:4px}
-.tpl-pearl .cv-bl{font-size:11.5px;line-height:1.65;padding-inline-start:14px}
-
-.tpl-aurora{font-family:var(--ff);color:#0f2027;background:#fff}
-.tpl-aurora .cv-hdr{background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);padding:22px 26px 16px;border-radius:10px 10px 0 0}
-.tpl-aurora .cv-name{font-family:var(--ffd);font-size:24px;font-weight:800;color:#fff}
-.tpl-aurora .cv-role{font-size:10px;color:#7dd3d8;text-transform:uppercase;letter-spacing:2px;margin-top:4px}
-.tpl-aurora .cv-rule{height:3px;background:linear-gradient(90deg,#2c5364,#7dd3d8)}
-.tpl-aurora .cv-body{padding:16px 26px 22px}
-.tpl-aurora .cv-st{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:#2c5364;border-bottom:1px solid #2c536422;padding-bottom:4px;margin:14px 0 8px}
-.tpl-aurora .cv-chip{font-size:10.5px;background:#e8f7f8;color:#2c5364;border:1px solid #b2e4e8;border-radius:999px;padding:2px 9px;display:inline-block;margin:0 4px 5px 0}
-.tpl-aurora .cv-rt{font-weight:700;font-size:12.5px;color:#0f2027}
-.tpl-aurora .cv-rm{font-size:10.5px;color:#64748b;margin-bottom:4px}
-.tpl-aurora .cv-bl{font-size:11.5px;line-height:1.65;padding-inline-start:14px}
-.tpl-aurora .cv-bl li::marker{color:#2c5364}
-
-.tpl-onyx{font-family:var(--ff);color:#e2e8f0;background:#0d1117}
-.tpl-onyx .cv-hdr{background:#0d1117;padding:22px 26px 16px}
-.tpl-onyx .cv-name{font-family:var(--ffd);font-size:24px;font-weight:800;color:#fff}
-.tpl-onyx .cv-role{font-size:10px;color:#4ade80;text-transform:uppercase;letter-spacing:2px;margin-top:4px}
-.tpl-onyx .cv-rule{border-top:1px solid #21262d;margin:0 0 12px;height:0}
-.tpl-onyx .cv-body{background:#0d1117;padding:0 26px 22px}
-.tpl-onyx .cv-st{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:#4ade80;margin:14px 0 8px}
-.tpl-onyx .cv-chip{font-size:10.5px;background:#161b22;color:#4ade80;border:1px solid #238636;border-radius:4px;padding:2px 9px;display:inline-block;margin:0 4px 5px 0;font-weight:600}
-.tpl-onyx .cv-rt{font-weight:700;font-size:12.5px;color:#fff}
-.tpl-onyx .cv-rm{font-size:10.5px;color:#6b7280;margin-bottom:4px}
-.tpl-onyx .cv-bl{font-size:11.5px;line-height:1.65;padding-inline-start:14px;color:#cbd5e1}
-.tpl-onyx .cv-bl li::marker{color:#4ade80}
-
-.tpl-sand{font-family:var(--ff);color:#2c1810;background:#fef9f0}
-.tpl-sand .cv-hdr{padding:22px 24px 16px;border-bottom:1px solid #e8d8c0}
-.tpl-sand .cv-name{font-family:var(--ffd);font-size:26px;font-weight:700;color:#2c1810}
-.tpl-sand .cv-role{font-size:10.5px;color:#8b5e3c;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}
-.tpl-sand .cv-body{padding:16px 24px 22px}
-.tpl-sand .cv-st{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:2.5px;color:#8b5e3c;margin:14px 0 8px}
-.tpl-sand .cv-plain{font-size:12px;line-height:1.8;color:#4a3020}
-.tpl-sand .cv-rt{font-weight:700;font-size:12.5px}
-.tpl-sand .cv-rm{font-size:10.5px;color:#a07850;margin-bottom:4px}
-.tpl-sand .cv-bl{font-size:11.5px;line-height:1.7;padding-inline-start:14px}
-.tpl-sand .cv-bl li::marker{color:#8b5e3c}
-
-.tpl-prism{font-family:var(--ff);color:#1a1a2e;background:#fff}
-.tpl-prism .cv-hdr{position:relative;overflow:hidden;padding:22px 24px 16px;border-bottom:3px solid #7c3aed}
+.tpl-slate .cv-main .cv-st{color:#0ea5e9;border-bottom:1px solid #e2e8f0}
+.tpl-slate .cv-main .cv-rt{color:#0f172a}
+/* Template: pearl */
+.tpl-pearl{background:#f8f8f8;color:#111}
+.tpl-pearl .cv-hdr{background:#111;border-radius:10px 10px 0 0}
+.tpl-pearl .cv-name{color:#fff}
+.tpl-pearl .cv-role{color:#aaa}
+.tpl-pearl .cv-rule{background:#111;height:2px}
+.tpl-pearl .cv-body{background:#f8f8f8}
+.tpl-pearl .cv-st{color:#111}
+.tpl-pearl .cv-chip{background:#111;color:#fff;border-color:#111;border-radius:4px}
+/* Template: aurora */
+.tpl-aurora{background:#fff;color:#0f2027}
+.tpl-aurora .cv-hdr{background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);border-radius:10px 10px 0 0}
+.tpl-aurora .cv-name{color:#fff}
+.tpl-aurora .cv-role{color:#7dd3d8}
+.tpl-aurora .cv-rule{background:linear-gradient(90deg,#2c5364,#7dd3d8)}
+.tpl-aurora .cv-body{background:#fff}
+.tpl-aurora .cv-st{color:#2c5364;border-bottom:1px solid #2c536422}
+.tpl-aurora .cv-chip{background:#e8f7f8;color:#2c5364;border-color:#b2e4e8}
+/* Template: onyx */
+.tpl-onyx{background:#0d1117;color:#e2e8f0}
+.tpl-onyx .cv-hdr{background:#0d1117}
+.tpl-onyx .cv-name{color:#fff}
+.tpl-onyx .cv-role{color:#4ade80}
+.tpl-onyx .cv-rule{border-top:1px solid #21262d;height:0;margin:0 0 12px}
+.tpl-onyx .cv-body{background:#0d1117;padding-top:0}
+.tpl-onyx .cv-st{color:#4ade80}
+.tpl-onyx .cv-chip{background:#161b22;color:#4ade80;border-color:#238636;border-radius:4px}
+.tpl-onyx .cv-rt{color:#fff}
+.tpl-onyx .cv-bl li{color:#cbd5e1}
+/* Template: sand */
+.tpl-sand{background:#fef9f0;color:#2c1810}
+.tpl-sand .cv-hdr{border-bottom:1px solid #e8d8c0}
+.tpl-sand .cv-name{font-size:26px;font-weight:700;color:#2c1810}
+.tpl-sand .cv-role{color:#8b5e3c}
+.tpl-sand .cv-body{background:#fef9f0}
+.tpl-sand .cv-st{color:#8b5e3c}
+.tpl-sand .cv-chip{background:transparent;color:#4a3020;border-color:transparent}
+/* Template: prism */
+.tpl-prism{background:#fff;color:#1a1a2e}
+.tpl-prism .cv-hdr{border-bottom:3px solid #7c3aed;position:relative;overflow:hidden}
 .tpl-prism .cv-hdr::before{content:'';position:absolute;top:0;right:0;width:120px;height:100%;background:#7c3aed;clip-path:polygon(60px 0,100% 0,100% 100%,0 100%);opacity:.08}
-.tpl-prism .cv-name{font-family:var(--ffd);font-size:24px;font-weight:800;color:#1a1a2e}
-.tpl-prism .cv-role{font-size:10.5px;color:#7c3aed;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-top:4px}
-.tpl-prism .cv-body{padding:16px 24px 22px}
-.tpl-prism .cv-st{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:#7c3aed;margin:14px 0 8px;padding-inline-start:8px;border-inline-start:3px solid #7c3aed}
-.tpl-prism .cv-chip{font-size:10.5px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:4px;padding:2px 9px;display:inline-block;margin:0 4px 5px 0}
-.tpl-prism .cv-rt{font-weight:700;font-size:12.5px}
-.tpl-prism .cv-rm{font-size:10.5px;color:#6b7280;margin-bottom:4px}
-.tpl-prism .cv-bl{font-size:11.5px;line-height:1.65;padding-inline-start:14px}
-.tpl-prism .cv-bl li::marker{color:#7c3aed}
-
-.tpl-titanium{font-family:var(--ff);color:#18181b;background:#fff}
-.tpl-titanium .cv-hdr{background:#18181b;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-radius:10px 10px 0 0}
-.tpl-titanium .cv-name{font-family:var(--ffd);font-size:22px;font-weight:900;color:#fff}
-.tpl-titanium .cv-role-pill{font-size:9.5px;background:#fff;color:#18181b;padding:4px 12px;border-radius:999px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap}
-.tpl-titanium .cv-rule{height:2px;background:linear-gradient(90deg,#a1a1aa,#e4e4e7,#a1a1aa)}
-.tpl-titanium .cv-body{padding:16px 24px 22px}
-.tpl-titanium .cv-st{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:#52525b;margin:14px 0 8px}
-.tpl-titanium .cv-chip{font-size:10.5px;background:#f4f4f5;color:#18181b;border:1px solid #e4e4e7;border-radius:4px;padding:2px 9px;display:inline-block;margin:0 4px 5px 0;font-weight:500}
-.tpl-titanium .cv-rt{font-weight:700;font-size:12.5px}
-.tpl-titanium .cv-rm{font-size:10.5px;color:#71717a;margin-bottom:4px}
-.tpl-titanium .cv-bl{font-size:11.5px;line-height:1.65;padding-inline-start:14px}
-.tpl-titanium .cv-bl li::marker{color:#71717a}
-
-.cv-arabic,.cv-arabic .cv-name,.cv-arabic .cv-role,.cv-arabic .cv-st,.cv-arabic .cv-rt,
-.cv-arabic .cv-rm,.cv-arabic .cv-bl,.cv-arabic .cv-chip,.cv-arabic .cv-plain,
-.cv-arabic .cv-inner,.cv-arabic .cv-main,.cv-arabic .cv-body,.cv-arabic .cv-sidebar{font-family:'Cairo',sans-serif!important}
+.tpl-prism .cv-role{color:#7c3aed}
+.tpl-prism .cv-body{background:#fff}
+.tpl-prism .cv-st{color:#7c3aed;padding-inline-start:8px;border-inline-start:3px solid #7c3aed}
+.tpl-prism .cv-chip{background:#f5f3ff;color:#7c3aed;border-color:#ddd6fe;border-radius:4px}
+/* Template: titanium */
+.tpl-titanium{background:#fff;color:#18181b}
+.tpl-titanium .cv-hdr{background:#18181b;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border-radius:10px 10px 0 0}
+.tpl-titanium .cv-name{color:#fff}
+.tpl-titanium .cv-rule{background:linear-gradient(90deg,#a1a1aa,#e4e4e7,#a1a1aa);height:2px}
+.tpl-titanium .cv-body{background:#fff}
+.tpl-titanium .cv-st{color:#52525b}
+.tpl-titanium .cv-chip{background:#f4f4f5;color:#18181b;border-color:#e4e4e7;border-radius:4px}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header class="no-print" style="border-bottom:1px solid var(--b);padding:14px 28px;display:flex;align-items:center;gap:12px;background:rgba(8,6,18,.88);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100">
+<!-- ═══ HEADER ═══ -->
+<header class="no-print" style="border-bottom:1px solid var(--b);padding:14px 28px;display:flex;align-items:center;gap:12px;background:rgba(8,6,18,.9);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100">
   <div style="display:flex;align-items:center;gap:10px">
     <svg width="30" height="30" viewBox="0 0 44 44" fill="none">
       <defs>
-        <linearGradient id="lb" x1="0" y1="44" x2="44" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#0A0618"/><stop offset="100%" stop-color="#1A1040"/>
-        </linearGradient>
-        <linearGradient id="lr" x1="5" y1="0" x2="39" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#6D28D9"/><stop offset="48%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#10B981"/>
-        </linearGradient>
-        <filter id="lg" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="1" result="b"/><feComposite in="SourceGraphic" in2="b" operator="over"/>
-        </filter>
+        <linearGradient id="lb" x1="0" y1="44" x2="44" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0A0618"/><stop offset="100%" stop-color="#1A1040"/></linearGradient>
+        <linearGradient id="lr" x1="5" y1="0" x2="39" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#6D28D9"/><stop offset="48%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#10B981"/></linearGradient>
+        <filter id="lg" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1" result="b"/><feComposite in="SourceGraphic" in2="b" operator="over"/></filter>
       </defs>
       <rect width="44" height="44" rx="12" fill="url(#lb)"/>
       <rect width="44" height="44" rx="12" fill="none" stroke="rgba(139,92,246,.25)" stroke-width="1"/>
@@ -203,152 +163,145 @@ body{background:var(--bg);color:var(--t);font-family:var(--ff)}
       <rect x="31" y="10" width="9" height="28" rx="2.5" fill="url(#lr)" filter="url(#lg)"/>
       <circle cx="35.5" cy="8" r="2" fill="white" opacity="0.72"/>
     </svg>
-    <span id="wm-en" style="font-family:'Inter',sans-serif;font-size:17px;letter-spacing:-.3px"><span style="font-weight:900;color:#fff">Seerah</span> <span style="font-weight:900;color:#8B5CF6">AI</span></span>
+    <span id="wm-en" style="font-family:'Inter',sans-serif;font-size:17px"><span style="font-weight:900;color:#fff">Seerah</span> <span style="font-weight:900;color:#8B5CF6">AI</span></span>
     <span id="wm-ar" style="font-family:'Cairo',sans-serif;font-size:17px;display:none"><span style="font-weight:900;color:#fff">سيرة</span> <span style="font-weight:900;color:#8B5CF6">AI</span></span>
   </div>
-  <div id="header-right" style="margin-inline-start:auto;display:flex;align-items:center;gap:10px"></div>
+  <div id="hdr-right" style="margin-inline-start:auto;display:flex;align-items:center;gap:10px"></div>
   <div style="display:flex;border:1px solid var(--b2);border-radius:8px;overflow:hidden;flex-shrink:0">
-    <button id="btn-en" onclick="setLang('en')" style="font-size:12px;font-weight:700;padding:5px 12px;background:var(--v);color:#fff;border:none;cursor:pointer;font-family:inherit">EN</button>
+    <button id="btn-en" onclick="setLang('en')" style="font-size:12px;font-weight:700;padding:5px 12px;background:var(--v);color:#fff;border:none;cursor:pointer">EN</button>
     <button id="btn-ar" onclick="setLang('ar')" style="font-size:13px;font-weight:700;padding:5px 12px;background:transparent;color:var(--tD);border:none;cursor:pointer;font-family:'Cairo',sans-serif">ع</button>
   </div>
 </header>
 
-<!-- SCREEN 1: UPLOAD -->
-<main id="form-view" class="screen">
+<!-- ═══ SCREEN 1: UPLOAD ═══ -->
+<main id="s-upload" class="screen">
   <div style="position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:600px;height:500px;background:radial-gradient(ellipse,rgba(109,40,217,.28) 0%,transparent 68%);pointer-events:none;z-index:0"></div>
   <section style="max-width:880px;margin:0 auto;padding:52px 24px 40px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;position:relative">
     <div>
       <div class="a1" style="display:inline-flex;align-items:center;gap:8px;background:var(--vDim);border:1px solid rgba(139,92,246,.3);border-radius:999px;padding:5px 16px;margin-bottom:24px">
         <span style="width:6px;height:6px;border-radius:50%;background:var(--v);animation:pulse 2s ease infinite;flex-shrink:0"></span>
-        <span id="badge-text" style="font-size:11px;color:var(--v);font-weight:700;letter-spacing:.5px"></span>
+        <span id="t-badge" style="font-size:11px;color:var(--v);font-weight:700;letter-spacing:.5px"></span>
       </div>
-      <h1 class="a2" style="font-family:'Fraunces',serif;font-size:46px;font-weight:900;line-height:1.06;letter-spacing:-1.5px;margin-bottom:16px">
-        <span id="h1a"></span><br>
-        <span id="h1b" style="background:linear-gradient(135deg,#8B5CF6,#10B981);-webkit-background-clip:text;-webkit-text-fill-color:transparent"></span>
+      <h1 class="a2" style="font-family:'Fraunces',serif;font-size:44px;font-weight:900;line-height:1.06;letter-spacing:-1.5px;margin-bottom:16px">
+        <span id="t-h1a"></span><br>
+        <span id="t-h1b" style="background:linear-gradient(135deg,#8B5CF6,#10B981);-webkit-background-clip:text;-webkit-text-fill-color:transparent"></span>
       </h1>
-      <p class="a2" id="hero-sub" style="font-size:15.5px;color:var(--tM);line-height:1.7;margin-bottom:28px;max-width:400px"></p>
+      <p class="a2" id="t-sub" style="font-size:15px;color:var(--tM);line-height:1.7;margin-bottom:28px;max-width:400px"></p>
       <div class="a3" style="display:flex;flex-wrap:wrap;gap:8px">
-        <span id="feat1" style="font-size:12px;color:var(--tM);background:var(--card);border:1px solid var(--b);border-radius:999px;padding:5px 14px"></span>
-        <span id="feat2" style="font-size:12px;color:var(--tM);background:var(--card);border:1px solid var(--b);border-radius:999px;padding:5px 14px"></span>
-        <span id="feat3" style="font-size:12px;color:var(--tM);background:var(--card);border:1px solid var(--b);border-radius:999px;padding:5px 14px"></span>
+        <span id="t-f1" style="font-size:12px;color:var(--tM);background:var(--card);border:1px solid var(--b);border-radius:999px;padding:5px 14px"></span>
+        <span id="t-f2" style="font-size:12px;color:var(--tM);background:var(--card);border:1px solid var(--b);border-radius:999px;padding:5px 14px"></span>
+        <span id="t-f3" style="font-size:12px;color:var(--tM);background:var(--card);border:1px solid var(--b);border-radius:999px;padding:5px 14px"></span>
       </div>
     </div>
     <div class="a3" style="background:var(--card);border:1px solid var(--b2);border-radius:20px;padding:32px">
-      <input id="file-input" type="file" accept=".pdf,.docx,.txt" style="display:none">
-      <div id="upload-zone" class="uz" onclick="document.getElementById('file-input').click()" style="border:2px dashed var(--b2);border-radius:14px;padding:32px 20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;text-align:center">
+      <input id="file-in" type="file" accept=".pdf,.docx,.txt" style="display:none">
+      <div class="uz" onclick="document.getElementById('file-in').click()" style="border:2px dashed var(--b2);border-radius:14px;padding:32px 20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;text-align:center">
         <div style="width:52px;height:52px;border-radius:14px;background:var(--vDim);border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:center;font-size:24px">📄</div>
         <div>
-          <div id="upload-label" style="font-weight:700;font-size:15px;color:var(--t);margin-bottom:4px"></div>
-          <div id="upload-sub" style="font-size:12px;color:var(--tD)"></div>
+          <div id="t-ulbl" style="font-weight:700;font-size:15px;color:var(--t);margin-bottom:4px"></div>
+          <div id="t-usub" style="font-size:12px;color:var(--tD)"></div>
         </div>
       </div>
-      <p style="text-align:center;margin-bottom:0">
-        <button id="sample-btn" onclick="useSample()" style="font-size:13px;color:var(--v);background:none;border:none;cursor:pointer;font-family:inherit"></button>
-      </p>
-      <div id="error-box" style="display:none;margin-top:14px;font-size:13px;color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 16px;text-align:center"></div>
+      <p style="text-align:center"><button id="t-sample" onclick="useSample()" style="font-size:13px;color:var(--v);background:none;border:none;cursor:pointer;font-family:inherit"></button></p>
+      <div id="upload-err" style="display:none;margin-top:14px;font-size:13px;color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 16px;text-align:center"></div>
     </div>
   </section>
 </main>
 
-<!-- SCREEN 2: JOBS -->
-<main id="jobs-view" style="display:none">
+<!-- ═══ SCREEN 2: JOBS ═══ -->
+<main id="s-jobs" style="display:none">
   <div class="screen" style="max-width:840px;margin:0 auto;padding:28px 20px">
-
-    <!-- Header: AI-auto-searched, user only changes country -->
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
       <div style="flex:1">
-        <h2 id="jobs-title" style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px"></h2>
+        <h2 id="t-jtitle" style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px"></h2>
         <p id="jobs-sub" style="font-size:13px;color:var(--tM);margin-bottom:10px"></p>
-        <!-- Profile tags extracted by AI -->
-        <div id="profile-pill" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        <!-- AI-extracted profile tags -->
+        <div id="profile-tags" style="display:flex;flex-wrap:wrap;gap:6px"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-        <select id="country-select" onchange="onCountryChange()"
-          style="background:var(--card);color:var(--t);border:1px solid var(--b);border-radius:10px;padding:8px 14px;font-size:13px;font-family:inherit;cursor:pointer;outline:none">
+      <div style="flex-shrink:0">
+        <select id="country-sel" onchange="onCountryChange()" style="background:var(--card);color:var(--t);border:1px solid var(--b);border-radius:10px;padding:8px 14px;font-size:13px;font-family:inherit;cursor:pointer;outline:none">
           <option>Oman</option><option>UAE</option><option>Saudi Arabia</option><option>Qatar</option><option>Bahrain</option><option>Kuwait</option>
         </select>
       </div>
     </div>
-
     <!-- Portal links -->
     <div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:7px;align-items:center">
-      <span id="portals-label" style="font-size:10px;color:var(--tD);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-inline-end:4px"></span>
-      <a href="https://www.linkedin.com/jobs/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none">LinkedIn ↗</a>
-      <a href="https://www.indeed.com/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none">Indeed ↗</a>
-      <a href="https://www.bayt.com/en/oman/jobs/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none">Bayt ↗</a>
-      <a href="https://kwader.mem.gov.om/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none">Kwader ↗</a>
-      <a href="https://tawteen.om/find-jobs" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none">Tawteen.om ↗</a>
-      <a href="http://jadarah.oia.gov.om/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none">Jadarah · OIA ↗</a>
-      <a href="https://www.naukrigulf.com/oman-jobs" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none">Naukrigulf ↗</a>
-      <a href="https://www.google.com/search?q=engineering+jobs+oman&udm=8" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none">Google Jobs ↗</a>
+      <span id="t-portals" style="font-size:10px;color:var(--tD);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-inline-end:4px"></span>
+      <a href="https://www.linkedin.com/jobs/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none;transition:color .15s,border-color .15s">LinkedIn ↗</a>
+      <a href="https://www.indeed.com/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none;transition:color .15s,border-color .15s">Indeed ↗</a>
+      <a href="https://www.bayt.com/en/oman/jobs/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none;transition:color .15s,border-color .15s">Bayt ↗</a>
+      <a href="https://kwader.mem.gov.om/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none;transition:color .15s,border-color .15s">Kwader ↗</a>
+      <a href="https://tawteen.om/find-jobs" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none;transition:color .15s,border-color .15s">Tawteen.om ↗</a>
+      <a href="http://jadarah.oia.gov.om/" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none;transition:color .15s,border-color .15s">Jadarah · OIA ↗</a>
+      <a href="https://www.naukrigulf.com/oman-jobs" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none;transition:color .15s,border-color .15s">Naukrigulf ↗</a>
+      <a href="https://www.google.com/search?q=engineering+jobs+oman&udm=8" target="_blank" rel="noopener" class="el" style="font-size:11.5px;font-weight:600;color:var(--tM);border:1px solid var(--b2);border-radius:999px;padding:3px 11px;text-decoration:none;transition:color .15s,border-color .15s">Google Jobs ↗</a>
     </div>
-    <div id="jobs-error" style="display:none;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
+    <div id="jobs-err" style="display:none;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 16px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
     <div id="job-cards"></div>
   </div>
 </main>
 
-<!-- SCREEN 3: RESULT -->
-<main id="result-view" style="display:none">
+<!-- ═══ SCREEN 3: RESULT ═══ -->
+<main id="s-result" style="display:none">
   <div class="screen" style="max-width:960px;margin:0 auto;padding:24px 20px">
     <!-- Job banner -->
     <div style="background:var(--card);border:1px solid var(--b);border-radius:13px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
       <div>
-        <div id="tailored-for" style="font-size:10px;color:var(--tD);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:3px"></div>
-        <div id="banner-title" style="font-weight:700;font-size:16px;color:var(--t)"></div>
-        <div id="banner-meta" style="font-size:13px;color:var(--tM);margin-top:2px"></div>
+        <div id="t-tfor" style="font-size:10px;color:var(--tD);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:3px"></div>
+        <div id="r-title" style="font-weight:700;font-size:16px;color:var(--t)"></div>
+        <div id="r-meta" style="font-size:13px;color:var(--tM);margin-top:2px"></div>
       </div>
-      <div id="banner-fitbar" style="min-width:200px"></div>
+      <div id="r-fitbar" style="min-width:190px"></div>
     </div>
     <!-- Scores + downloads -->
     <div style="background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:12px">
-        <div id="ring-before" style="width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <div style="width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center"><span id="score-before" style="font-size:13px;font-weight:900">0</span></div>
+        <div id="ring-b" style="width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center"><span id="score-b" style="font-size:13px;font-weight:900">0</span></div>
         </div>
-        <div><div id="lbl-before" style="font-size:13px;font-weight:700;color:var(--t)"></div><div id="sub-before" style="font-size:11px;color:var(--tD);margin-top:1px"></div></div>
+        <div><div id="t-before" style="font-size:13px;font-weight:700;color:var(--t)"></div><div id="t-origcv" style="font-size:11px;color:var(--tD);margin-top:1px"></div></div>
       </div>
       <div style="flex:1;display:flex;align-items:center;min-width:60px">
         <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--b),rgba(139,92,246,.5))"></div>
-        <span id="improved-lbl" style="font-size:9.5px;color:var(--v);font-weight:700;margin:0 8px;letter-spacing:.5px;white-space:nowrap"></span>
+        <span id="t-improved" style="font-size:9.5px;color:var(--v);font-weight:700;margin:0 8px;letter-spacing:.5px;white-space:nowrap"></span>
         <div style="flex:1;height:2px;background:linear-gradient(90deg,rgba(139,92,246,.5),rgba(16,185,129,.5))"></div>
       </div>
       <div style="display:flex;align-items:center;gap:12px">
-        <div id="ring-after" style="width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <div style="width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center"><span id="score-after" style="font-size:13px;font-weight:900">0</span></div>
+        <div id="ring-a" style="width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center"><span id="score-a" style="font-size:13px;font-weight:900">0</span></div>
         </div>
-        <div><div id="lbl-after" style="font-size:13px;font-weight:700;color:var(--v)"></div><div id="sub-after" style="font-size:11px;color:var(--tD);margin-top:1px"></div></div>
+        <div><div id="t-after" style="font-size:13px;font-weight:700;color:var(--v)"></div><div id="t-rewrcv" style="font-size:11px;color:var(--tD);margin-top:1px"></div></div>
       </div>
       <div style="margin-inline-start:auto;display:flex;gap:10px;flex-wrap:wrap;flex-shrink:0">
-        <button onclick="window.print()" style="font-size:13px;font-weight:600;color:var(--t);background:var(--cardH);border:1px solid var(--b);border-radius:10px;padding:9px 18px;cursor:pointer;font-family:inherit" id="btn-dl-pdf"></button>
+        <button onclick="window.print()" style="font-size:13px;font-weight:600;color:var(--t);background:var(--cardH);border:1px solid var(--b);border-radius:10px;padding:9px 18px;cursor:pointer;font-family:inherit" id="t-dlpdf"></button>
         <button class="bp" style="font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6D28D9,#8B5CF6);border:none;border-radius:10px;padding:9px 18px;display:flex;align-items:center;gap:8px;font-family:inherit">
-          <span id="btn-dl-word"></span>
-          <span style="font-size:10px;background:rgba(0,0,0,.3);border-radius:999px;padding:2px 8px;font-weight:700">$1.99</span>
+          <span id="t-dlword"></span><span style="font-size:10px;background:rgba(0,0,0,.3);border-radius:999px;padding:2px 8px;font-weight:700">$1.99</span>
         </button>
       </div>
     </div>
     <!-- Missing keywords -->
-    <div id="keywords-card" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:14px 18px;margin-bottom:18px">
+    <div id="kw-card" style="display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:14px 18px;margin-bottom:18px">
       <div style="display:flex;gap:12px;align-items:flex-start">
         <span style="font-size:16px;flex-shrink:0">⚠</span>
-        <div><div id="keywords-heading" style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px"></div>
-        <div id="keywords-list" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
+        <div><div id="t-kwhead" style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px"></div>
+        <div id="kw-list" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
       </div>
     </div>
     <!-- Template picker -->
     <div style="margin-bottom:18px" class="no-print">
-      <div id="tpl-label" style="font-size:10.5px;font-weight:700;color:var(--tD);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px"></div>
+      <div id="t-tpllbl" style="font-size:10.5px;font-weight:700;color:var(--tD);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px"></div>
       <div id="tpl-picker" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px"></div>
     </div>
-    <!-- Main grid -->
+    <!-- CV doc + side panels -->
     <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;margin-bottom:18px">
-      <div id="cv-document" class="tpl-executive" style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05)"></div>
+      <div id="cv-doc" style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05)"></div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:16px 18px">
-          <div id="cover-hd" style="font-size:10.5px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px"></div>
-          <p id="cover-text" style="font-size:12px;line-height:1.75;color:var(--tM);white-space:pre-line"></p>
+          <div id="t-covhd" style="font-size:10.5px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px"></div>
+          <p id="cover-txt" style="font-size:12px;line-height:1.75;color:var(--tM);white-space:pre-line"></p>
         </div>
         <div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:16px 18px">
-          <div id="iq-hd" style="font-size:10.5px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px"></div>
+          <div id="t-iqhd" style="font-size:10.5px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px"></div>
           <ol id="iq-list" style="padding-inline-start:16px;margin:0"></ol>
         </div>
       </div>
@@ -356,12 +309,12 @@ body{background:var(--bg);color:var(--t);font-family:var(--ff)}
     <!-- CTA -->
     <div style="background:linear-gradient(135deg,rgba(109,40,217,.18),rgba(16,185,129,.09));border:1px solid rgba(139,92,246,.25);border-radius:14px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
       <div>
-        <div id="cta-hd" style="font-family:'Fraunces',serif;font-weight:700;font-size:17px;margin-bottom:4px"></div>
-        <div id="cta-sub" style="font-size:13px;color:var(--tM)"></div>
+        <div id="t-ctahd" style="font-family:'Fraunces',serif;font-weight:700;font-size:17px;margin-bottom:4px"></div>
+        <div id="t-ctasub" style="font-size:13px;color:var(--tM)"></div>
       </div>
       <div style="display:flex;gap:10px">
-        <button id="btn-more" onclick="showJobs()" style="font-size:13px;font-weight:600;color:var(--tM);background:transparent;border:1px solid var(--b);border-radius:10px;padding:10px 18px;cursor:pointer;font-family:inherit"></button>
-        <button class="bp" id="btn-apply" onclick="if(currentJob&&currentJob.url)window.open(currentJob.url,'_blank')" style="font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6D28D9,#10B981);border:none;border-radius:10px;padding:10px 20px;font-family:inherit"></button>
+        <button onclick="goJobs()" style="font-size:13px;font-weight:600;color:var(--tM);background:transparent;border:1px solid var(--b);border-radius:10px;padding:10px 18px;cursor:pointer;font-family:inherit" id="t-more"></button>
+        <button class="bp" id="t-apply" style="font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6D28D9,#10B981);border:none;border-radius:10px;padding:10px 20px;font-family:inherit"></button>
       </div>
     </div>
   </div>
@@ -370,233 +323,70 @@ body{background:var(--bg);color:var(--t);font-family:var(--ff)}
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-/* ── i18n ── */
-var T={
+/* ══ i18n ══════════════════════════════════════════════════════════════════ */
+var I={
   en:{
     badge:'AI-POWERED JOB MATCHING · OMAN & GCC',
     h1a:'Upload your CV.',h1b:"We'll find the jobs.",
-    heroSub:"Browse real openings matched to your profile. Pick one and we'll rewrite your CV for that exact role — keywords, bullets, cover letter.",
-    feat1:'🎯 Smart matching',feat2:'✦ One-click tailor',feat3:'⬇ PDF & Word export',
-    uploadLabel:'Click to upload your CV',uploadSub:'PDF, DOCX or TXT · up to 10MB',
-    sampleBtn:'or try with a sample engineering CV →',uploadReading:'Reading your CV…',
-    newCv:'← New CV',jobsTitle:'Jobs matched to your profile',portalsLabel:'Search also on',
-    filterPh:'Filter roles…',viewBtn:'View ↗',tailorBtn:'✦ Tailor my CV',tailoringBtn:'Tailoring…',
-    compLabel:'Compatibility',fitHigh:'Strong fit',fitMed:'Partial fit',fitLow:'Low fit',
-    fullTime:'Full-time',contract:'Contract',
-    tailoredFor:'Tailored for',beforeLabel:'Before',afterLabel:'After',
-    originalCv:'Original CV',rewrittenCv:'Rewritten CV',improvedLbl:'IMPROVED',
-    dlPdf:'⬇ Download PDF',dlWord:'⬇ Download Word',
-    keywordsHd:'Missing keywords — add these to strengthen your application',
-    tplLabel:'Template',coverHd:'Cover letter',iqHd:'Interview questions',
-    ctaHd:'Ready to apply?',ctaSub:'Your tailored CV is ready. Download and submit with confidence.',
-    moreJobs:'← Browse more jobs',applyBtn:'Apply now ↗',
-    cvSummary:'Professional Summary',cvSkills:'Skills',cvExp:'Experience',cvEdu:'Education',
-    errUpload:'Please upload your CV first.',errJd:'Please paste the job description.',
-    errFail:'Generation failed. Please try again.',errFile:'Could not read that file.',
-    noJobs:'No jobs match that search.',
+    sub:'Upload your CV and our AI will analyse it, find live matching jobs, and tailor your CV for any role you choose.',
+    f1:'🤖 AI reads your CV',f2:'🎯 Finds matching jobs',f3:'✦ Tailors your CV to apply',
+    ulbl:'Click to upload your CV',usub:'PDF, DOCX or TXT',
+    sample:'Try with a sample engineering CV →',
+    newcv:'← New CV',jtitle:'Jobs matched to your profile',
+    portals:'Search also on',
+    tfor:'Tailored for',before:'Before',after:'After',
+    origcv:'Original CV',rewrcv:'Rewritten CV',improved:'IMPROVED',
+    dlpdf:'⬇ Download PDF',dlword:'⬇ Download Word',
+    kwhead:'Missing keywords — add these to close the gap',
+    tpllbl:'Template',covhd:'Cover letter',iqhd:'Interview questions',
+    ctahd:'Ready to apply?',ctasub:'Your tailored CV is ready. Download and submit.',
+    more:'← Browse more jobs',apply:'Apply now ↗',
+    sum:'Professional Summary',skills:'Skills',exp:'Experience',edu:'Education',
+    reading:'Reading your CV…',analysing:'Analysing your CV with AI…',
+    searching:'Searching for matching jobs in ',noresults:'No recent matching jobs found. Try a different country.',
   },
   ar:{
     badge:'مطابقة وظائف بالذكاء الاصطناعي · عُمان والخليج',
     h1a:'ارفع سيرتك الذاتية.',h1b:'سنجد لك الوظائف.',
-    heroSub:'تصفّح الوظائف المتاحة المتوافقة مع مهاراتك. اختر وظيفة وسنُعيد كتابة سيرتك الذاتية بالكامل لتناسبها.',
-    feat1:'🎯 مطابقة ذكية',feat2:'✦ تخصيص بنقرة',feat3:'⬇ تصدير PDF وWord',
-    uploadLabel:'اضغط لرفع سيرتك الذاتية',uploadSub:'PDF أو DOCX أو TXT · حتى 10 ميغابايت',
-    sampleBtn:'← أو جرّب مع سيرة ذاتية هندسية نموذجية',uploadReading:'جارٍ قراءة سيرتك الذاتية…',
-    newCv:'← سيرة جديدة',jobsTitle:'وظائف تناسب ملفك الشخصي',portalsLabel:'ابحث أيضاً في',
-    filterPh:'فلترة الوظائف…',viewBtn:'عرض ↗',tailorBtn:'✦ خصّص سيرتي',tailoringBtn:'جارٍ التخصيص…',
-    compLabel:'التوافق',fitHigh:'توافق ممتاز',fitMed:'توافق جزئي',fitLow:'توافق منخفض',
-    fullTime:'دوام كامل',contract:'عقد مؤقت',
-    tailoredFor:'مخصّصة لـ',beforeLabel:'قبل',afterLabel:'بعد',
-    originalCv:'السيرة الأصلية',rewrittenCv:'السيرة المحسّنة',improvedLbl:'محسّنة',
-    dlPdf:'⬇ تنزيل PDF',dlWord:'⬇ تنزيل Word',
-    keywordsHd:'الكلمات المفتاحية الناقصة — أضفها لتقوية طلبك',
-    tplLabel:'قالب السيرة',coverHd:'خطاب التغطية',iqHd:'أسئلة المقابلة المتوقعة',
-    ctaHd:'مستعد للتقديم؟',ctaSub:'سيرتك المخصّصة جاهزة. نزّلها وقدّم بثقة.',
-    moreJobs:'← تصفّح المزيد',applyBtn:'قدّم الآن ←',
-    cvSummary:'الملخص المهني',cvSkills:'المهارات',cvExp:'الخبرات العملية',cvEdu:'التعليم',
-    errUpload:'يرجى رفع سيرتك الذاتية أولاً.',errJd:'يرجى لصق وصف الوظيفة.',
-    errFail:'فشل الإنشاء. يرجى المحاولة مجدداً.',errFile:'تعذّر قراءة الملف.',
-    noJobs:'لا توجد وظائف تطابق البحث.',
+    sub:'ارفع سيرتك وسيحللها الذكاء الاصطناعي، يجد الوظائف المناسبة، ويعيد صياغة سيرتك لأي وظيفة تختارها.',
+    f1:'🤖 يقرأ الذكاء الاصطناعي سيرتك',f2:'🎯 يجد الوظائف المناسبة',f3:'✦ يخصّص سيرتك للتقديم',
+    ulbl:'اضغط لرفع سيرتك الذاتية',usub:'PDF أو DOCX أو TXT',
+    sample:'← جرّب مع سيرة ذاتية هندسية نموذجية',
+    newcv:'← سيرة جديدة',jtitle:'وظائف تناسب ملفك الشخصي',
+    portals:'ابحث أيضاً في',
+    tfor:'مخصّصة لـ',before:'قبل',after:'بعد',
+    origcv:'السيرة الأصلية',rewrcv:'السيرة المحسّنة',improved:'محسّنة',
+    dlpdf:'⬇ تنزيل PDF',dlword:'⬇ تنزيل Word',
+    kwhead:'الكلمات المفتاحية الناقصة — أضفها لتقوية طلبك',
+    tpllbl:'قالب السيرة',covhd:'خطاب التغطية',iqhd:'أسئلة المقابلة المتوقعة',
+    ctahd:'مستعد للتقديم؟',ctasub:'سيرتك المخصّصة جاهزة. نزّلها وقدّم.',
+    more:'← تصفّح المزيد',apply:'قدّم الآن ←',
+    sum:'الملخص المهني',skills:'المهارات',exp:'الخبرات العملية',edu:'التعليم',
+    reading:'جارٍ قراءة سيرتك الذاتية…',analysing:'يحلّل الذكاء الاصطناعي سيرتك…',
+    searching:'يبحث عن وظائف في ',noresults:'لا توجد وظائف حديثة مطابقة. جرّب دولة أخرى.',
   }
 };
-function t(k){return (T[lang]&&T[lang][k])||T.en[k]||k;}
+function t(k){return (I[lang]&&I[lang][k])||I.en[k]||k;}
 
-/* ── State ── */
-var lang='en',cvText='',detectedName='',lastResult=null,currentJob=null,currentTpl='executive',tailoring=false;
-var JOBS=[];        // filled by autoSearchJobs() after CV upload
-var cvProfile=null; // filled by extractCVProfile() — AI-extracted
-var jobsLoading=false;
+/* ══ State ══════════════════════════════════════════════════════════════════ */
+var lang='en', cvText='', userName='', cvProfile=null;
+var JOBS=[], currentJob=null, lastResult=null;
+var currentTpl='executive', busy=false;
 
-/* ── Client-side match scoring (keyword overlap) ── */
-function calcMatch(cv,desc){
-  var cvW=new Set(cv.toLowerCase().split(/\W+/).filter(function(w){return w.length>3;}));
-  var dW=(desc||'').toLowerCase().split(/\W+/).filter(function(w){return w.length>3;});
-  if(!dW.length) return 40;
-  var hits=dW.filter(function(w){return cvW.has(w);}).length;
-  var raw=Math.round(hits/dW.length*100);
-  return Math.min(Math.max(raw,15),92);
-}
+var TPLS=[
+  {id:'executive',label:'Executive',sub:'Navy & gold',   hBg:'#0f1f4b',ac:'#C9A84C'},
+  {id:'zurich',   label:'Zürich',   sub:'Swiss red',     hBg:'#c0392b',ac:'#c0392b'},
+  {id:'ember',    label:'Ember',    sub:'Terracotta',    hBg:'#fdf8f3',ac:'#b05e3a'},
+  {id:'slate',    label:'Slate',    sub:'Dark sidebar',  hBg:'#1e293b',ac:'#38bdf8'},
+  {id:'pearl',    label:'Pearl',    sub:'Black & white', hBg:'#111',   ac:'#fff'},
+  {id:'aurora',   label:'Aurora',   sub:'Ocean gradient',hBg:'#203a43',ac:'#7dd3d8'},
+  {id:'onyx',     label:'Onyx',     sub:'Dark mode',     hBg:'#0d1117',ac:'#4ade80'},
+  {id:'sand',     label:'Sand',     sub:'Warm beige',    hBg:'#fef9f0',ac:'#8b5e3c'},
+  {id:'prism',    label:'Prism',    sub:'Purple geo',    hBg:'#fff',   ac:'#7c3aed'},
+  {id:'titanium', label:'Titanium', sub:'Sleek mono',    hBg:'#18181b',ac:'#a1a1aa'},
+];
 
-/* ── Days-ago badge label ── */
-function daysAgoLabel(n){
-  if(n===null||n===undefined) return '';
-  if(n===0) return lang==='ar'?'نُشر اليوم':'Today';
-  if(n===1) return lang==='ar'?'منذ يوم':'1d ago';
-  if(n<7)   return lang==='ar'?'منذ '+n+' أيام':n+'d ago';
-  if(n<14)  return lang==='ar'?'هذا الأسبوع':'This week';
-  return lang==='ar'?'هذا الشهر':Math.floor(n/7)+'w ago';
-}
-
-/* ── Jobs sub-label ── */
-function setJobsStatus(msg,loading){
-  var sub=document.getElementById('jobs-sub');
-  if(!sub) return;
-  if(loading){
-    sub.innerHTML='<span style="display:inline-flex;align-items:center;gap:6px">'+
-      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="animation:spin .7s linear infinite">'+
-      '<circle cx="12" cy="12" r="9" stroke="#2D1F4E" stroke-width="3"/>'+
-      '<path d="M12 3a9 9 0 0 1 9 9" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round"/></svg>'+
-      esc(msg)+'</span>';
-  } else if(msg){
-    sub.innerHTML='<span style="color:var(--red)">'+esc(msg)+'</span>';
-  } else {
-    var n=JOBS.length;
-    sub.textContent=n+' '+(lang==='ar'?'وظيفة حديثة':'live jobs')+
-      ' · '+(lang==='ar'?'مرتبة حسب التوافق':'sorted by compatibility');
-  }
-}
-
-/* ── Show profile tags extracted by AI ── */
-function showProfileTags(profile){
-  var pill=document.getElementById('profile-pill');
-  if(!pill||!profile) return;
-  var tags=[];
-  if(profile.jobTitle)        tags.push('💼 '+profile.jobTitle);
-  if(profile.yearsExperience) tags.push('📅 '+profile.yearsExperience+(lang==='ar'?' سنوات':' yrs'));
-  if(profile.educationField)  tags.push('🎓 '+profile.educationField);
-  (profile.certifications||[]).forEach(function(c){ tags.push('✓ '+c); });
-  (profile.topSkills||[]).slice(0,3).forEach(function(s){ tags.push(s); });
-  pill.innerHTML=tags.map(function(tag){
-    return '<span style="font-size:11px;color:var(--tM);background:var(--card);border:1px solid var(--b);border-radius:999px;padding:3px 10px">'+esc(tag)+'</span>';
-  }).join('');
-}
-
-/* ── Step 1: AI extracts structured profile from CV ── */
-async function extractCVProfile(){
-  setJobsStatus(lang==='ar'?'يحلّل سيرتك الذاتية بالذكاء الاصطناعي…':'Analysing your CV with AI…',true);
-  var res=await fetch('/api/extract-cv',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({cvText:cvText}),
-  });
-  if(!res.ok) throw new Error('CV extraction failed');
-  return await res.json();
-}
-
-/* ── Step 2: Search jobs using extracted profile ── */
-async function searchWithProfile(profile){
-  var country=document.getElementById('country-select').value||'Oman';
-  setJobsStatus(
-    lang==='ar'?'يبحث عن وظائف في '+country+'…':'Searching for jobs in '+country+'…',
-    true
-  );
-  var res=await fetch('/api/find-jobs',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      jobTitle: profile.jobTitle,
-      skills:   profile.topSkills||[],
-      country:  country,
-    }),
-  });
-  var data=await res.json();
-  if(!res.ok) throw new Error(data.error||'Job search failed');
-  return data.jobs||[];
-}
-
-/* ── Main: extract then search (called after CV upload) ── */
-async function autoSearchJobs(){
-  if(jobsLoading) return;
-  jobsLoading=true;
-  JOBS=[];
-  renderCards([]);
-  document.getElementById('jobs-error').style.display='none';
-  document.getElementById('profile-pill').innerHTML='';
-  try{
-    // Step 1 — extract profile
-    cvProfile=await extractCVProfile();
-    showProfileTags(cvProfile);
-    // Step 2 — search jobs
-    var raw=await searchWithProfile(cvProfile);
-    if(!raw.length) throw new Error(
-      lang==='ar'?'لا توجد وظائف حديثة مطابقة. جرّب دولة أخرى.':
-      'No recent matching jobs found. Try a different country.'
-    );
-    JOBS=raw.map(function(j,i){
-      var pct=calcMatch(cvText,j.desc||'');
-      return {
-        id:      j.id||('r'+i),
-        match:   pct>=65?'high':pct>=40?'medium':'low',
-        pct:     pct,
-        en:      j.title||'',
-        ar:      j.title||'',
-        company: j.company||'',
-        loc:     j.location||'',
-        ten:     j.type||'Full-time',
-        tar:     (j.type||'').toLowerCase().includes('contract')?'عقد مؤقت':'دوام كامل',
-        url:     j.apply_link||'',
-        desc:    j.desc||'',
-        days_ago:j.days_ago,
-      };
-    }).sort(function(a,b){return b.pct-a.pct;});
-    setJobsStatus('',false);
-    renderCards(JOBS);
-  }catch(e){
-    JOBS=[];
-    setJobsStatus('',false);
-    var errEl=document.getElementById('jobs-error');
-    errEl.textContent=e.message;
-    errEl.style.display='';
-    renderCards([]);
-  }finally{
-    jobsLoading=false;
-  }
-}
-
-/* ── Country change re-runs search with cached profile ── */
-function onCountryChange(){
-  if(!cvProfile) return;
-  if(jobsLoading) return;
-  jobsLoading=true;
-  JOBS=[];
-  renderCards([]);
-  document.getElementById('jobs-error').style.display='none';
-  searchWithProfile(cvProfile).then(function(raw){
-    if(!raw.length){
-      setJobsStatus('',false);
-      renderCards([]);
-      return;
-    }
-    JOBS=raw.map(function(j,i){
-      var pct=calcMatch(cvText,j.desc||'');
-      return {
-        id:j.id||('r'+i),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
-        en:j.title||'',ar:j.title||'',company:j.company||'',loc:j.location||'',
-        ten:j.type||'Full-time',tar:(j.type||'').toLowerCase().includes('contract')?'عقد مؤقت':'دوام كامل',
-        url:j.apply_link||'',desc:j.desc||'',days_ago:j.days_ago,
-      };
-    }).sort(function(a,b){return b.pct-a.pct;});
-    setJobsStatus('',false);
-    renderCards(JOBS);
-  }).catch(function(e){
-    setJobsStatus('',false);
-    var errEl=document.getElementById('jobs-error');
-    errEl.textContent=e.message;
-    errEl.style.display='';
-  }).finally(function(){ jobsLoading=false; });
-}
-
-/* ── Language ── */
+/* ══ Language ══════════════════════════════════════════════════════════════ */
 function setLang(l){
   lang=l;
   var root=document.getElementById('root');
@@ -607,55 +397,98 @@ function setLang(l){
   document.getElementById('btn-en').style.cssText='font-size:12px;font-weight:700;padding:5px 12px;border:none;cursor:pointer;font-family:inherit;background:'+(l==='en'?'var(--v)':'transparent')+';color:'+(l==='en'?'#fff':'var(--tD)');
   document.getElementById('btn-ar').style.cssText="font-size:13px;font-weight:700;padding:5px 12px;border:none;cursor:pointer;font-family:'Cairo',sans-serif;background:"+(l==='ar'?'var(--v)':'transparent')+';color:'+(l==='ar'?'#fff':'var(--tD)');
   applyText();
-  var jv=document.getElementById('jobs-view');
-  if(jv.style.display!=='none'){renderCards(JOBS);}
-  var rv=document.getElementById('result-view');
-  if(lastResult&&rv.style.display!=='none'){renderResult(lastResult);}
+  if(document.getElementById('s-jobs').style.display!=='none') renderCards(JOBS);
+  if(lastResult&&document.getElementById('s-result').style.display!=='none') renderResult(lastResult);
 }
-
 function applyText(){
-  setText('badge-text','badge'); setText('h1a','h1a'); setText('h1b','h1b');
-  setText('hero-sub','heroSub'); setText('feat1','feat1'); setText('feat2','feat2'); setText('feat3','feat3');
-  setText('upload-label','uploadLabel'); setText('upload-sub','uploadSub'); setText('sample-btn','sampleBtn');
-  setText('jobs-title','jobsTitle'); setText('portals-label','portalsLabel');
+  sx('t-badge','badge');sx('t-h1a','h1a');sx('t-h1b','h1b');sx('t-sub','sub');
+  sx('t-f1','f1');sx('t-f2','f2');sx('t-f3','f3');
+  sx('t-ulbl','ulbl');sx('t-usub','usub');sx('t-sample','sample');
+  sx('t-jtitle','jtitle');sx('t-portals','portals');
+  sx('t-tfor','tfor');sx('t-before','before');sx('t-origcv','origcv');
+  sx('t-after','after');sx('t-rewrcv','rewrcv');sx('t-improved','improved');
+  sx('t-dlpdf','dlpdf');sx('t-dlword','dlword');sx('t-kwhead','kwhead');
+  sx('t-tpllbl','tpllbl');sx('t-covhd','covhd');sx('t-iqhd','iqhd');
+  sx('t-ctahd','ctahd');sx('t-ctasub','ctasub');sx('t-more','more');sx('t-apply','apply');
+}
+function sx(id,key){var el=document.getElementById(id);if(el)el.textContent=t(key);}
+function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
 
-  setText('tailored-for','tailoredFor'); setText('lbl-before','beforeLabel'); setText('sub-before','originalCv');
-  setText('lbl-after','afterLabel'); setText('sub-after','rewrittenCv'); setText('improved-lbl','improvedLbl');
-  setText('btn-dl-pdf','dlPdf'); setText('btn-dl-word','dlWord');
-  setText('keywords-heading','keywordsHd'); setText('tpl-label','tplLabel');
-  setText('cover-hd','coverHd'); setText('iq-hd','iqHd');
-  setText('cta-hd','ctaHd'); setText('cta-sub','ctaSub');
-  setText('btn-more','moreJobs'); setText('btn-apply','applyBtn');
-  if(document.getElementById('jobs-sub')) document.getElementById('jobs-sub').textContent=JOBS.length+' '+(lang==='ar'?'وظيفة':'roles')+' · '+(lang==='ar'?'مرتبة حسب التوافق':'sorted by compatibility');
+/* ══ Screen navigation ══════════════════════════════════════════════════════ */
+function goUpload(){
+  show('s-upload');hide('s-jobs');hide('s-result');
+  document.getElementById('hdr-right').innerHTML='';
 }
-function setText(id,key){var el=document.getElementById(id);if(el)el.textContent=t(key);}
-function setAttr(id,attr,key){var el=document.getElementById(id);if(el)el[attr]=t(key);}
-
-/* ── Screens ── */
-function showUpload(){
-  show('form-view'); hide('jobs-view'); hide('result-view');
-  document.getElementById('header-right').innerHTML='';
+function goJobs(){
+  hide('s-upload');show('s-jobs');hide('s-result');
+  document.getElementById('hdr-right').innerHTML=
+    '<div style="display:flex;align-items:center;gap:8px">'+
+    '<div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#6D28D9,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800">'+esc((userName||'?')[0])+'</div>'+
+    '<span style="font-size:13px;color:var(--tM)"><strong style="color:var(--t)">'+esc(userName||'You')+'</strong></span></div>'+
+    '<button onclick="goUpload()" style="font-size:12px;color:var(--tD);background:var(--card);border:1px solid var(--b);border-radius:8px;padding:5px 12px;cursor:pointer;font-family:inherit">'+t('newcv')+'</button>';
 }
-function showJobs(){
-  hide('form-view'); show('jobs-view'); hide('result-view');
-  document.getElementById('header-right').innerHTML=
-    '<div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#6D28D9,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800">'+((detectedName||'?')[0])+'</div><span style="font-size:13px;color:var(--tM)"><strong style="color:var(--t)">'+esc(detectedName||'You')+'</strong></span></div>'+
-    '<button onclick="showUpload()" style="font-size:12px;color:var(--tD);background:var(--card);border:1px solid var(--b);border-radius:8px;padding:5px 12px;cursor:pointer;font-family:inherit">'+t('newCv')+'</button>';
-  autoSearchJobs();
-}
-function showResult(){
-  hide('form-view'); hide('jobs-view'); show('result-view');
-  document.getElementById('header-right').innerHTML=
-    '<button onclick="showJobs()" style="font-size:12px;color:var(--tD);background:var(--card);border:1px solid var(--b);border-radius:8px;padding:5px 12px;cursor:pointer;font-family:inherit">'+t('moreJobs')+'</button>';
+function goResult(){
+  hide('s-upload');hide('s-jobs');show('s-result');
+  document.getElementById('hdr-right').innerHTML=
+    '<button onclick="goJobs()" style="font-size:12px;color:var(--tD);background:var(--card);border:1px solid var(--b);border-radius:8px;padding:5px 12px;cursor:pointer;font-family:inherit">'+t('more')+'</button>';
 }
 function show(id){document.getElementById(id).style.display='';}
 function hide(id){document.getElementById(id).style.display='none';}
 
-/* ── File upload ── */
-document.getElementById('file-input').addEventListener('change',async function(e){
-  var file=e.target.files[0]; if(!file) return;
-  document.getElementById('upload-label').textContent=t('uploadReading');
-  document.getElementById('error-box').style.display='none';
+/* ══ Job sub-label ══════════════════════════════════════════════════════════ */
+function setJobSub(msg,loading){
+  var el=document.getElementById('jobs-sub');if(!el)return;
+  if(loading){
+    el.innerHTML='<span style="display:inline-flex;align-items:center;gap:6px">'+
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="animation:spin .7s linear infinite">'+
+      '<circle cx="12" cy="12" r="9" stroke="#2D1F4E" stroke-width="3"/>'+
+      '<path d="M12 3a9 9 0 0 1 9 9" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round"/></svg>'+
+      esc(msg)+'</span>';
+  }else if(msg){
+    el.innerHTML='<span style="color:var(--red)">'+esc(msg)+'</span>';
+  }else{
+    el.textContent=JOBS.length+' '+(lang==='ar'?'وظيفة حديثة':'live jobs')+
+      ' · '+(lang==='ar'?'مرتبة حسب التوافق':'sorted by match');
+  }
+}
+
+/* ══ Profile tags ═══════════════════════════════════════════════════════════ */
+function showProfileTags(p){
+  var el=document.getElementById('profile-tags');if(!el||!p)return;
+  var tags=[];
+  if(p.jobTitle)        tags.push('💼 '+p.jobTitle);
+  if(p.yearsExperience) tags.push('📅 '+p.yearsExperience+(lang==='ar'?' سنوات':' yrs'));
+  if(p.educationField)  tags.push('🎓 '+p.educationField);
+  (p.certifications||[]).forEach(function(c){if(c)tags.push('✓ '+c);});
+  (p.topSkills||[]).slice(0,3).forEach(function(s){if(s)tags.push(s);});
+  el.innerHTML=tags.map(function(tag){
+    return '<span style="font-size:11px;color:var(--tM);background:var(--card);border:1px solid var(--b);border-radius:999px;padding:3px 10px">'+esc(tag)+'</span>';
+  }).join('');
+}
+
+/* ══ Match score ════════════════════════════════════════════════════════════ */
+function calcMatch(cv,desc){
+  var cvW=new Set(cv.toLowerCase().split(/\W+/).filter(function(w){return w.length>3;}));
+  var dW=(desc||'').toLowerCase().split(/\W+/).filter(function(w){return w.length>3;});
+  if(!dW.length)return 40;
+  var hits=dW.filter(function(w){return cvW.has(w);}).length;
+  return Math.min(Math.max(Math.round(hits/dW.length*100),15),92);
+}
+
+/* ══ Days-ago badge ═════════════════════════════════════════════════════════ */
+function dAgo(n){
+  if(n===null||n===undefined)return '';
+  if(n===0)return lang==='ar'?'نُشر اليوم':'Today';
+  if(n<7)  return lang==='ar'?'منذ '+n+' أيام':n+'d ago';
+  if(n<14) return lang==='ar'?'هذا الأسبوع':'This week';
+  return lang==='ar'?'هذا الشهر':Math.floor(n/7)+'w ago';
+}
+
+/* ══ File upload ════════════════════════════════════════════════════════════ */
+document.getElementById('file-in').addEventListener('change',async function(e){
+  var file=e.target.files[0];if(!file)return;
+  document.getElementById('t-ulbl').textContent=t('reading');
+  document.getElementById('upload-err').style.display='none';
   try{
     var name=file.name.toLowerCase(),txt='';
     if(name.endsWith('.pdf')){
@@ -670,249 +503,353 @@ document.getElementById('file-input').addEventListener('change',async function(e
       var ab=await file.arrayBuffer();
       var r=await mammoth.extractRawText({arrayBuffer:ab});
       txt=r.value;
-    }else if(name.endsWith('.txt')){
+    }else{
       txt=await file.text();
-    }else{throw new Error(t('errFile'));}
+    }
     cvText=txt.trim();
-    if(!cvText) throw new Error(t('errFile'));
-    detectedName=detectName(cvText);
-    document.getElementById('upload-label').textContent=file.name+' ✓'+(detectedName?' ('+detectedName+')':'');
-    cvProfile=null; JOBS=[];
-    setTimeout(function(){showJobs();},500);
+    if(!cvText)throw new Error(t('usub'));
+    userName=detectName(cvText);
+    document.getElementById('t-ulbl').textContent=file.name+' ✓'+(userName?' ('+userName+')':'');
+    cvProfile=null;JOBS=[];
+    setTimeout(function(){goJobs();runAutoSearch();},400);
   }catch(err){
-    document.getElementById('error-box').textContent=err.message||t('errFile');
-    document.getElementById('error-box').style.display='';
-    document.getElementById('upload-label').textContent=t('uploadLabel');
+    var eb=document.getElementById('upload-err');
+    eb.textContent=err.message||'Could not read file.';
+    eb.style.display='';
+    document.getElementById('t-ulbl').textContent=t('ulbl');
   }
 });
 
-function detectName(tx){
-  var lines=tx.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+function detectName(txt){
+  var lines=txt.split('\n').map(function(l){return l.trim();}).filter(Boolean);
   for(var i=0;i<Math.min(5,lines.length);i++){
     var l=lines[i];
-    if(l.length<50&&/^[\u0600-\u06FFA-Z][\u0600-\u06FFa-z]+(\s+[\u0600-\u06FFA-Za-z][a-zA-Z\u0600-\u06FF'-]+){1,3}$/.test(l)) return l;
+    if(l.length<50&&/^[\u0600-\u06FFA-Z][\u0600-\u06FFa-z]+(\s+[\u0600-\u06FFA-Za-z][a-zA-Z\u0600-\u06FF'-]+){1,3}$/.test(l))return l;
   }
   return '';
 }
 
+/* ══ Sample CV ══════════════════════════════════════════════════════════════ */
+var SAMPLE_EN='Muadh Al Shukairi\nSenior Project Engineer – O&M / Water Networks\nMuscat, Oman\n\nEXPERIENCE\nSenior Project Engineer | Nama Water & Wastewater | 2018–Present\n- Managed feasibility assessments for 40+ sewer connection requests monthly using GIS mapping tools\n- Led cross-functional teams, coordinating with DIAM, PAEW and municipality stakeholders\n- Planned and tracked project timelines using scheduling software and progress curves\n- Oversaw capital works for sewer extension projects up to OMR 500K\n- Prepared technical reports and managed contractor performance under FIDIC conditions\n\nProject Engineer | Galfar Engineering | 2014–2018\n- Supervised civil works on 8 wastewater treatment plant upgrades (OMR 18M total)\n- Managed subcontractors, enforced contract terms, and administered variation orders\n- Prepared monthly S-curves, earned value reports and progress presentations\n\nEDUCATION\nB.Sc. Civil Engineering | Sultan Qaboos University | 2014\n\nSKILLS\nProject Management · Stakeholder Coordination · Asset Management · O&M Planning · Report Writing · GIS · FIDIC Contracts\n\nCERTIFICATIONS\nPMP – Project Management Professional | NEBOSH International General Certificate';
+
+var SAMPLE_AR='مُعاذ الشكيري\nمهندس مشاريع أول – تشغيل وصيانة شبكات المياه\nمسقط، سلطنة عُمان\n\nالخبرة العملية\nمهندس مشاريع أول | مياه وصرف صحي عُمان | 2018 – حتى الآن\n- إدارة دراسات الجدوى لأكثر من 40 طلب توصيل صرف صحي شهرياً باستخدام أدوات رسم الخرائط الجغرافية\n- قيادة فرق متعددة التخصصات بالتنسيق مع هيئة المياه والجهات الحكومية المعنية\n- تخطيط الأعمال وتتبع الجداول الزمنية باستخدام برامج الجدولة ومنحنيات التقدم\n- الإشراف على مشاريع تمديد شبكات الصرف حتى 500,000 ريال عُماني\n- إعداد التقارير الفنية وإدارة أداء المقاولين وفق شروط عقود FIDIC\n\nمهندس مشاريع | شركة غلفار للهندسة | 2014 – 2018\n- الإشراف على الأعمال المدنية لـ 8 مشاريع تحديث محطات معالجة مياه الصرف (18 مليون ريال إجمالاً)\n- إدارة المقاولين الفرعيين وتطبيق بنود العقود\n- إعداد منحنيات S والتقارير الشهرية وتحليلات القيمة المكتسبة\n\nالتعليم\nبكالوريوس الهندسة المدنية | جامعة السلطان قابوس | 2014\n\nالمهارات\nإدارة المشاريع · التنسيق مع أصحاب المصلحة · إدارة الأصول · تخطيط التشغيل والصيانة · كتابة التقارير · أنظمة GIS · عقود FIDIC\n\nالشهادات المهنية\nPMP – محترف إدارة المشاريع | شهادة NEBOSH الدولية العامة';
+
 function useSample(){
   cvText=lang==='ar'?SAMPLE_AR:SAMPLE_EN;
-  detectedName=lang==='ar'?'\u0645\u064f\u0639\u0627\u0630 \u0627\u0644\u0634\u0643\u064a\u0631\u064a':'Muadh Al Shukairi';
-  cvProfile=null; JOBS=[];
-  showJobs();
+  userName=lang==='ar'?'مُعاذ الشكيري':'Muadh Al Shukairi';
+  cvProfile=null;JOBS=[];
+  goJobs();runAutoSearch();
 }
 
-/* ── Job cards ── */
+/* ══ AUTO SEARCH — AI reads CV then searches ════════════════════════════════
+   Step 1: /api/extract-cv  → Claude extracts structured profile
+   Step 2: /api/find-jobs   → JSearch returns live matching jobs
+   User only controls the country dropdown.
+══════════════════════════════════════════════════════════════════════════════ */
+async function runAutoSearch(){
+  if(busy)return;
+  busy=true;
+  JOBS=[];
+  renderCards([]);
+  document.getElementById('jobs-err').style.display='none';
+  document.getElementById('profile-tags').innerHTML='';
 
+  try{
+    // Step 1 — AI extracts structured profile
+    setJobSub(t('analysing'),true);
+    var r1=await fetch('/api/extract-cv',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cvText:cvText}),
+    });
+    var p=await r1.json();
+    if(!r1.ok)throw new Error(p.error||'CV analysis failed');
+    cvProfile=p;
+    showProfileTags(p);
 
+    // Step 2 — search jobs using extracted profile
+    var country=document.getElementById('country-sel').value||'Oman';
+    setJobSub(t('searching')+country+'…',true);
+    var r2=await fetch('/api/find-jobs',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jobTitle:p.jobTitle,skills:p.topSkills||[],country:country}),
+    });
+    var d=await r2.json();
+    if(!r2.ok)throw new Error(d.error||'Job search failed');
+    if(!d.jobs||!d.jobs.length)throw new Error(t('noresults'));
+
+    JOBS=d.jobs.map(function(j,i){
+      var pct=calcMatch(cvText,j.desc||'');
+      return {
+        id:j.id||('r'+i),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
+        en:j.title||'',ar:j.title||'',
+        company:j.company||'',loc:j.location||country,
+        ten:j.type||'Full-time',
+        tar:(j.type||'').toLowerCase().includes('contract')?'عقد مؤقت':'دوام كامل',
+        url:j.apply_link||'',desc:j.desc||'',days_ago:j.days_ago,
+      };
+    }).sort(function(a,b){return b.pct-a.pct;});
+
+    setJobSub('',false);
+    renderCards(JOBS);
+
+  }catch(err){
+    setJobSub('',false);
+    var errEl=document.getElementById('jobs-err');
+    errEl.textContent=err.message;
+    errEl.style.display='';
+    renderCards([]);
+  }finally{busy=false;}
+}
+
+/* Country change — re-runs job search with cached profile ══════════════════ */
+function onCountryChange(){
+  if(!cvProfile||busy)return;
+  busy=true;JOBS=[];renderCards([]);
+  document.getElementById('jobs-err').style.display='none';
+  var country=document.getElementById('country-sel').value||'Oman';
+  setJobSub(t('searching')+country+'…',true);
+  fetch('/api/find-jobs',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({jobTitle:cvProfile.jobTitle,skills:cvProfile.topSkills||[],country:country}),
+  }).then(function(r){return r.json();}).then(function(d){
+    if(!d.jobs||!d.jobs.length)throw new Error(t('noresults'));
+    JOBS=d.jobs.map(function(j,i){
+      var pct=calcMatch(cvText,j.desc||'');
+      return {id:j.id||('r'+i),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
+        en:j.title||'',ar:j.title||'',company:j.company||'',loc:j.location||country,
+        ten:j.type||'Full-time',tar:'دوام كامل',url:j.apply_link||'',
+        desc:j.desc||'',days_ago:j.days_ago};
+    }).sort(function(a,b){return b.pct-a.pct;});
+    setJobSub('',false);renderCards(JOBS);
+  }).catch(function(e){
+    setJobSub('',false);
+    var errEl=document.getElementById('jobs-err');
+    errEl.textContent=e.message;errEl.style.display='';
+  }).finally(function(){busy=false;});
+}
+
+/* ══ Job cards ══════════════════════════════════════════════════════════════ */
 function renderCards(jobs){
   var wrap=document.getElementById('job-cards');
-  if(!jobs.length){wrap.innerHTML='<p style="color:var(--tD);text-align:center;padding:40px 0;font-size:14px">'+t('noJobs')+'</p>';return;}
+  if(!jobs.length){
+    wrap.innerHTML='<p style="color:var(--tD);text-align:center;padding:48px 0;font-size:14px">'+
+      (busy?'':lang==='ar'?'لا توجد نتائج.':'No results.')+'</p>';
+    return;
+  }
   wrap.innerHTML='';
   jobs.forEach(function(j,idx){
     var acL=j.match==='high'?'#10B981':j.match==='medium'?'#F59E0B':'#EF4444';
-    var grad=j.match==='high'?'linear-gradient(90deg,#6D28D9,#10B981)':j.match==='medium'?'linear-gradient(90deg,#6D28D9,#F59E0B)':'linear-gradient(90deg,#6D28D9,#EF4444)';
-    var title=lang==='ar'?j.ar:j.en;
-    var type=lang==='ar'?j.tar:j.ten;
-    var fitLbl=j.match==='high'?t('fitHigh'):j.match==='medium'?t('fitMed'):t('fitLow');
-    var isTailoring=tailoring===j.id;
-    var d=document.createElement('div');
-    d.className='jcard';
-    d.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:14px;overflow:hidden;display:grid;grid-template-columns:4px 1fr auto;margin-bottom:10px;animation:fadeUp .4s '+(idx*.05)+'s ease both;opacity:0';
-    d.innerHTML=
+    var grad=j.match==='high'?'linear-gradient(90deg,#6D28D9,#10B981)':
+             j.match==='medium'?'linear-gradient(90deg,#6D28D9,#F59E0B)':
+             'linear-gradient(90deg,#6D28D9,#EF4444)';
+    var fitLbl=j.match==='high'?t('f2').replace('🎯 ',''):
+              j.match==='medium'?(lang==='ar'?'توافق جزئي':'Partial fit'):
+              (lang==='ar'?'توافق منخفض':'Low fit');
+    var badge=j.days_ago!==null&&j.days_ago!==undefined?
+      '<span style="font-size:10.5px;color:var(--g);background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:999px;padding:2px 8px;font-weight:600">'+esc(dAgo(j.days_ago))+'</span>':'';
+    var card=document.createElement('div');
+    card.className='jcard';
+    card.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:14px;overflow:hidden;display:grid;grid-template-columns:4px 1fr auto;margin-bottom:10px;animation:fadeUp .4s '+(idx*.05)+'s ease both;opacity:0';
+    card.innerHTML=
       '<div style="background:'+acL+';opacity:.75"></div>'+
       '<div style="padding:16px 18px">'+
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;flex-wrap:wrap">'+
-          '<span style="font-weight:700;font-size:14.5px;color:var(--t)">'+esc(title)+'</span>'+
-          '<span style="font-size:10.5px;color:var(--tD);background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px">'+esc(type)+'</span>'+
-          (j.days_ago!==null&&j.days_ago!==undefined?'<span style="font-size:10.5px;color:var(--g);background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:999px;padding:2px 8px;font-weight:600">'+esc(daysAgoLabel(j.days_ago))+'</span>':'')+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap">'+
+          '<span style="font-weight:700;font-size:14.5px;color:var(--t)">'+esc(lang==='ar'?j.ar:j.en)+'</span>'+
+          '<span style="font-size:10.5px;color:var(--tD);background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px">'+esc(lang==='ar'?j.tar:j.ten)+'</span>'+
+          badge+
         '</div>'+
         '<div style="font-size:12.5px;color:var(--tM);margin-bottom:12px">'+esc(j.company)+' · '+esc(j.loc)+'</div>'+
         '<div>'+
-          '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--tD);font-weight:500">'+t('compLabel')+'</span><span style="font-size:11.5px;font-weight:700;color:'+acL+'">'+j.pct+'% · '+fitLbl+'</span></div>'+
-          '<div style="height:4px;background:var(--b);border-radius:999px"><div style="height:100%;width:'+j.pct+'%;background:'+grad+';border-radius:999px;box-shadow:0 0 8px '+acL+'55;animation:barIn .9s cubic-bezier(.4,0,.2,1) both"></div></div>'+
+          '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
+            '<span style="font-size:11px;color:var(--tD);font-weight:500">'+(lang==='ar'?'التوافق':'Compatibility')+'</span>'+
+            '<span style="font-size:11.5px;font-weight:700;color:'+acL+'">'+j.pct+'% · '+fitLbl+'</span>'+
+          '</div>'+
+          '<div style="height:4px;background:var(--b);border-radius:999px">'+
+            '<div style="height:100%;width:'+j.pct+'%;background:'+grad+';border-radius:999px;box-shadow:0 0 8px '+acL+'55;animation:barIn .9s cubic-bezier(.4,0,.2,1) both"></div>'+
+          '</div>'+
         '</div>'+
       '</div>'+
       '<div style="padding:16px 16px 16px 0;display:flex;flex-direction:column;gap:8px;justify-content:center;align-items:flex-end">'+
-        '<a href="'+esc(j.url)+'" target="_blank" rel="noopener" style="font-size:12px;font-weight:500;color:var(--tM);border:1px solid var(--b);border-radius:8px;padding:6px 12px;text-decoration:none;font-family:inherit;white-space:nowrap">'+t('viewBtn')+'</a>'+
-        '<button id="tb-'+j.id+'" class="bp" onclick="doTailor(\''+j.id+'\')" '+(tailoring?'disabled':'')+' style="font-size:12.5px;font-weight:700;color:#fff;background:'+(isTailoring?'#6D28D9':'linear-gradient(135deg,#6D28D9,#8B5CF6)')+';border:none;border-radius:8px;padding:7px 14px;display:flex;align-items:center;gap:6px;white-space:nowrap;font-family:inherit;opacity:'+(tailoring&&!isTailoring?.5:1)+'">'+
-          (isTailoring?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="animation:spin .7s linear infinite"><circle cx="12" cy="12" r="9" stroke="#2D1F4E" stroke-width="3"/><path d="M12 3a9 9 0 0 1 9 9" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round"/></svg> '+t('tailoringBtn'):t('tailorBtn'))+
+        '<a href="'+esc(j.url||'#')+'" target="_blank" rel="noopener" style="font-size:12px;font-weight:500;color:var(--tM);border:1px solid var(--b);border-radius:8px;padding:6px 12px;text-decoration:none;font-family:inherit;white-space:nowrap">'+(lang==='ar'?'عرض ↗':'View ↗')+'</a>'+
+        '<button id="tb-'+j.id+'" class="bp" onclick="doTailor(\''+j.id+'\')"'+
+          ' style="font-size:12.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6D28D9,#8B5CF6);border:none;border-radius:8px;padding:7px 14px;display:flex;align-items:center;gap:6px;white-space:nowrap;font-family:inherit">'+
+          (lang==='ar'?'✦ خصّص سيرتي':'✦ Tailor my CV')+
         '</button>'+
       '</div>';
-    wrap.appendChild(d);
+    wrap.appendChild(card);
   });
 }
 
-/* ── AI generate ── */
+/* ══ Tailor CV ══════════════════════════════════════════════════════════════ */
 async function doTailor(jobId){
   var job=JOBS.find(function(j){return j.id===jobId;});
-  if(!job||tailoring) return;
-  if(!cvText){alert(t('errUpload'));return;}
-  tailoring=jobId; currentJob=job;
-  renderCards(JOBS);
-  document.getElementById('jobs-error').style.display='none';
+  if(!job||busy)return;
+  busy=true;currentJob=job;
+  // Update button
+  var btn=document.getElementById('tb-'+jobId);
+  if(btn){btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="animation:spin .7s linear infinite"><circle cx="12" cy="12" r="9" stroke="#2D1F4E" stroke-width="3"/><path d="M12 3a9 9 0 0 1 9 9" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round"/></svg> '+(lang==='ar'?'جارٍ التخصيص…':'Tailoring…');btn.disabled=true;}
+  document.getElementById('jobs-err').style.display='none';
   try{
     var res=await fetch('/api/generate',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({cvText:cvText,jobDescription:job.desc,country:document.getElementById('country-select').value,level:'senior',language:lang}),
+      body:JSON.stringify({cvText:cvText,jobDescription:job.desc,country:document.getElementById('country-sel').value,level:cvProfile?cvProfile.seniorityLevel:'senior',language:lang}),
     });
     var data=await res.json();
-    if(!res.ok) throw new Error(data.error||t('errFail'));
-    lastResult=data; currentTpl='executive';
-    renderResult(data);
-    showResult();
-  }catch(err){
-    var errEl=document.getElementById('jobs-error');
-    errEl.textContent=err.message||t('errFail');
-    errEl.style.display='';
-    tailoring=false; renderCards(JOBS);
-  }
+    if(!res.ok)throw new Error(data.error||'Generation failed');
+    lastResult=data;currentTpl='executive';
+    renderResult(data);goResult();
+  }catch(e){
+    var errEl=document.getElementById('jobs-err');
+    errEl.textContent=e.message;errEl.style.display='';
+    if(btn){btn.innerHTML=lang==='ar'?'✦ خصّص سيرتي':'✦ Tailor my CV';btn.disabled=false;}
+  }finally{busy=false;}
 }
 
-/* ── Render result ── */
+/* ══ Result ═════════════════════════════════════════════════════════════════ */
 function renderResult(data){
+  applyText();
   var cv=data.generated_cv||{};
   var job=currentJob;
-  applyText();
   // Banner
-  document.getElementById('banner-title').textContent=lang==='ar'?job.ar:job.en;
-  document.getElementById('banner-meta').textContent=job.company+' · '+job.loc;
+  document.getElementById('r-title').textContent=lang==='ar'?job.ar:job.en;
+  document.getElementById('r-meta').textContent=job.company+' · '+job.loc;
   var acL=job.match==='high'?'#10B981':job.match==='medium'?'#F59E0B':'#EF4444';
   var grad=job.match==='high'?'linear-gradient(90deg,#6D28D9,#10B981)':job.match==='medium'?'linear-gradient(90deg,#6D28D9,#F59E0B)':'linear-gradient(90deg,#6D28D9,#EF4444)';
-  var fitLbl=job.match==='high'?t('fitHigh'):job.match==='medium'?t('fitMed'):t('fitLow');
-  document.getElementById('banner-fitbar').innerHTML=
-    '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--tD);font-weight:500">'+t('compLabel')+'</span><span style="font-size:11.5px;font-weight:700;color:'+acL+'">'+job.pct+'% · '+fitLbl+'</span></div>'+
+  var fitLbl=job.match==='high'?(lang==='ar'?'توافق ممتاز':'Strong fit'):job.match==='medium'?(lang==='ar'?'توافق جزئي':'Partial fit'):(lang==='ar'?'توافق منخفض':'Low fit');
+  document.getElementById('r-fitbar').innerHTML=
+    '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--tD);font-weight:500">'+(lang==='ar'?'التوافق':'Compatibility')+'</span><span style="font-size:11.5px;font-weight:700;color:'+acL+'">'+job.pct+'% · '+fitLbl+'</span></div>'+
     '<div style="height:4px;background:var(--b);border-radius:999px"><div style="height:100%;width:'+job.pct+'%;background:'+grad+';border-radius:999px;animation:barIn .9s cubic-bezier(.4,0,.2,1) both"></div></div>';
-  // Scores
-  var before=data.match_score||0,after=data.improved_match_score||before;
-  setRing('ring-before','score-before',before,false);
-  setRing('ring-after','score-after',after,true);
+  // Score rings
+  setRing('ring-b','score-b',data.match_score||0,false);
+  setRing('ring-a','score-a',data.improved_match_score||0,true);
   // CTA heading
-  var ctaHdEl=document.getElementById('cta-hd');
-  if(ctaHdEl) ctaHdEl.textContent=lang==='ar'?'مستعد للتقديم في '+job.company+'؟':'Ready to apply to '+job.company+'?';
+  var ch=document.getElementById('t-ctahd');
+  if(ch)ch.textContent=lang==='ar'?'مستعد للتقديم في '+job.company+'؟':'Ready to apply to '+job.company+'?';
+  // Apply button
+  var ab=document.getElementById('t-apply');
+  if(ab)ab.onclick=function(){if(job.url)window.open(job.url,'_blank');};
   // Keywords
-  var mkCard=document.getElementById('keywords-card');
-  var mkList=document.getElementById('keywords-list');
-  mkList.innerHTML='';
+  var kwCard=document.getElementById('kw-card'),kwList=document.getElementById('kw-list');
+  kwList.innerHTML='';
   if(data.missing_keywords&&data.missing_keywords.length){
-    mkCard.style.display='';
+    kwCard.style.display='';
     data.missing_keywords.forEach(function(k){
       var sp=document.createElement('span');
       sp.style.cssText='font-size:12px;background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.3);border-radius:999px;padding:3px 12px';
-      sp.textContent=k; mkList.appendChild(sp);
+      sp.textContent=k;kwList.appendChild(sp);
     });
-  }else{mkCard.style.display='none';}
+  }else{kwCard.style.display='none';}
   // Cover + IQ
-  document.getElementById('cover-text').textContent=data.cover_letter||'';
-  var iqEl=document.getElementById('iq-list');
-  iqEl.innerHTML='';
+  document.getElementById('cover-txt').textContent=data.cover_letter||'';
+  var iq=document.getElementById('iq-list');iq.innerHTML='';
   (data.interview_questions||[]).forEach(function(q){
     var li=document.createElement('li');
     li.style.cssText='font-size:12px;line-height:1.65;color:var(--tM);margin-bottom:8px';
-    li.textContent=q; iqEl.appendChild(li);
+    li.textContent=q;iq.appendChild(li);
   });
-  // Template picker + document
-  buildTplPicker();
-  buildCVDoc(currentTpl);
-  tailoring=false;
+  // Template picker + CV doc
+  buildPicker();buildCVDoc(currentTpl);
 }
 
 function setRing(rid,nid,score,glow){
   var c=score>=75?'#10B981':score>=50?'#F59E0B':'#EF4444';
   var r=document.getElementById(rid);
   r.style.background='conic-gradient('+c+' '+(score*3.6)+'deg,var(--b) 0deg)';
-  if(glow) r.style.boxShadow='0 0 22px '+c+'44';
-  var n=document.getElementById(nid);
-  n.textContent=score; n.style.color=c;
+  if(glow)r.style.boxShadow='0 0 20px '+c+'44';
+  var n=document.getElementById(nid);n.textContent=score;n.style.color=c;
 }
 
-/* ── Template picker ── */
-function buildTplPicker(){
-  var el=document.getElementById('tpl-picker');
-  el.innerHTML='';
+/* ══ Template picker ════════════════════════════════════════════════════════ */
+function buildPicker(){
+  var el=document.getElementById('tpl-picker');el.innerHTML='';
   TPLS.forEach(function(tpl){
     var btn=document.createElement('div');
     btn.className='topt';
-    btn.style.cssText='flex-shrink:0;border-radius:10px;border:2px solid '+(currentTpl===tpl.id?'var(--v)':'var(--b)')+';overflow:hidden;background:var(--card);box-shadow:'+(currentTpl===tpl.id?'0 4px 20px var(--vGlow)':'none');
+    btn.style.cssText='flex-shrink:0;border-radius:10px;border:2px solid '+(currentTpl===tpl.id?'var(--v)':'var(--b)')+';overflow:hidden;background:var(--card);box-shadow:'+(currentTpl===tpl.id?'0 4px 20px rgba(139,92,246,.3)':'none');
     btn.innerHTML=
       '<div style="width:62px;height:48px;background:'+tpl.hBg+';padding:6px 7px;display:flex;flex-direction:column;gap:2.5px">'+
-        '<div style="height:5px;background:'+tpl.acct+';border-radius:2px;width:65%;opacity:.9"></div>'+
-        '<div style="height:2.5px;background:'+tpl.acct+'44;border-radius:1px;width:100%"></div>'+
-        '<div style="height:2px;background:rgba(150,150,150,.2);border-radius:1px;width:80%"></div>'+
-      '</div>'+
+      '<div style="height:5px;background:'+tpl.ac+';border-radius:2px;width:65%;opacity:.9"></div>'+
+      '<div style="height:2.5px;background:'+tpl.ac+'44;border-radius:1px;width:100%"></div>'+
+      '<div style="height:2px;background:rgba(150,150,150,.2);border-radius:1px;width:80%"></div></div>'+
       '<div style="padding:4px 5px 5px;background:var(--card)">'+
-        '<div style="font-size:9.5px;font-weight:'+(currentTpl===tpl.id?700:500)+';color:'+(currentTpl===tpl.id?'var(--v)':'var(--tD)')+'">'+tpl.label+'</div>'+
-        '<div style="font-size:8.5px;color:#2D3748">'+tpl.sub+'</div>'+
-      '</div>';
-    btn.addEventListener('click',function(){currentTpl=tpl.id;buildTplPicker();buildCVDoc(tpl.id);});
+      '<div style="font-size:9.5px;font-weight:'+(currentTpl===tpl.id?700:500)+';color:'+(currentTpl===tpl.id?'var(--v)':'var(--tD)')+'">'+tpl.label+'</div>'+
+      '<div style="font-size:8.5px;color:#2D3748">'+tpl.sub+'</div></div>';
+    btn.addEventListener('click',function(){currentTpl=tpl.id;buildPicker();buildCVDoc(tpl.id);});
     el.appendChild(btn);
   });
 }
 
-/* ── CV document ── */
+/* ══ CV Document builder ════════════════════════════════════════════════════ */
 function buildCVDoc(tplId){
-  if(!lastResult) return;
+  if(!lastResult)return;
   var cv=lastResult.generated_cv||{};
   var isAr=lang==='ar';
-  var doc=document.getElementById('cv-document');
-  doc.className='tpl-'+tplId+(isAr?' cv-arabic':'');
-  if(isAr) doc.setAttribute('dir','rtl'); else doc.removeAttribute('dir');
-  var nm=detectedName||(isAr?'الاسم':'Your Name');
-  var role='';
-  if(cv.experience&&cv.experience[0]) role=(cv.experience[0].title||'').split(/[-–—/|]/)[0].trim();
-  var skills=buildSkills(cv.skills||[],tplId);
-  var exp=buildExp(cv.experience||[]);
-  var edu=cv.education&&cv.education.length?cv.education.map(function(e){return '<p style="font-size:11.5px;margin-bottom:2px">'+esc(e)+'</p>';}).join(''):'';
+  var doc=document.getElementById('cv-doc');
+  doc.className='cv tpl-'+tplId+(isAr?' ar':'');
+  if(isAr)doc.setAttribute('dir','rtl');else doc.removeAttribute('dir');
+  var nm=userName||(isAr?'الاسم':'Your Name');
+  var role=cv.experience&&cv.experience[0]?(cv.experience[0].title||'').split(/[-–—/|]/)[0].trim():'';
+  var stColor={executive:'#0f1f4b',zurich:'#c0392b',ember:'#b05e3a',slate:'#0ea5e9',pearl:'#111',aurora:'#2c5364',onyx:'#4ade80',sand:'#8b5e3c',prism:'#7c3aed',titanium:'#52525b'};
+  var ac=stColor[tplId]||'#8B5CF6';
+  var skillsHTML=buildSkills(cv.skills||[],tplId,ac);
+  var expHTML=buildExp(cv.experience||[],tplId);
+  var eduHTML=(cv.education||[]).map(function(e){return '<p style="font-size:11.5px;margin-bottom:2px">'+esc(e)+'</p>';}).join('');
   var body=
-    '<div class="cv-st">'+t('cvSummary')+'</div>'+
+    '<div class="cv-st" style="color:'+ac+';border-bottom:1px solid '+ac+'33">'+t('sum')+'</div>'+
     '<p style="font-size:12px;line-height:1.7;opacity:.85;margin-bottom:4px">'+esc(cv.professional_summary||'')+'</p>'+
-    '<div class="cv-st">'+t('cvSkills')+'</div>'+skills+
-    '<div class="cv-st">'+t('cvExp')+'</div>'+exp+
-    (edu?'<div class="cv-st">'+t('cvEdu')+'</div>'+edu:'');
+    '<div class="cv-st" style="color:'+ac+';border-bottom:1px solid '+ac+'33">'+t('skills')+'</div>'+skillsHTML+
+    '<div class="cv-st" style="color:'+ac+';border-bottom:1px solid '+ac+'33">'+t('exp')+'</div>'+expHTML+
+    (eduHTML?'<div class="cv-st" style="color:'+ac+';border-bottom:1px solid '+ac+'33">'+t('edu')+'</div>'+eduHTML:'');
   if(tplId==='zurich'){
-    doc.innerHTML='<div class="cv-bar"></div><div class="cv-inner"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role">'+esc(role)+'</div>':'')+'<div class="cv-rule"></div>'+body+'</div>';
-    return;
+    doc.innerHTML='<div class="cv-bar"></div><div class="cv-inner"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role" style="color:'+ac+'">'+esc(role)+'</div>':'')+
+      '<div class="cv-rule"></div>'+body+'</div>';return;
   }
   if(tplId==='slate'){
     doc.innerHTML=
-      '<div class="cv-sidebar"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role">'+esc(role)+'</div>':'')+'<div class="cv-rule"></div>'+
-      '<div class="cv-st-side">'+t('cvSkills')+'</div>'+(cv.skills||[]).map(function(s){return '<span class="cv-chip-side">· '+esc(s)+'</span>';}).join('')+
-      (edu?'<div class="cv-st-side" style="margin-top:14px">'+t('cvEdu')+'</div>'+edu:'')+'</div>'+
-      '<div class="cv-main"><div class="cv-st">'+t('cvSummary')+'</div><p style="font-size:12px;line-height:1.7;opacity:.85;margin-bottom:4px">'+esc(cv.professional_summary||'')+'</p>'+
-      '<div class="cv-st">'+t('cvExp')+'</div>'+exp+'</div>';
-    return;
+      '<div class="cv-sidebar"><div class="cv-name" style="font-family:\'Fraunces\',serif">'+esc(nm)+'</div>'+(role?'<div class="cv-role" style="color:#94a3b8">'+esc(role)+'</div>':'')+
+      '<div class="cv-rule" style="border-top:1px solid #334155;height:0;margin:0 0 12px"></div>'+
+      '<div class="cv-st" style="color:#38bdf8">'+t('skills')+'</div>'+(cv.skills||[]).map(function(s){return '<span style="font-size:10.5px;color:#e2e8f0;display:block;padding:2px 0;line-height:1.6">· '+esc(s)+'</span>';}).join('')+
+      (eduHTML?'<div class="cv-st" style="color:#38bdf8;margin-top:16px">'+t('edu')+'</div>'+eduHTML:'')+'</div>'+
+      '<div class="cv-main"><div class="cv-st" style="color:#0ea5e9;border-bottom:1px solid #e2e8f0">'+t('sum')+'</div><p style="font-size:12px;line-height:1.7;opacity:.85">'+esc(cv.professional_summary||'')+'</p>'+
+      '<div class="cv-st" style="color:#0ea5e9;border-bottom:1px solid #e2e8f0">'+t('exp')+'</div>'+expHTML+'</div>';return;
   }
   if(tplId==='titanium'){
-    doc.innerHTML='<div class="cv-hdr"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<span class="cv-role-pill">'+esc(role)+'</span>':'')+'</div><div class="cv-rule"></div><div class="cv-body">'+body+'</div>';
-    return;
+    doc.innerHTML='<div class="cv-hdr"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<span style="font-size:9.5px;background:#fff;color:#18181b;padding:4px 12px;border-radius:999px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap">'+esc(role)+'</span>':'')+
+      '</div><div class="cv-rule"></div><div class="cv-body">'+body+'</div>';return;
+  }
+  if(tplId==='prism'){
+    doc.innerHTML='<div class="cv-hdr"><div style="position:absolute;top:0;right:0;width:120px;height:100%;background:#7c3aed;clip-path:polygon(60px 0,100% 0,100% 100%,0 100%);opacity:.08"></div>'+
+      '<div class="cv-name" style="position:relative">'+esc(nm)+'</div>'+(role?'<div class="cv-role" style="color:#7c3aed;position:relative">'+esc(role)+'</div>':'')+
+      '</div><div class="cv-body">'+body+'</div>';return;
   }
   if(tplId==='ember'||tplId==='sand'){
-    doc.innerHTML='<div class="cv-hdr"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role">'+esc(role)+'</div>':'')+'</div><div class="cv-body">'+body+'</div>';
-    return;
+    doc.innerHTML='<div class="cv-hdr"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role">'+esc(role)+'</div>':'')+
+      '</div><div class="cv-body">'+body+'</div>';return;
   }
-  // Default
-  doc.innerHTML='<div class="cv-hdr" style="border-radius:10px 10px 0 0"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role">'+esc(role)+'</div>':'')+'</div><div class="cv-rule"></div><div class="cv-body">'+body+'</div>';
+  // Default header-body
+  doc.innerHTML='<div class="cv-hdr"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role">'+esc(role)+'</div>':'')+
+    '</div><div class="cv-rule"></div><div class="cv-body">'+body+'</div>';
 }
 
-function buildSkills(skills,tplId){
-  if(!skills.length) return '';
-  if(tplId==='zurich'||tplId==='sand') return '<p class="cv-plain">'+skills.map(esc).join('  ·  ')+'</p>';
-  return '<div style="display:flex;flex-wrap:wrap">'+skills.map(function(s){return '<span class="cv-chip">'+esc(s)+'</span>';}).join('')+'</div>';
+function buildSkills(skills,tplId,ac){
+  if(!skills.length)return '';
+  var plain=tplId==='zurich'||tplId==='sand';
+  if(plain)return '<p style="font-size:12px;line-height:1.8;opacity:.85">'+skills.map(esc).join('  ·  ')+'</p>';
+  return '<div style="display:flex;flex-wrap:wrap">'+skills.map(function(s){
+    return '<span class="cv-chip" style="background:'+ac+'18;color:'+ac+';border-color:'+ac+'44">'+esc(s)+'</span>';
+  }).join('')+'</div>';
 }
-
-function buildExp(exp){
+function buildExp(exp,tplId){
   return exp.map(function(r){
     return '<div style="margin-bottom:12px">'+
       '<div class="cv-rt">'+esc(r.title||'')+' — '+esc(r.company||'')+'</div>'+
-      '<div class="cv-rm">'+esc(r.dates||'')+'</div>'+
+      '<div class="cv-rd">'+esc(r.dates||'')+'</div>'+
       '<ul class="cv-bl">'+(r.bullets||[]).map(function(b){return '<li>'+esc(b)+'</li>';}).join('')+'</ul>'+
     '</div>';
   }).join('');
 }
 
-function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
-
-/* ── Init ── */
+/* ══ Init ═══════════════════════════════════════════════════════════════════ */
 applyText();
 </script>
 </body>
