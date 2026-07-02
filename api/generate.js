@@ -1,6 +1,5 @@
-// /api/generate.js
-// One serverless function. Vercel auto-detects anything in /api as a
-// function — no extra config, no build step, no framework needed.
+// /api/generate.js — Seerah AI (سيرة)
+// Supports Arabic and English output via the `language` parameter.
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -9,7 +8,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { cvText, jobDescription, country, level } = req.body || {};
+    const { cvText, jobDescription, country, level, language } = req.body || {};
 
     if (!cvText || !jobDescription) {
       res.status(400).json({ error: 'cvText and jobDescription are required' });
@@ -22,54 +21,37 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    const prompt = `You are an expert CV writer and ATS (Applicant Tracking System) optimization specialist.
-Your goal is to maximize this candidate's chances of passing an automated
-keyword filter AND impressing a human reviewer for THIS SPECIFIC job — while
-staying 100% truthful to their real background.
+    const isArabic = language === 'ar';
 
-Follow this process:
+    const langInstruction = isArabic
+      ? `CRITICAL LANGUAGE REQUIREMENT: Generate ALL text content in formal Modern Standard Arabic (الفصحى). This includes: professional_summary, every item in the skills array, every bullet in experience, education entries, cover_letter, AND every interview question. Keep technical software names (AutoCAD, MS Project, Primavera P6, etc.), company names, certifications (PMP, NEBOSH, etc.), and universally English terms (like "AI", "SCADA", "FIDIC") in English or as bilingual Arabic/English as is professionally standard in the Arab Gulf region. All narrative text must be fluent, natural Arabic — not machine-translated.`
+      : `Generate all content in English.`;
 
-1. Read the job description carefully and identify its most important
-   required skills, qualifications, and the exact phrases/terminology it
-   uses (e.g. "stakeholder management", "P&L ownership", "Agile delivery").
-2. Rewrite the professional summary so it leads with the strongest genuine
-   matches between the candidate's background and this job, using the job
-   posting's own terminology wherever the candidate truthfully has that
-   skill or experience (mirror their exact wording, don't just paraphrase
-   it — ATS keyword matching is often literal).
-3. Reorder AND rewrite the skills list so the skills most relevant to this
-   specific job appear first. Where the candidate has a matching skill,
-   phrase it using the exact term from the job description rather than a
-   synonym.
-4. For each role in the experience section, rewrite the bullet points to be
-   achievement-oriented and quantified, and REORDER them within that role so
-   the bullets most relevant to this job's requirements come first. Keep the
-   roles themselves in standard reverse-chronological order (most recent job
-   first) — only reorder bullets within a role, never the roles themselves.
-5. Never invent employers, job titles, dates, or skills the candidate
-   doesn't actually have. If an important skill from the job description is
-   genuinely missing from their background, put it in missing_keywords
-   instead of fabricating it into the CV.
-6. Score improved_match_score honestly based on real overlap between the
-   rewritten CV and the job description — reordering and rephrasing existing
-   true content can genuinely raise the score, but it should rarely reach
-   100, since missing_keywords (skills the candidate doesn't truly have)
-   still represent a real gap.
+    const prompt = `You are an expert ATS CV writer and career coach specialising in the GCC job market. Your goal is to maximise this candidate's chances of passing automated keyword filters AND impressing a human reviewer for THIS SPECIFIC job — while staying 100% truthful to their real background.
+
+${langInstruction}
+
+Follow this process precisely:
+1. Read the job description carefully and identify its most important required skills, qualifications, and exact phrases/terminology.
+2. Rewrite the professional summary so it leads with the strongest genuine matches between the candidate's background and this job, using the job posting's own terminology where the candidate truthfully has that skill.
+3. Reorder AND rewrite the skills list — most relevant to THIS specific job first. Where the candidate has a matching skill, phrase it using the exact term from the job description rather than a synonym (ATS keyword matching is often literal).
+4. For each role in experience, rewrite the bullet points to be achievement-oriented and quantified, and REORDER them so the most relevant to this job's requirements come first. Keep roles in standard reverse-chronological order.
+5. Score improved_match_score honestly — reordering and rephrasing existing true content can genuinely raise the score, but it should not reach 100 if skills are genuinely missing.
+6. Never invent employers, job titles, dates, or skills the candidate does not actually have. Genuinely missing skills go in missing_keywords.
 
 Respond with ONLY valid JSON, no markdown fences, no commentary, matching exactly this schema:
-
 {
-  "match_score": <integer 0-100, how well the ORIGINAL unedited CV matched the job description before any rewriting>,
-  "improved_match_score": <integer 0-100, how well the REWRITTEN cv (the generated_cv below) matches the job description after your improvements — this should be honestly higher than match_score if your rewrite genuinely improved alignment, but do not inflate it; base it on real keyword and qualification overlap>,
-  "missing_keywords": [<up to 6 important job-description keywords/skills genuinely absent from the candidate's background>],
+  "match_score": <integer 0-100, original unedited CV vs job description BEFORE rewriting>,
+  "improved_match_score": <integer 0-100, rewritten CV vs job description AFTER improvements>,
+  "missing_keywords": [<up to 6 important job-description keywords genuinely absent from the candidate's background>],
   "generated_cv": {
-    "professional_summary": "<3 sentences, ATS-friendly, leads with the strongest matches to this job>",
+    "professional_summary": "<3 ATS-friendly sentences, leads with strongest matches to this job>",
     "skills": [<up to 10 strings, ordered most-relevant-to-this-job first>],
     "experience": [{"title": "...", "company": "...", "dates": "...", "bullets": [<3-5 bullets, most relevant to this job first>]}],
     "education": [<plain strings>]
   },
-  "cover_letter": "<3-4 paragraphs, plain text>",
-  "interview_questions": [<8-10 strings>]
+  "cover_letter": "<3-4 paragraphs, plain text, tailored to this specific role and company>",
+  "interview_questions": [<8-10 strings tailored to this specific role>]
 }
 
 CANDIDATE'S CURRENT CV:
