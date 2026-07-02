@@ -8,14 +8,16 @@ const COUNTRY_CODES = {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).end(); return; }
-  const { jobTitle, country } = req.body || {};
-  if (!jobTitle) { res.status(400).json({ error: 'jobTitle required' }); return; }
+  const { jobTitle, searchTitle, country } = req.body || {};
+  const titleToSearch = searchTitle || jobTitle; // prefer broad searchTitle
+  if (!titleToSearch) { res.status(400).json({ error: 'jobTitle required' }); return; }
   const apiKey = process.env.RAPIDAPI_KEY;
   if (!apiKey) { res.status(500).json({ error: 'RAPIDAPI_KEY is not set in Vercel environment variables' }); return; }
 
   try {
-    // Simplest possible query — just like Google: "engineer Oman"
-    const core = jobTitle
+    // Use the broad searchTitle — already simplified by extract-cv.js
+    // Strip remaining seniority words just in case
+    const core = (titleToSearch)
       .replace(/\b(senior|sr\.?|lead|principal|chief|head of|junior|jr\.?|associate)\b/gi, '')
       .replace(/\s+/g, ' ').trim();
 
