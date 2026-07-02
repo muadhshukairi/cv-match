@@ -143,6 +143,104 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
 .tpl-titanium .cv-body{background:#fff}
 .tpl-titanium .cv-st{color:#52525b}
 .tpl-titanium .cv-chip{background:#f4f4f5;color:#18181b;border-color:#e4e4e7;border-radius:4px}
+
+/* ══════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — max-width 768px
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Header ── */
+  header { padding: 12px 16px !important; }
+  #hdr-right { gap: 6px !important; }
+  #hdr-right span[style*="font-size:13px"] { display: none; }
+
+  /* ── Upload screen ── */
+  #upload-grid {
+    grid-template-columns: 1fr !important;
+    padding: 28px 16px 32px !important;
+    gap: 28px !important;
+  }
+  #upload-grid h1 { font-size: 34px !important; }
+  #upload-grid p[id="t-sub"] { font-size: 14px !important; }
+
+  /* ── Jobs screen ── */
+  #jobs-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  #jobs-header select { width: 100% !important; }
+
+  .jcard {
+    grid-template-columns: 4px 1fr !important;
+  }
+  .jcard-actions {
+    grid-column: 2 !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    padding: 0 14px 14px 14px !important;
+    gap: 8px !important;
+  }
+  .jcard-actions button { font-size: 12px !important; padding: 6px 12px !important; }
+  .jcard-actions a { font-size: 11px !important; padding: 5px 10px !important; }
+
+  /* ── Result screen ── */
+  #result-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  #scores-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  #scores-bar > div:nth-child(2) { display: none !important; } /* hide arrow */
+  #scores-bar > div:last-child {
+    flex-direction: column !important;
+    width: 100% !important;
+    margin-inline-start: 0 !important;
+  }
+  #scores-bar button { width: 100% !important; justify-content: center !important; }
+
+  /* Job banner */
+  #result-view > div > div:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  #r-fitbar { min-width: unset !important; width: 100% !important; }
+
+  /* Template picker labels */
+  #tpl-picker { gap: 6px !important; }
+
+  /* CTA strip */
+  #result-view > div > div:last-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  #result-view > div > div:last-child > div:last-child {
+    width: 100% !important;
+    flex-direction: column !important;
+  }
+  #result-view > div > div:last-child button { width: 100% !important; justify-content: center !important; }
+
+  /* Keywords card */
+  #kw-list { gap: 6px !important; }
+
+  /* General padding reduction */
+  #s-jobs > div, #s-result > div { padding: 16px !important; }
+
+  /* Reduce h1 on upload */
+  h1[style*="font-size:44px"] { font-size: 32px !important; letter-spacing: -1px !important; }
+}
+
+/* ── Extra small phones (< 420px) ── */
+@media (max-width: 420px) {
+  header { padding: 10px 14px !important; }
+  #upload-grid h1, h1[style*="font-size:44px"] { font-size: 28px !important; }
+  .jcard { font-size: 13px !important; }
+  #tpl-picker .topt { transform: scale(0.9); transform-origin: left; }
+}
+
 </style>
 </head>
 <body>
@@ -176,8 +274,37 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
 <!-- ═══ SCREEN 1: UPLOAD ═══ -->
 <main id="s-upload" class="screen">
   <div style="position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:600px;height:500px;background:radial-gradient(ellipse,rgba(109,40,217,.28) 0%,transparent 68%);pointer-events:none;z-index:0"></div>
-  <section style="max-width:880px;margin:0 auto;padding:52px 24px 40px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;position:relative">
+  <section id="upload-grid" style="max-width:880px;margin:0 auto;padding:52px 24px 40px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;position:relative">
     <div>
+      <!-- Large hero logo -->
+      <div class="a1" style="display:flex;align-items:center;gap:16px;margin-bottom:28px">
+        <svg width="72" height="72" viewBox="0 0 44 44" fill="none">
+          <defs>
+            <linearGradient id="hbg" x1="0" y1="44" x2="44" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#0A0618"/><stop offset="100%" stop-color="#1A1040"/>
+            </linearGradient>
+            <linearGradient id="hbr" x1="5" y1="0" x2="39" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#6D28D9"/><stop offset="48%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#10B981"/>
+            </linearGradient>
+            <filter id="hgl" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="1.5" result="b"/><feComposite in="SourceGraphic" in2="b" operator="over"/>
+            </filter>
+          </defs>
+          <rect width="44" height="44" rx="13" fill="url(#hbg)"/>
+          <rect width="44" height="44" rx="13" fill="none" stroke="rgba(139,92,246,.3)" stroke-width="1"/>
+          <rect x="5" y="28" width="9" height="10" rx="2.5" fill="url(#hbr)" filter="url(#hgl)"/>
+          <rect x="18" y="20" width="9" height="18" rx="2.5" fill="url(#hbr)" filter="url(#hgl)"/>
+          <rect x="31" y="10" width="9" height="28" rx="2.5" fill="url(#hbr)" filter="url(#hgl)"/>
+          <circle cx="35.5" cy="8" r="2.2" fill="white" opacity="0.75"/>
+        </svg>
+        <div>
+          <div style="font-family:'Inter',sans-serif;font-size:34px;font-weight:900;letter-spacing:-1.5px;line-height:1">
+            <span style="color:#fff">Seerah</span><span style="color:#8B5CF6"> AI</span>
+          </div>
+          <div style="font-family:'Cairo',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:2px;margin-top:3px">سيرة</div>
+        </div>
+      </div>
+
       <div class="a1" style="display:inline-flex;align-items:center;gap:8px;background:var(--vDim);border:1px solid rgba(139,92,246,.3);border-radius:999px;padding:5px 16px;margin-bottom:24px">
         <span style="width:6px;height:6px;border-radius:50%;background:var(--v);animation:pulse 2s ease infinite;flex-shrink:0"></span>
         <span id="t-badge" style="font-size:11px;color:var(--v);font-weight:700;letter-spacing:.5px"></span>
@@ -211,7 +338,7 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
 <!-- ═══ SCREEN 2: JOBS ═══ -->
 <main id="s-jobs" style="display:none">
   <div class="screen" style="max-width:840px;margin:0 auto;padding:28px 20px">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div id="jobs-header" style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
       <div style="flex:1">
         <h2 id="t-jtitle" style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px"></h2>
         <p id="jobs-sub" style="font-size:13px;color:var(--tM);margin-bottom:10px"></p>
@@ -254,7 +381,7 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
       <div id="r-fitbar" style="min-width:190px"></div>
     </div>
     <!-- Scores + downloads -->
-    <div style="background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div id="scores-bar" style="background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:12px">
         <div id="ring-b" style="width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <div style="width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center"><span id="score-b" style="font-size:13px;font-weight:900">0</span></div>
@@ -293,7 +420,7 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
       <div id="tpl-picker" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px"></div>
     </div>
     <!-- CV doc + side panels -->
-    <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;margin-bottom:18px">
+    <div id="result-grid" style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;margin-bottom:18px">
       <div id="cv-doc" style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05)"></div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:16px 18px">
@@ -759,7 +886,7 @@ function renderCards(jobs){
           '</div>'+
         '</div>'+
       '</div>'+
-      '<div style="padding:16px 16px 16px 0;display:flex;flex-direction:column;gap:8px;justify-content:center;align-items:flex-end">'+
+      '<div class="jcard-actions" style="padding:16px 16px 16px 0;display:flex;flex-direction:column;gap:8px;justify-content:center;align-items:flex-end">'+
         '<a href="'+esc(j.url||'#')+'" target="_blank" rel="noopener" style="font-size:12px;font-weight:500;color:var(--tM);border:1px solid var(--b);border-radius:8px;padding:6px 12px;text-decoration:none;font-family:inherit;white-space:nowrap">'+(lang==='ar'?'عرض ↗':'View ↗')+'</a>'+
         '<button id="tb-'+j.id+'" class="bp" onclick="doTailor(\''+j.id+'\')"'+
           ' style="font-size:12.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6D28D9,#8B5CF6);border:none;border-radius:8px;padding:7px 14px;display:flex;align-items:center;gap:6px;white-space:nowrap;font-family:inherit">'+
