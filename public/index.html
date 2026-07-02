@@ -254,21 +254,20 @@ body{background:var(--bg);color:var(--t);font-family:var(--ff)}
 <main id="jobs-view" style="display:none">
   <div class="screen" style="max-width:840px;margin:0 auto;padding:28px 20px">
 
-    <!-- Search form — user controls this, not auto-extracted from CV -->
-    <div style="background:var(--card);border:1px solid var(--b2);border-radius:16px;padding:22px 24px;margin-bottom:20px">
-      <h2 id="jobs-title" style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:16px"></h2>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <input id="job-search-query" onkeydown="if(event.key==='Enter')doJobSearch()"
-          style="flex:1;min-width:200px;background:var(--bg);color:var(--t);border:1px solid var(--b2);border-radius:10px;padding:11px 16px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s"
-          onfocus="this.style.borderColor='var(--v)'" onblur="this.style.borderColor='var(--b2)'">
-        <select id="country-select"
-          style="background:var(--bg);color:var(--t);border:1px solid var(--b2);border-radius:10px;padding:11px 14px;font-size:13px;font-family:inherit;cursor:pointer;outline:none">
+    <!-- Header: AI-auto-searched, user only changes country -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div style="flex:1">
+        <h2 id="jobs-title" style="font-family:'Fraunces',serif;font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px"></h2>
+        <p id="jobs-sub" style="font-size:13px;color:var(--tM);margin-bottom:10px"></p>
+        <!-- Profile tags extracted by AI -->
+        <div id="profile-pill" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <select id="country-select" onchange="onCountryChange()"
+          style="background:var(--card);color:var(--t);border:1px solid var(--b);border-radius:10px;padding:8px 14px;font-size:13px;font-family:inherit;cursor:pointer;outline:none">
           <option>Oman</option><option>UAE</option><option>Saudi Arabia</option><option>Qatar</option><option>Bahrain</option><option>Kuwait</option>
         </select>
-        <button onclick="doJobSearch()" id="search-btn"
-          style="background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:10px;padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:opacity .15s"></button>
       </div>
-      <p id="jobs-sub" style="font-size:12px;color:var(--tD);margin-top:10px"></p>
     </div>
 
     <!-- Portal links -->
@@ -424,23 +423,11 @@ function t(k){return (T[lang]&&T[lang][k])||T.en[k]||k;}
 
 /* ── State ── */
 var lang='en',cvText='',detectedName='',lastResult=null,currentJob=null,currentTpl='executive',tailoring=false;
-var JOBS=[]; // filled by loadLiveJobs() after CV upload
+var JOBS=[];        // filled by autoSearchJobs() after CV upload
+var cvProfile=null; // filled by extractCVProfile() — AI-extracted
 var jobsLoading=false;
 
-var TPLS=[
-  {id:'executive',label:'Executive',sub:'Navy & gold',   hBg:'#0f1f4b',acct:'#C9A84C'},
-  {id:'zurich',   label:'Zürich',   sub:'Swiss red',     hBg:'#fff',   acct:'#c0392b'},
-  {id:'ember',    label:'Ember',    sub:'Terracotta',    hBg:'#fdf8f3',acct:'#b05e3a'},
-  {id:'slate',    label:'Slate',    sub:'Dark sidebar',  hBg:'#1e293b',acct:'#38bdf8'},
-  {id:'pearl',    label:'Pearl',    sub:'Black & white', hBg:'#111',   acct:'#fff'},
-  {id:'aurora',   label:'Aurora',   sub:'Ocean gradient',hBg:'#203a43',acct:'#7dd3d8'},
-  {id:'onyx',     label:'Onyx',     sub:'Dark mode',     hBg:'#0d1117',acct:'#4ade80'},
-  {id:'sand',     label:'Sand',     sub:'Warm beige',    hBg:'#fef9f0',acct:'#8b5e3c'},
-  {id:'prism',    label:'Prism',    sub:'Purple geo',    hBg:'#fff',   acct:'#7c3aed'},
-  {id:'titanium', label:'Titanium', sub:'Sleek mono',    hBg:'#18181b',acct:'#a1a1aa'},
-];
-
-/* ── Client-side match scoring ── */
+/* ── Client-side match scoring (keyword overlap) ── */
 function calcMatch(cv,desc){
   var cvW=new Set(cv.toLowerCase().split(/\W+/).filter(function(w){return w.length>3;}));
   var dW=(desc||'').toLowerCase().split(/\W+/).filter(function(w){return w.length>3;});
@@ -450,70 +437,102 @@ function calcMatch(cv,desc){
   return Math.min(Math.max(raw,15),92);
 }
 
-/* ── Extract job title from CV text ── */
-function detectTitle(txt){
-  var lines=txt.split('\n').map(function(l){return l.trim();}).filter(Boolean);
-  for(var i=1;i<Math.min(7,lines.length);i++){
-    var l=lines[i];
-    if(l.length>8&&l.length<90&&!l.includes('@')&&!/^\+?\d/.test(l)&&!/^(Muscat|Dubai|Riyadh|Doha|Abu|مسقط|دبي)/i.test(l)){
-      return l.split(/[|·–—]/)[0].trim();
-    }
-  }
-  return 'Engineer';
-}
-
-/* ── Days ago label ── */
+/* ── Days-ago badge label ── */
 function daysAgoLabel(n){
   if(n===null||n===undefined) return '';
   if(n===0) return lang==='ar'?'نُشر اليوم':'Today';
   if(n===1) return lang==='ar'?'منذ يوم':'1d ago';
   if(n<7)   return lang==='ar'?'منذ '+n+' أيام':n+'d ago';
   if(n<14)  return lang==='ar'?'هذا الأسبوع':'This week';
-  if(n<31)  return lang==='ar'?'هذا الشهر':Math.floor(n/7)+'w ago';
-  return '';
+  return lang==='ar'?'هذا الشهر':Math.floor(n/7)+'w ago';
 }
 
-/* ── Extract key skills from raw CV text ── */
-function extractSkills(txt){
-  // Common engineering/professional keywords to pick up from the CV
-  var keywords=['AutoCAD','Civil 3D','Primavera','MS Project','FIDIC','SCADA',
-    'PMP','NEBOSH','GIS','Project Management','Asset Management','O&M',
-    'Python','Excel','SQL','SAP','BIM','Revit','MATLAB','HSE',
-    'Procurement','Contracts','Operations','Maintenance','Construction'];
-  var found=[];
-  var lower=txt.toLowerCase();
-  keywords.forEach(function(k){ if(lower.includes(k.toLowerCase())) found.push(k); });
-  return found.slice(0,3);
+/* ── Jobs sub-label ── */
+function setJobsStatus(msg,loading){
+  var sub=document.getElementById('jobs-sub');
+  if(!sub) return;
+  if(loading){
+    sub.innerHTML='<span style="display:inline-flex;align-items:center;gap:6px">'+
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="animation:spin .7s linear infinite">'+
+      '<circle cx="12" cy="12" r="9" stroke="#2D1F4E" stroke-width="3"/>'+
+      '<path d="M12 3a9 9 0 0 1 9 9" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round"/></svg>'+
+      esc(msg)+'</span>';
+  } else if(msg){
+    sub.innerHTML='<span style="color:var(--red)">'+esc(msg)+'</span>';
+  } else {
+    var n=JOBS.length;
+    sub.textContent=n+' '+(lang==='ar'?'وظيفة حديثة':'live jobs')+
+      ' · '+(lang==='ar'?'مرتبة حسب التوافق':'sorted by compatibility');
+  }
 }
 
-/* ── Job search — triggered by Search button or Enter ── */
-function doJobSearch(){
-  var query=(document.getElementById('job-search-query').value||'').trim();
-  if(!query) return;
-  loadLiveJobs(query);
+/* ── Show profile tags extracted by AI ── */
+function showProfileTags(profile){
+  var pill=document.getElementById('profile-pill');
+  if(!pill||!profile) return;
+  var tags=[];
+  if(profile.jobTitle)        tags.push('💼 '+profile.jobTitle);
+  if(profile.yearsExperience) tags.push('📅 '+profile.yearsExperience+(lang==='ar'?' سنوات':' yrs'));
+  if(profile.educationField)  tags.push('🎓 '+profile.educationField);
+  (profile.certifications||[]).forEach(function(c){ tags.push('✓ '+c); });
+  (profile.topSkills||[]).slice(0,3).forEach(function(s){ tags.push(s); });
+  pill.innerHTML=tags.map(function(tag){
+    return '<span style="font-size:11px;color:var(--tM);background:var(--card);border:1px solid var(--b);border-radius:999px;padding:3px 10px">'+esc(tag)+'</span>';
+  }).join('');
 }
 
-async function loadLiveJobs(query){
-  if(!query||jobsLoading) return;
+/* ── Step 1: AI extracts structured profile from CV ── */
+async function extractCVProfile(){
+  setJobsStatus(lang==='ar'?'يحلّل سيرتك الذاتية بالذكاء الاصطناعي…':'Analysing your CV with AI…',true);
+  var res=await fetch('/api/extract-cv',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({cvText:cvText}),
+  });
+  if(!res.ok) throw new Error('CV extraction failed');
+  return await res.json();
+}
+
+/* ── Step 2: Search jobs using extracted profile ── */
+async function searchWithProfile(profile){
+  var country=document.getElementById('country-select').value||'Oman';
+  setJobsStatus(
+    lang==='ar'?'يبحث عن وظائف في '+country+'…':'Searching for jobs in '+country+'…',
+    true
+  );
+  var res=await fetch('/api/find-jobs',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      jobTitle: profile.jobTitle,
+      skills:   profile.topSkills||[],
+      country:  country,
+    }),
+  });
+  var data=await res.json();
+  if(!res.ok) throw new Error(data.error||'Job search failed');
+  return data.jobs||[];
+}
+
+/* ── Main: extract then search (called after CV upload) ── */
+async function autoSearchJobs(){
+  if(jobsLoading) return;
   jobsLoading=true;
-  document.getElementById('jobs-error').style.display='none';
-  setJobsStatus(lang==='ar'?'جارٍ البحث…':'Searching…',true);
+  JOBS=[];
   renderCards([]);
+  document.getElementById('jobs-error').style.display='none';
+  document.getElementById('profile-pill').innerHTML='';
   try{
-    var country=document.getElementById('country-select').value||'Oman';
-    var skills=extractSkills(cvText);
-    var res=await fetch('/api/find-jobs',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({jobTitle:query, skills:skills, country:country}),
-    });
-    var data=await res.json();
-    if(!res.ok) throw new Error(data.error||'Search failed');
-    if(!data.jobs||!data.jobs.length) throw new Error(
-      lang==='ar'?'لا توجد نتائج حديثة. جرّب كلمات مختلفة.':
-      'No recent results found. Try different keywords.'
+    // Step 1 — extract profile
+    cvProfile=await extractCVProfile();
+    showProfileTags(cvProfile);
+    // Step 2 — search jobs
+    var raw=await searchWithProfile(cvProfile);
+    if(!raw.length) throw new Error(
+      lang==='ar'?'لا توجد وظائف حديثة مطابقة. جرّب دولة أخرى.':
+      'No recent matching jobs found. Try a different country.'
     );
-    JOBS=data.jobs.map(function(j,i){
+    JOBS=raw.map(function(j,i){
       var pct=calcMatch(cvText,j.desc||'');
       return {
         id:      j.id||('r'+i),
@@ -522,7 +541,7 @@ async function loadLiveJobs(query){
         en:      j.title||'',
         ar:      j.title||'',
         company: j.company||'',
-        loc:     j.location||country,
+        loc:     j.location||'',
         ten:     j.type||'Full-time',
         tar:     (j.type||'').toLowerCase().includes('contract')?'عقد مؤقت':'دوام كامل',
         url:     j.apply_link||'',
@@ -544,21 +563,38 @@ async function loadLiveJobs(query){
   }
 }
 
-function setJobsStatus(msg,loading){
-  var sub=document.getElementById('jobs-sub');
-  if(!sub) return;
-  if(loading){
-    sub.innerHTML='<span style="display:inline-flex;align-items:center;gap:6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="animation:spin .7s linear infinite"><circle cx="12" cy="12" r="9" stroke="#2D1F4E" stroke-width="3"/><path d="M12 3a9 9 0 0 1 9 9" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round"/></svg>'+esc(msg)+'</span>';
-  }else if(msg){
-    sub.innerHTML='<span style="color:var(--red)">'+esc(msg)+'</span>';
-  }else{
-    sub.textContent=JOBS.length+' '+(lang==='ar'?'وظيفة حديثة':'live jobs')+' · '+(lang==='ar'?'مرتبة حسب التوافق':'sorted by compatibility');
-  }
+/* ── Country change re-runs search with cached profile ── */
+function onCountryChange(){
+  if(!cvProfile) return;
+  if(jobsLoading) return;
+  jobsLoading=true;
+  JOBS=[];
+  renderCards([]);
+  document.getElementById('jobs-error').style.display='none';
+  searchWithProfile(cvProfile).then(function(raw){
+    if(!raw.length){
+      setJobsStatus('',false);
+      renderCards([]);
+      return;
+    }
+    JOBS=raw.map(function(j,i){
+      var pct=calcMatch(cvText,j.desc||'');
+      return {
+        id:j.id||('r'+i),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
+        en:j.title||'',ar:j.title||'',company:j.company||'',loc:j.location||'',
+        ten:j.type||'Full-time',tar:(j.type||'').toLowerCase().includes('contract')?'عقد مؤقت':'دوام كامل',
+        url:j.apply_link||'',desc:j.desc||'',days_ago:j.days_ago,
+      };
+    }).sort(function(a,b){return b.pct-a.pct;});
+    setJobsStatus('',false);
+    renderCards(JOBS);
+  }).catch(function(e){
+    setJobsStatus('',false);
+    var errEl=document.getElementById('jobs-error');
+    errEl.textContent=e.message;
+    errEl.style.display='';
+  }).finally(function(){ jobsLoading=false; });
 }
-
-var SAMPLE_EN='Muadh Al Shukairi\nSenior Project Engineer – O&M / Water Networks\nMuscat, Oman\n\nEXPERIENCE\nSenior Project Engineer | Nama Water & Wastewater | 2018–Present\n- Managed feasibility assessments for 40+ sewer connection requests monthly\n- Led teams coordinating with DIAM, PAEW and municipality stakeholders\n- Reduced project delivery time by 23% through process re-engineering\n- Oversaw capex for sewer extension projects up to OMR 500K\n\nProject Engineer | Galfar Engineering | 2014–2018\n- Supervised civil works on 8 wastewater treatment plant upgrades (OMR 18M)\n- Managed subcontractors and enforced FIDIC contract terms\n- Prepared monthly S-curves, progress reports, earned value analyses\n\nEDUCATION\nB.Sc. Civil Engineering | Sultan Qaboos University | 2014\n\nSKILLS\nProject Management · AutoCAD · Civil 3D · FIDIC Contracts · Asset Management\nMS Project · Primavera P6 · O&M Planning · Stakeholder Coordination · GIS\n\nCERTIFICATIONS\nPMP – Project Management Professional | NEBOSH International General Certificate';
-
-var SAMPLE_AR='مُعاذ الشكيري\nمهندس مشاريع أول – تشغيل وصيانة شبكات المياه\nمسقط، سلطنة عُمان\n\nالخبرة العملية\nمهندس مشاريع أول | مياه وصرف صحي عُمان | 2018 – حتى الآن\n- إدارة دراسات الجدوى لأكثر من 40 طلب توصيل صرف صحي شهرياً\n- قيادة فرق متعددة التخصصات بالتنسيق مع هيئة المياه والجهات الحكومية\n- تقليص وقت تنفيذ المشاريع بنسبة 23% عبر إعادة هندسة العمليات\n- الإشراف على مشاريع تمديد شبكات الصرف حتى 500,000 ريال عُماني\n\nمهندس مشاريع | شركة غلفار للهندسة | 2014 – 2018\n- الإشراف على الأعمال المدنية لـ 8 مشاريع تحديث محطات معالجة مياه الصرف (18 مليون ريال)\n- إدارة المقاولين الفرعيين وتطبيق بنود عقود FIDIC\n- إعداد التقارير الشهرية وتحليلات القيمة المكتسبة\n\nالتعليم\nبكالوريوس الهندسة المدنية | جامعة السلطان قابوس | 2014\n\nالمهارات\nإدارة المشاريع · AutoCAD · Civil 3D · عقود FIDIC · إدارة الأصول\nMS Project · Primavera P6 · تخطيط التشغيل والصيانة · أنظمة GIS\n\nالشهادات المهنية\nPMP – محترف إدارة المشاريع | شهادة NEBOSH الدولية العامة';
 
 /* ── Language ── */
 function setLang(l){
@@ -582,9 +618,7 @@ function applyText(){
   setText('hero-sub','heroSub'); setText('feat1','feat1'); setText('feat2','feat2'); setText('feat3','feat3');
   setText('upload-label','uploadLabel'); setText('upload-sub','uploadSub'); setText('sample-btn','sampleBtn');
   setText('jobs-title','jobsTitle'); setText('portals-label','portalsLabel');
-  setAttr('job-search-query','placeholder',lang==='ar'?'اكتب المسمى الوظيفي…':'Job title or keywords…');
-  var sb=document.getElementById('search-btn');
-  if(sb) sb.textContent=lang==='ar'?'🔍 بحث':'🔍 Search';
+
   setText('tailored-for','tailoredFor'); setText('lbl-before','beforeLabel'); setText('sub-before','originalCv');
   setText('lbl-after','afterLabel'); setText('sub-after','rewrittenCv'); setText('improved-lbl','improvedLbl');
   setText('btn-dl-pdf','dlPdf'); setText('btn-dl-word','dlWord');
@@ -607,19 +641,7 @@ function showJobs(){
   document.getElementById('header-right').innerHTML=
     '<div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#6D28D9,#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800">'+((detectedName||'?')[0])+'</div><span style="font-size:13px;color:var(--tM)"><strong style="color:var(--t)">'+esc(detectedName||'You')+'</strong></span></div>'+
     '<button onclick="showUpload()" style="font-size:12px;color:var(--tD);background:var(--card);border:1px solid var(--b);border-radius:8px;padding:5px 12px;cursor:pointer;font-family:inherit">'+t('newCv')+'</button>';
-  // Pre-fill search with detected title, then auto-search
-  var qInput=document.getElementById('job-search-query');
-  if(qInput&&!qInput.value){
-    var suggested=detectTitle(cvText);
-    qInput.value=suggested;
-  }
-  // Update search button label
-  var sbtn=document.getElementById('search-btn');
-  if(sbtn) sbtn.textContent=lang==='ar'?'🔍 بحث':'🔍 Search';
-  // Auto-run search on first load
-  if(JOBS.length===0&&document.getElementById('job-search-query').value){
-    loadLiveJobs(document.getElementById('job-search-query').value);
-  }
+  autoSearchJobs();
 }
 function showResult(){
   hide('form-view'); hide('jobs-view'); show('result-view');
@@ -655,9 +677,7 @@ document.getElementById('file-input').addEventListener('change',async function(e
     if(!cvText) throw new Error(t('errFile'));
     detectedName=detectName(cvText);
     document.getElementById('upload-label').textContent=file.name+' ✓'+(detectedName?' ('+detectedName+')':'');
-    JOBS=[];
-    var qEl=document.getElementById('job-search-query');
-    if(qEl) qEl.value=''; // clear so showJobs() re-detects title and auto-searches
+    cvProfile=null; JOBS=[];
     setTimeout(function(){showJobs();},500);
   }catch(err){
     document.getElementById('error-box').textContent=err.message||t('errFile');
@@ -677,18 +697,13 @@ function detectName(tx){
 
 function useSample(){
   cvText=lang==='ar'?SAMPLE_AR:SAMPLE_EN;
-  detectedName=lang==='ar'?'مُعاذ الشكيري':'Muadh Al Shukairi';
-  JOBS=[];
-  var q=document.getElementById('job-search-query');
-  if(q) q.value=''; // clear so showJobs() re-detects and auto-searches
+  detectedName=lang==='ar'?'\u0645\u064f\u0639\u0627\u0630 \u0627\u0644\u0634\u0643\u064a\u0631\u064a':'Muadh Al Shukairi';
+  cvProfile=null; JOBS=[];
   showJobs();
 }
 
 /* ── Job cards ── */
-function filterJobs(){
-  // Client-side filter on already-loaded results
-  renderCards(JOBS);
-}
+
 
 function renderCards(jobs){
   var wrap=document.getElementById('job-cards');
@@ -734,7 +749,7 @@ async function doTailor(jobId){
   if(!job||tailoring) return;
   if(!cvText){alert(t('errUpload'));return;}
   tailoring=jobId; currentJob=job;
-  filterJobs();
+  renderCards(JOBS);
   document.getElementById('jobs-error').style.display='none';
   try{
     var res=await fetch('/api/generate',{
