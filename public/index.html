@@ -571,7 +571,7 @@ async function runAutoSearch(){
     setJobSub(t('searching')+country+'…',true);
     var r2=await fetch('/api/find-jobs',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({jobTitle:p.jobTitle,skills:p.topSkills||[],country:country}),
+      body:JSON.stringify({jobTitle:p.jobTitle,skills:p.topSkills||[],country:country,educationField:p.educationField||''}),
     });
     var d=await r2.json();
     if(!r2.ok)throw new Error(d.error||'Job search failed');
