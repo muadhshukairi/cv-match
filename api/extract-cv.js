@@ -1,35 +1,32 @@
 // /api/extract-cv.js — Seerah AI
-// Uses Claude to extract structured profile data from raw CV text.
-// This drives the automatic job search — user doesn't type anything.
+// Claude reads the raw CV semantically and extracts structured job search terms.
+// Understands context: "planned works with scheduling software" → Primavera, MS Project.
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
+  if (req.method !== 'POST') { res.status(405).end(); return; }
+
+  const { cvText } = req.body || {};
+  if (!cvText) { res.status(400).json({ error: 'cvText required' }); return; }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) { res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY' }); return; }
 
   try {
-    const { cvText } = req.body || {};
-    if (!cvText) {
-      res.status(400).json({ error: 'cvText is required' });
-      return;
-    }
+    const prompt = `You are a CV parser for the Gulf job market. Read this CV carefully and extract search terms.
+Be smart: infer skills from context, not just stated keywords.
+- "planned works using scheduling software" → include Primavera P6, MS Project
+- "managed site teams on infrastructure" → include Site Engineer, Project Manager  
+- "coordinated with authorities and clients" → include Stakeholder Management
+- Infer the most marketable version of their role
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY' });
-      return;
-    }
-
-    const prompt = `You are a CV parser. Extract structured profile data from this CV.
-Respond ONLY with valid JSON — no fences, no extra text:
+Return ONLY valid JSON, no markdown fences, no extra text:
 {
-  "jobTitle": "<primary/most recent job title, keep concise e.g. 'Project Manager' or 'Civil Engineer'>",
-  "yearsExperience": <integer, total years of professional experience>,
-  "topSkills": [<exactly 5 most marketable skills as short strings>],
-  "certifications": [<professional certs e.g. "PMP", "NEBOSH" — empty array if none>],
-  "educationField": "<degree field e.g. 'Civil Engineering', 'Business Administration'>",
-  "seniorityLevel": "<one of: junior, mid, senior, lead>"
+  "jobTitle": "<primary role, concise, in English — e.g. 'Project Engineer' or 'Civil Engineer'>",
+  "yearsExperience": <integer total professional years>,
+  "topSkills": [<exactly 5 strings — mix of stated AND inferred skills>],
+  "certifications": [<e.g. "PMP","NEBOSH" — empty array if none found>],
+  "educationField": "<e.g. 'Civil Engineering' or 'Mechanical Engineering'>",
+  "seniorityLevel": "<one of: junior / mid / senior / lead>"
 }
 
 CV TEXT:
@@ -53,7 +50,7 @@ ${cvText.slice(0, 7000)}
 
     if (!response.ok) {
       const err = await response.text();
-      res.status(502).json({ error: 'AI extraction failed', detail: err });
+      res.status(502).json({ error: 'AI call failed', detail: err });
       return;
     }
 
@@ -61,9 +58,9 @@ ${cvText.slice(0, 7000)}
     const raw  = (data.content || []).find(c => c.type === 'text')?.text || '';
     const clean = raw.replace(/```(?:json)?|```/gi, '').trim();
     const profile = JSON.parse(clean);
-
     res.status(200).json(profile);
-  } catch (err) {
-    res.status(500).json({ error: 'CV extraction failed', detail: err.message });
+
+  } catch (e) {
+    res.status(500).json({ error: 'CV extraction failed', detail: e.message });
   }
 };
