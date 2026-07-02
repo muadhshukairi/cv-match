@@ -41,8 +41,8 @@ Follow this process precisely:
 
 Respond with ONLY valid JSON, no markdown fences, no commentary, matching exactly this schema:
 {
-  "match_score": <integer 0-100, original unedited CV vs job description BEFORE rewriting>,
-  "improved_match_score": <integer 0-100, rewritten CV vs job description AFTER improvements>,
+  "match_score": <integer 0-100, honest ATS keyword match of the ORIGINAL unedited CV against this job — be strict: most CVs score 20-55 before rewriting>,
+  "improved_match_score": <integer 0-100, honest ATS keyword match AFTER rewriting — should be meaningfully higher than before (typically +15 to +35 points) but never exceed 92 — be realistic>,
   "missing_keywords": [<up to 6 important job-description keywords genuinely absent from the candidate's background>],
   "generated_cv": {
     "professional_summary": "<3 ATS-friendly sentences, leads with strongest matches to this job>",
