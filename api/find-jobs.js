@@ -53,7 +53,19 @@ module.exports = async function handler(req, res) {
     }
 
     const data = JSON.parse(responseText);
-    const raw = (data.data && data.data.jobs) || data.data || [];
+    // Log the actual response structure so we can debug
+    console.log('JSearch response keys:', Object.keys(data));
+    console.log('data.data type:', Array.isArray(data.data) ? 'array('+data.data.length+')' : typeof data.data);
+    if (data.data && !Array.isArray(data.data)) {
+      console.log('data.data keys:', Object.keys(data.data));
+      if (data.data.jobs) console.log('data.data.jobs type:', Array.isArray(data.data.jobs) ? 'array('+data.data.jobs.length+')' : typeof data.data.jobs);
+    }
+
+    // search-v2 can return data.data.jobs (array) OR data.data (array) OR something else
+    let raw = [];
+    if (Array.isArray(data.data))            raw = data.data;
+    else if (Array.isArray(data.data?.jobs)) raw = data.data.jobs;
+    else if (Array.isArray(data?.data?.data))raw = data.data.data;
 
     function daysAgo(iso) {
       if (!iso) return null;
