@@ -1,5 +1,6 @@
 // /api/find-jobs.js — Seerah AI
-// Simplified — one clean query, errors exposed (no silent failures)
+// Runs ALL searchQueries in parallel — one per CV experience area.
+// Merges + deduplicates results for the widest accurate coverage.
 
 const COUNTRY_CODES = {
   Oman:'om', UAE:'ae', 'Saudi Arabia':'sa',
@@ -8,73 +9,87 @@ const COUNTRY_CODES = {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).end(); return; }
-  const { jobTitle, searchTitle, country } = req.body || {};
-  const titleToSearch = searchTitle || jobTitle; // prefer broad searchTitle
-  if (!titleToSearch) { res.status(400).json({ error: 'jobTitle required' }); return; }
+
+  const { jobTitle, searchTitle, searchQueries, country } = req.body || {};
   const apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) { res.status(500).json({ error: 'RAPIDAPI_KEY is not set in Vercel environment variables' }); return; }
+  if (!apiKey) { res.status(500).json({ error: 'Missing RAPIDAPI_KEY' }); return; }
 
   try {
-    // Use the broad searchTitle — already simplified by extract-cv.js
-    // Strip remaining seniority words just in case
-    const core = (titleToSearch)
-      .replace(/\b(senior|sr\.?|lead|principal|chief|head of|junior|jr\.?|associate)\b/gi, '')
-      .replace(/\s+/g, ' ').trim();
+    const countryCode = COUNTRY_CODES[country] || '';
+    const loc = country || 'Oman';
 
-    const query = `${core} ${country || 'Oman'}`.trim();
-
-    const params = new URLSearchParams({ query, page: '1', num_pages: '1' });
-
-    const response = await fetch(
-      `https://jsearch.p.rapidapi.com/search-v2?${params.toString()}`,
-      {
-        method: 'GET',
-        headers: {
-          'X-RapidAPI-Key':  apiKey,
-          'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
-        },
-      }
-    );
-
-    const responseText = await response.text();
-
-    // Expose the real API error — no more silent failures
-    if (!response.ok) {
-      const status = response.status;
-      let detail = responseText;
-      try { detail = JSON.parse(responseText); } catch(e) {}
-
-      if (status === 429) {
-        res.status(429).json({ error: 'RapidAPI quota exceeded. Check your plan at rapidapi.com/dashboard', status, detail });
-      } else if (status === 403) {
-        res.status(403).json({ error: 'RapidAPI key invalid or not subscribed to JSearch. Check at rapidapi.com', status, detail });
-      } else {
-        res.status(status).json({ error: `JSearch API error ${status}`, detail });
-      }
-      return;
+    // Build the list of queries to run
+    // Use searchQueries if provided, otherwise fall back to searchTitle or jobTitle
+    let queries = [];
+    if (searchQueries && searchQueries.length) {
+      // Each query: "{experience area} {country}"
+      queries = searchQueries.map(function(q) {
+        return (q + ' ' + loc).trim();
+      });
+    } else {
+      const base = searchTitle || jobTitle || 'engineer';
+      const core = base.replace(/\b(senior|sr\.?|lead|principal|chief|head of|junior|jr\.?|associate)\b/gi,'').replace(/\s+/g,' ').trim();
+      queries = [core + ' ' + loc];
     }
 
-    const data = JSON.parse(responseText);
-    // Log the actual response structure so we can debug
-    console.log('JSearch response keys:', Object.keys(data));
-    console.log('data.data type:', Array.isArray(data.data) ? 'array('+data.data.length+')' : typeof data.data);
-    if (data.data && !Array.isArray(data.data)) {
-      console.log('data.data keys:', Object.keys(data.data));
-      if (data.data.jobs) console.log('data.data.jobs type:', Array.isArray(data.data.jobs) ? 'array('+data.data.jobs.length+')' : typeof data.data.jobs);
+    // Deduplicate queries
+    queries = [...new Set(queries)].filter(Boolean).slice(0, 4); // max 4 parallel searches
+
+    async function search(query) {
+      const params = new URLSearchParams({
+        query,
+        page:      '1',
+        num_pages: '1',
+        ...(countryCode ? { country: countryCode } : {}),
+      });
+      try {
+        const r = await fetch(
+          'https://jsearch.p.rapidapi.com/search-v2?' + params.toString(),
+          {
+            method: 'GET',
+            headers: {
+              'X-RapidAPI-Key':  apiKey,
+              'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
+            },
+          }
+        );
+        if (!r.ok) {
+          console.log('JSearch error for query "'+query+'": '+r.status);
+          return [];
+        }
+        const d = await r.json();
+        // search-v2 response: data.jobs or data (array)
+        if (Array.isArray(d.data?.jobs)) return d.data.jobs;
+        if (Array.isArray(d.data))       return d.data;
+        return [];
+      } catch(e) {
+        console.log('Search failed for "'+query+'": '+e.message);
+        return [];
+      }
     }
 
-    // search-v2 can return data.data.jobs (array) OR data.data (array) OR something else
-    let raw = [];
-    if (Array.isArray(data.data))            raw = data.data;
-    else if (Array.isArray(data.data?.jobs)) raw = data.data.jobs;
-    else if (Array.isArray(data?.data?.data))raw = data.data.data;
+    // Run all in parallel
+    console.log('Running ' + queries.length + ' parallel searches:', queries);
+    const batches = await Promise.all(queries.map(search));
+
+    // Merge + deduplicate by job_id
+    const seen = new Set();
+    const merged = [];
+    for (const batch of batches) {
+      for (const j of batch) {
+        const uid = j.job_id || (j.employer_name + '|' + j.job_title);
+        if (!seen.has(uid)) { seen.add(uid); merged.push(j); }
+      }
+    }
+
+    console.log('Total merged results:', merged.length);
 
     function daysAgo(iso) {
       if (!iso) return null;
       return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
     }
 
-    const jobs = raw.slice(0, 10).map(j => ({
+    const jobs = merged.slice(0, 12).map(j => ({
       id:         j.job_id || '',
       title:      j.job_title           || '',
       company:    j.employer_name       || '',
@@ -85,7 +100,7 @@ module.exports = async function handler(req, res) {
       days_ago:   daysAgo(j.job_posted_at_datetime_utc),
     }));
 
-    res.status(200).json({ jobs, query_used: query });
+    res.status(200).json({ jobs, queries_used: queries });
 
   } catch (e) {
     res.status(500).json({ error: 'Unexpected error: ' + e.message });

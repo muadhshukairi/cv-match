@@ -1,6 +1,6 @@
 // /api/extract-cv.js — Seerah AI
-// Extracts structured profile AND generates a broad, sector-agnostic search title
-// so the job search finds opportunities across multiple industries.
+// Extracts profile AND multiple search queries — one per experience area.
+// A customer service + admin + operations person gets 3 parallel searches.
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).end(); return; }
@@ -10,24 +10,24 @@ module.exports = async function handler(req, res) {
   if (!apiKey) { res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY' }); return; }
 
   try {
-    const prompt = `You are a career consultant and CV analyst. Read this CV carefully.
+    const prompt = `You are a career consultant. Read this CV carefully and extract ALL experience areas.
 
-Your job is to understand the person's REAL transferable skills and generate a broad, marketable job search title that will find the widest range of suitable opportunities — not just jobs in their current sector.
+Key rule: A person may have experience in multiple fields. Generate a separate search query for EACH distinct experience area so the job search covers everything.
 
-Examples of good thinking:
-- "Wastewater Operations & Service Connection Administrator" → searchTitle: "Operations Administrator" (works in any sector)
-- "Senior Project Engineer O&M Water Networks" → searchTitle: "Senior Project Engineer" (broad, not water-specific)
-- "Civil/Structural Site Inspector at Airport" → searchTitle: "Site Engineer" (applicable everywhere)
-- Someone with customer service + admin + coordination experience → searchTitle: "Operations Coordinator" or "Administrator"
+Examples:
+- CV has wastewater ops + customer service + admin → 3 queries: "Operations Administrator", "Customer Service", "Administrative Coordinator"  
+- CV has civil engineering + project management + site inspection → 3 queries: "Civil Engineer", "Project Manager", "Site Engineer"
+- CV has only one clear field → 1-2 queries
 
 Return ONLY valid JSON, no markdown fences:
 {
-  "jobTitle": "<their actual current title, as-is from CV>",
-  "searchTitle": "<BROAD, SECTOR-AGNOSTIC title for job searching — 2-3 words max, e.g. 'Project Engineer', 'Operations Manager', 'Administrator', 'Site Engineer'>",
+  "jobTitle": "<their actual current job title from CV>",
+  "searchTitle": "<primary broad job title for searching, 2-3 words, sector-agnostic>",
+  "searchQueries": [<2-4 short search terms, each 1-3 words, covering ALL experience areas in this CV — e.g. ["Operations Administrator","Customer Service","Administrative Coordinator"]>],
   "yearsExperience": <integer>,
-  "topSkills": [<5 TRANSFERABLE skills that work across sectors — not company-specific terms>],
+  "topSkills": [<5 transferable skills that work across sectors>],
   "certifications": [<professional certs, empty array if none>],
-  "educationField": "<degree field or highest education>",
+  "educationField": "<degree field or highest qualification>",
   "seniorityLevel": "<junior|mid|senior|lead>"
 }
 
@@ -45,7 +45,7 @@ ${cvText.slice(0, 7000)}
       },
       body: JSON.stringify({
         model: process.env.AI_MODEL || 'claude-sonnet-4-6',
-        max_tokens: 400,
+        max_tokens: 500,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -61,13 +61,14 @@ ${cvText.slice(0, 7000)}
     const clean = raw.replace(/```(?:json)?|```/gi, '').trim();
     const profile = JSON.parse(clean);
 
-    // Ensure searchTitle is always set — fallback to stripped jobTitle
+    // Ensure searchQueries always exists
+    if (!profile.searchQueries || !profile.searchQueries.length) {
+      profile.searchQueries = [profile.searchTitle || profile.jobTitle || 'Engineer'];
+    }
+
+    // Fallback for searchTitle
     if (!profile.searchTitle) {
-      profile.searchTitle = (profile.jobTitle || '')
-        .replace(/\b(senior|sr\.?|junior|jr\.?|lead|principal|chief|head of)\b/gi, '')
-        .replace(/\b(water|wastewater|sewer|pipeline|airport|railway|oil|gas|petrochemical)\b/gi, '')
-        .replace(/\s+/g, ' ').trim()
-        .split(/[&,|]/)[0].trim() || 'Engineer';
+      profile.searchTitle = profile.searchQueries[0] || profile.jobTitle;
     }
 
     res.status(200).json(profile);
