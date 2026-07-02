@@ -1,21 +1,10 @@
-// /api/find-jobs.js
-// Searches live job postings (via the JSearch API, which aggregates Google
-// for Jobs / LinkedIn / Indeed / Bayt / Glassdoor etc.) for openings that
-// match the candidate's most relevant role + skills, filtered by country.
+// /api/find-jobs.js — Seerah AI
+// Fetches live, recent job postings via JSearch API.
+// Key fix: date_posted=month ensures no stale results.
 
 const COUNTRY_CODES = {
-  Oman: 'om',
-  UAE: 'ae',
-  'Saudi Arabia': 'sa',
-  Qatar: 'qa',
-  Bahrain: 'bh',
-  Kuwait: 'kw',
-  'United Kingdom': 'gb',
-  'United States': 'us',
-  Canada: 'ca',
-  Australia: 'au',
-  Germany: 'de',
-  India: 'in',
+  Oman:'om', UAE:'ae', 'Saudi Arabia':'sa',
+  Qatar:'qa', Bahrain:'bh', Kuwait:'kw',
 };
 
 module.exports = async function handler(req, res) {
@@ -25,7 +14,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { jobTitle, skills, country, education, certifications } = req.body || {};
+    const { jobTitle, skills, country } = req.body || {};
 
     if (!jobTitle) {
       res.status(400).json({ error: 'jobTitle is required' });
@@ -38,92 +27,74 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    // Job titles can be long/specific ("Senior Project Engineer – O&M / Small
-    // Capex Department"), which real job search engines often match too
-    // narrowly or not at all. Strip it down to the core, more commonly-used
-    // role words.
-    function simplifyTitle(title) {
-      return (title || '')
-        .split(/[-–—/|]/)[0] // keep only the part before a dash/slash separator
+    // Strip seniority prefixes to broaden the search
+    function coreTitle(t) {
+      return (t || '')
+        .split(/[-–—/|]/)[0]
         .replace(/\b(senior|junior|lead|principal|associate|chief|head of)\b/gi, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+        .replace(/\s+/g, ' ').trim();
     }
 
-    // Pull out the likely field/major from education entries (e.g.
-    // "B.Sc. Civil Engineering, Sultan Qaboos University" -> "Civil Engineering")
-    function extractField(educationEntries) {
-      if (!educationEntries || !educationEntries.length) return '';
-      const entry = educationEntries[0];
-      const match = entry.match(/(?:in|of)\s+([A-Za-z &]+?)(?:,|$)/i);
-      if (match) return match[1].trim();
-      // fallback: strip common degree prefixes, take what's left before a comma
-      return entry
-        .replace(/\b(b\.?sc\.?|m\.?sc\.?|bachelor'?s?|master'?s?|diploma|phd|degree)\b/gi, '')
-        .split(',')[0]
-        .trim();
-    }
+    const core   = coreTitle(jobTitle) || jobTitle;
+    const skills2 = (Array.isArray(skills) ? skills : []).slice(0, 2).join(' ');
 
-    const coreTitle = simplifyTitle(jobTitle) || jobTitle;
-    const topSkills = (skills || []).slice(0, 2).join(' ');
-    const field = extractField(education);
+    // Progressive queries: specific → broader
+    const queries = [
+      `${core} jobs in ${country}`,
+      `${core} ${skills2} jobs in ${country}`,
+      `${core} jobs`,
+    ].filter(q => q.replace(/jobs(?: in \w+)?/i,'').trim().length > 0);
 
-    // Build a few progressively broader queries to try in order. Keeping
-    // each one short (a handful of words) works far better with real search
-    // engines than one long combined string. We deliberately do NOT pass a
-    // strict `country` filter param to the API — for smaller/less-indexed
-    // markets like Oman that filter can zero out real results that the
-    // natural-language "in <country>" phrase still finds.
-    const candidateQueries = [
-      [coreTitle, 'jobs in', country].filter(Boolean).join(' '),
-      [coreTitle, topSkills, 'jobs in', country].filter(Boolean).join(' '),
-      [field, topSkills, 'jobs in', country].filter(Boolean).join(' '),
-      [topSkills, 'jobs in', country].filter(Boolean).join(' '),
-    ].filter((q) => q.replace(/jobs in/i, '').trim().length > 0);
-
-    async function searchJobs(searchQuery) {
+    async function search(query) {
       const params = new URLSearchParams({
-        query: searchQuery,
+        query,
         page: '1',
-        num_pages: '1',
+        num_pages: '2',
+        date_posted: 'month',   // ← ONLY jobs posted in the last 30 days
       });
 
-      const response = await fetch(`https://jsearch.p.rapidapi.com/search-v2?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
-        },
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Job search request failed: ${errText}`);
-      }
-
-      const data = await response.json();
-      return (data.data && data.data.jobs) || data.data || [];
+      const r = await fetch(
+        `https://jsearch.p.rapidapi.com/search-v2?${params}`,
+        {
+          headers: {
+            'X-RapidAPI-Key': apiKey,
+            'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
+          },
+        }
+      );
+      if (!r.ok) throw new Error(`JSearch ${r.status}`);
+      const d = await r.json();
+      return (d.data && d.data.jobs) || d.data || [];
     }
 
-    let jobList = [];
-    let queryUsed = '';
-    for (const candidate of candidateQueries) {
-      jobList = await searchJobs(candidate);
-      queryUsed = candidate;
-      if (jobList.length > 0) break;
+    let raw = [], queryUsed = '';
+    for (const q of queries) {
+      raw = await search(q);
+      queryUsed = q;
+      if (raw.length > 0) break;
     }
 
-    const jobs = jobList.slice(0, 8).map((j) => ({
-      title: j.job_title,
-      company: j.employer_name,
-      location: [j.job_city, j.job_country].filter(Boolean).join(', ') || j.job_location || country,
-      apply_link: j.job_apply_link,
-      employment_type: j.job_employment_type,
-      posted: j.job_posted_at_datetime_utc,
+    // Calculate days since posted
+    function daysAgo(iso) {
+      if (!iso) return null;
+      const ms = Date.now() - new Date(iso).getTime();
+      return Math.max(0, Math.floor(ms / 86400000));
+    }
+
+    const jobs = raw.slice(0, 8).map(j => ({
+      id:          j.job_id,
+      title:       j.job_title        || '',
+      company:     j.employer_name    || '',
+      location:    [j.job_city, j.job_country].filter(Boolean).join(', ') || country,
+      type:        j.job_employment_type || 'Full-time',
+      desc:        (j.job_description || '').slice(0, 3000),  // ← crucial for AI tailoring
+      apply_link:  j.job_apply_link   || j.job_google_link || '',
+      posted_at:   j.job_posted_at_datetime_utc || null,
+      days_ago:    daysAgo(j.job_posted_at_datetime_utc),
     }));
 
     res.status(200).json({ jobs, query_used: queryUsed });
   } catch (err) {
-    res.status(500).json({ error: 'Unexpected server error', detail: err.message });
+    res.status(500).json({ error: 'Job search failed', detail: err.message });
   }
 };
