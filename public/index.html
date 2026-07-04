@@ -1109,7 +1109,17 @@ function printCV() {
 }
 
 /* ══ Init ═══════════════════════════════════════════════════════════════════ */
-applyText();
+// Auto-detect Arabic browser — activates if user's browser/Google is set to Arabic
+(function() {
+  var langs = navigator.languages || [navigator.language || ''];
+  for (var i = 0; i < langs.length; i++) {
+    if ((langs[i] || '').toLowerCase().startsWith('ar')) {
+      setLang('ar');
+      return;
+    }
+  }
+  applyText(); // default English
+})();
 </script>
   <script defer src="/_vercel/insights/script.js"></script>
 </body>
