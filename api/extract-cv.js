@@ -22,6 +22,9 @@ Examples:
 Return ONLY valid JSON, no markdown fences:
 {
   "candidateName": "<full name of the person — look carefully, may be ALL-CAPS or formatted unusually>",
+  "email": "<email address if found, empty string if not>",
+  "phone": "<phone number if found, empty string if not>",
+  "location": "<city and country if found, e.g. Muscat, Oman, empty string if not>",
   "jobTitle": "<their actual current job title from CV>",
   "searchTitle": "<primary broad job title for searching, 2-3 words, sector-agnostic>",
   "searchQueries": [<2-4 short search terms, each 1-3 words, covering ALL experience areas in this CV — e.g. ["Operations Administrator","Customer Service","Administrative Coordinator"]>],
