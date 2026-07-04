@@ -790,6 +790,10 @@ async function runAutoSearch(){
     cvProfile=p;
     // Use AI-extracted name if detectName() failed
     if(p.candidateName && (!userName || userName==='')) userName=p.candidateName;
+    // Store contact info from profile for CV template
+    if(p.email)    cvProfile.email    = p.email;
+    if(p.phone)    cvProfile.phone    = p.phone;
+    if(p.location) cvProfile.location = p.location;
     showProfileTags(p);
 
     // Step 2 — search jobs using extracted profile
@@ -1027,6 +1031,12 @@ function buildCVDoc(tplId){
   if(isAr)doc.setAttribute('dir','rtl');else doc.removeAttribute('dir');
   var nm=userName||(isAr?'الاسم':'Your Name');
   var role=cv.experience&&cv.experience[0]?(cv.experience[0].title||'').split(/[-–—/|]/)[0].trim():'';
+  // Contact info from AI-extracted profile
+  var contactParts=[];
+  if(cvProfile&&cvProfile.location) contactParts.push(cvProfile.location);
+  if(cvProfile&&cvProfile.email)    contactParts.push(cvProfile.email);
+  if(cvProfile&&cvProfile.phone)    contactParts.push(cvProfile.phone);
+  var contactLine=contactParts.join('  ·  ');
   var stColor={executive:'#0f1f4b',zurich:'#c0392b',ember:'#b05e3a',slate:'#0ea5e9',pearl:'#111',aurora:'#2c5364',onyx:'#4ade80',sand:'#8b5e3c',prism:'#7c3aed',titanium:'#52525b'};
   var ac=stColor[tplId]||'#8B5CF6';
   var skillsHTML=buildSkills(cv.skills||[],tplId,ac);
@@ -1038,6 +1048,9 @@ function buildCVDoc(tplId){
     '<div class="cv-st" style="color:'+ac+';border-bottom:1px solid '+ac+'33">'+t('skills')+'</div>'+skillsHTML+
     '<div class="cv-st" style="color:'+ac+';border-bottom:1px solid '+ac+'33">'+t('exp')+'</div>'+expHTML+
     (eduHTML?'<div class="cv-st" style="color:'+ac+';border-bottom:1px solid '+ac+'33">'+t('edu')+'</div>'+eduHTML:'');
+  // Build contact line HTML snippet (reused in all templates)
+  var ctLine=contactLine?'<div style="font-size:9.5px;opacity:.6;margin-top:5px;letter-spacing:.3px">'+esc(contactLine)+'</div>':'';
+
   if(tplId==='zurich'){
     doc.innerHTML='<div class="cv-bar"></div><div class="cv-inner"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role" style="color:'+ac+'">'+esc(role)+'</div>':'')+
       '<div class="cv-rule"></div>'+body+'</div>';return;
@@ -1066,6 +1079,7 @@ function buildCVDoc(tplId){
   }
   // Default header-body
   doc.innerHTML='<div class="cv-hdr"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role">'+esc(role)+'</div>':'')+
+    (contactLine?'<div style="font-size:10px;opacity:.65;margin-top:6px;letter-spacing:.3px">'+esc(contactLine)+'</div>':'')+
     '</div><div class="cv-rule"></div><div class="cv-body">'+body+'</div>';
 }
 
