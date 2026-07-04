@@ -1096,7 +1096,8 @@ function printCV() {
     '</style>',
     '</head><body>',
     docEl.outerHTML,
-    '</body></html>'
+    '  <script defer src="/_vercel/insights/script.js"></script>
+</body></html>'
   ].join('');
 
   var win = window.open('', '_blank', 'width=860,height=1100');
@@ -1111,5 +1112,6 @@ function printCV() {
 /* ══ Init ═══════════════════════════════════════════════════════════════════ */
 applyText();
 </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
