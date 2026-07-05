@@ -11,9 +11,10 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  const cleanUrl = url.replace(/\/+$/, '');
   async function redisCmd(cmd, key) {
     try {
-      const r = await fetch(`${url}/${cmd}/${encodeURIComponent(key)}`, {
+      const r = await fetch(`${cleanUrl}/${cmd}/${encodeURIComponent(key)}`, {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
       });

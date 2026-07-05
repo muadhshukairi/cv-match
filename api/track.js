@@ -13,8 +13,9 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  const cleanUrl = url.replace(/\/+$/, '');
   try {
-    const r = await fetch(`${url}/INCR/seerah_${event}`, {
+    const r = await fetch(`${cleanUrl}/INCR/seerah_${event}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const d = await r.json();
