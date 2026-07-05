@@ -104,6 +104,14 @@ Target country: ${country || 'Not specified'}. Experience level: ${level || 'mid
       return;
     }
 
+    // Increment CV improved counter
+    try {
+      const redisUrl   = process.env.UPSTASH_REDIS_REST_URL;
+      const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+      if (redisUrl && redisToken) {
+        fetch(`${redisUrl}/INCR/seerah:improved`, { headers: { Authorization: `Bearer ${redisToken}` } });
+      }
+    } catch(e2) {}
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ error: 'Unexpected server error', detail: err.message });
