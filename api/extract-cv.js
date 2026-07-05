@@ -75,12 +75,12 @@ ${cvText.slice(0, 7000)}
       profile.searchTitle = profile.searchQueries[0] || profile.jobTitle;
     }
 
-    // Increment CV upload counter
+    // Increment CV upload counter (awaited so Vercel doesn't kill it early)
     try {
       const redisUrl   = process.env.UPSTASH_REDIS_REST_URL;
       const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
       if (redisUrl && redisToken) {
-        fetch(`${redisUrl}/INCR/seerah_cvs`, { headers: { Authorization: `Bearer ${redisToken}` } });
+        await fetch(`${redisUrl}/INCR/seerah_cvs`, { headers: { Authorization: `Bearer ${redisToken}` } });
       }
     } catch(e2) {}
     res.status(200).json(profile);
