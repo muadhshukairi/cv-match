@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Seerah AI · Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:#080612;color:#F1F5F9;font-family:'Inter',sans-serif;min-height:100vh;padding:32px 24px}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .card{background:#0F0B1F;border:1px solid #1E1535;border-radius:16px;padding:28px;animation:fadeUp .5s ease both}
+  .stat-card{background:#0F0B1F;border:1px solid #1E1535;border-radius:14px;padding:24px 28px}
+  .big-num{font-size:52px;font-weight:900;line-height:1;letter-spacing:-2px}
+  .v{color:#8B5CF6}.g{color:#10B981}.gold{color:#F59E0B}.w{color:#fff}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1.5px;padding:10px 14px;text-align:left;border-bottom:1px solid #1E1535}
+  td{padding:12px 14px;font-size:13px;border-bottom:1px solid #0F0B1F;color:#94A3B8}
+  tr:hover td{background:rgba(139,92,246,.05)}
+  .badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;display:inline-block}
+</style>
+</head>
+<body>
+
+<div style="max-width:900px;margin:0 auto">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:32px">
+    <svg width="36" height="36" viewBox="0 0 44 44" fill="none">
+      <defs>
+        <linearGradient id="b" x1="0" y1="44" x2="44" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0A0618"/><stop offset="100%" stop-color="#1A1040"/></linearGradient>
+        <linearGradient id="r" x1="5" y1="0" x2="39" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#6D28D9"/><stop offset="48%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#10B981"/></linearGradient>
+      </defs>
+      <rect width="44" height="44" rx="12" fill="url(#b)"/>
+      <rect x="5" y="28" width="9" height="10" rx="2.5" fill="url(#r)"/>
+      <rect x="18" y="20" width="9" height="18" rx="2.5" fill="url(#r)"/>
+      <rect x="31" y="10" width="9" height="28" rx="2.5" fill="url(#r)"/>
+    </svg>
+    <div>
+      <h1 style="font-size:22px;font-weight:800;color:#fff">Seerah AI · Dashboard</h1>
+      <div style="font-size:13px;color:#475569" id="last-updated">Loading…</div>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+      <div style="width:8px;height:8px;border-radius:50%;background:#10B981;animation:pulse 2s infinite"></div>
+      <span style="font-size:12px;color:#10B981;font-weight:600">Live</span>
+      <button onclick="loadStats()" style="font-size:12px;color:#94A3B8;background:#0F0B1F;border:1px solid #1E1535;border-radius:8px;padding:5px 14px;cursor:pointer;font-family:inherit;margin-left:8px">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Stat cards -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+
+    <div class="stat-card" style="animation:fadeUp .5s .05s ease both;opacity:0">
+      <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">📄 CVs Uploaded</div>
+      <div class="big-num v" id="count-cvs">—</div>
+      <div style="font-size:12px;color:#475569;margin-top:8px">Total CV uploads</div>
+    </div>
+
+    <div class="stat-card" style="animation:fadeUp .5s .1s ease both;opacity:0">
+      <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">🔍 Job Searches</div>
+      <div class="big-num g" id="count-searches">—</div>
+      <div style="font-size:12px;color:#475569;margin-top:8px">Total searches run</div>
+    </div>
+
+    <div class="stat-card" style="animation:fadeUp .5s .15s ease both;opacity:0">
+      <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">✦ CVs Improved</div>
+      <div class="big-num gold" id="count-improved">—</div>
+      <div style="font-size:12px;color:#475569;margin-top:8px">AI rewrites done</div>
+    </div>
+
+  </div>
+
+  <!-- Ratios -->
+  <div class="card" style="margin-bottom:24px;animation-delay:.2s">
+    <h2 style="font-size:14px;font-weight:700;color:#fff;margin-bottom:20px">Conversion Funnel</h2>
+    <div id="funnel" style="display:flex;flex-direction:column;gap:14px">
+      <div style="color:#475569;font-size:13px">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Vercel Analytics link -->
+  <div class="card" style="animation-delay:.25s">
+    <h2 style="font-size:14px;font-weight:700;color:#fff;margin-bottom:16px">Traffic Analytics</h2>
+    <p style="font-size:13px;color:#475569;margin-bottom:16px">Visitor data, countries, devices and page views are tracked via Vercel Analytics.</p>
+    <a href="https://vercel.com/takhfeed/seerah-ai/analytics" target="_blank"
+      style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;font-size:13px;font-weight:700;padding:10px 22px;border-radius:10px;text-decoration:none">
+      Open Vercel Analytics ↗
+    </a>
+  </div>
+
+</div>
+
+<script>
+async function loadStats() {
+  try {
+    const r = await fetch('/api/stats');
+    const d = await r.json();
+
+    document.getElementById('count-cvs').textContent      = (d.cvs      || 0).toLocaleString();
+    document.getElementById('count-searches').textContent = (d.searches  || 0).toLocaleString();
+    document.getElementById('count-improved').textContent = (d.improved  || 0).toLocaleString();
+    document.getElementById('last-updated').textContent   = 'Last updated: ' + new Date().toLocaleTimeString();
+
+    // Funnel
+    var cvs = d.cvs || 0;
+    var searches = d.searches || 0;
+    var improved = d.improved || 0;
+    var s2r = cvs > 0 ? Math.round(searches / cvs * 100) : 0;
+    var r2i = searches > 0 ? Math.round(improved / searches * 100) : 0;
+
+    var funnel = document.getElementById('funnel');
+    funnel.innerHTML = [
+      { label:'Uploaded CV',         val: cvs,      pct: 100,  col:'#8B5CF6' },
+      { label:'Ran job search',       val: searches, pct: s2r,  col:'#10B981' },
+      { label:'Improved their CV',    val: improved, pct: r2i,  col:'#F59E0B' },
+    ].map(function(row) {
+      return '<div><div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
+        '<span style="font-size:13px;color:#94A3B8">'+row.label+'</span>'+
+        '<span style="font-size:13px;font-weight:700;color:#fff">'+row.val.toLocaleString()+
+        ' <span style="font-size:11px;color:'+row.col+'">'+row.pct+'%</span></span>'+
+        '</div>'+
+        '<div style="height:6px;background:#1E1535;border-radius:999px">'+
+        '<div style="height:100%;width:'+Math.min(row.pct,100)+'%;background:'+row.col+';border-radius:999px;transition:width .8s ease"></div>'+
+        '</div></div>';
+    }).join('');
+
+  } catch(e) {
+    document.getElementById('last-updated').textContent = 'Error loading stats: ' + e.message;
+  }
+}
+
+loadStats();
+// Auto-refresh every 60 seconds
+setInterval(loadStats, 60000);
+</script>
+</body>
+</html>
