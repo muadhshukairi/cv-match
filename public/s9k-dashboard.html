@@ -164,11 +164,18 @@ async function loadStats() {
 
 async function testIncrement() {
   try {
-    var r = await fetch('/api/stats?key=cvs', { method: 'POST' });
-    var d = await r.json();
-    document.getElementById('status-msg').innerHTML =
-      '<div class="ok">✓ Test counter incremented — new value: ' + d.new_value + '</div>';
-    setTimeout(loadStats, 500);
+    var r = await fetch('/api/track?event=cvs');
+    var text = await r.text();
+    document.getElementById('raw-resp').textContent = 'track response: ' + text;
+    var d = JSON.parse(text);
+    if (d.ok) {
+      document.getElementById('status-msg').innerHTML =
+        '<div class="ok">✓ Counter incremented — new value: ' + d.value + '</div>';
+      setTimeout(loadStats, 800);
+    } else {
+      document.getElementById('status-msg').innerHTML =
+        '<div class="err">❌ Track returned ok:false — check Upstash env vars in Vercel</div>';
+    }
   } catch(e) {
     document.getElementById('status-msg').innerHTML =
       '<div class="err">❌ Test failed: ' + e.message + '</div>';
