@@ -81,11 +81,43 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    console.log('Searching Google Jobs + Jadarah with queries:', queries);
-    const jadarahQ = queries[0] || '';
+    // LinkedIn — direct site:linkedin.com/jobs search for guaranteed LinkedIn coverage
+    async function searchLinkedIn(query) {
+      const cleanQ = query.replace(/ Oman$/, '').trim();
+      const params = new URLSearchParams({
+        engine: 'google',
+        q: `${cleanQ} ${loc} site:linkedin.com/jobs`,
+        num: '10', hl: 'en', api_key: apiKey,
+      });
+      try {
+        const r = await fetch('https://serpapi.com/search.json?' + params.toString());
+        if (!r.ok) return [];
+        const d = await r.json();
+        return (d.organic_results || [])
+          .filter(x => x.link && x.link.includes('linkedin.com/jobs'))
+          .map(x => ({
+            job_id: x.link,
+            title: (x.title || '').replace(/\s*[-|].*$/,'').trim(),
+            company_name: (x.displayed_link || '').replace('linkedin.com › jobs › view','').trim() || 'LinkedIn',
+            location: loc,
+            job_employment_type: 'Full-time',
+            description: x.snippet || '',
+            job_apply_link: x.link,
+            job_posted_at_datetime_utc: null,
+            _source: 'LinkedIn',
+          }));
+      } catch(e) {
+        console.log('LinkedIn search failed:', e.message);
+        return [];
+      }
+    }
+
+    console.log('Searching Google Jobs + LinkedIn + Jadarah with queries:', queries);
+    const mainQ = queries[0] || '';
     const batches = await Promise.all([
       ...queries.map(searchGoogle),
-      searchJadarah(jadarahQ),
+      searchLinkedIn(mainQ),
+      searchJadarah(mainQ),
     ]);
 
     // Merge + deduplicate
