@@ -80,7 +80,7 @@ ${cvText.slice(0, 7000)}
       const redisUrl   = process.env.UPSTASH_REDIS_REST_URL;
       const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
       if (redisUrl && redisToken) {
-        fetch(`${redisUrl}/INCR/seerah:cvs`, { headers: { Authorization: `Bearer ${redisToken}` } });
+        fetch(`${redisUrl}/INCR/seerah_cvs`, { headers: { Authorization: `Bearer ${redisToken}` } });
       }
     } catch(e2) {}
     res.status(200).json(profile);
