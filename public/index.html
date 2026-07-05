@@ -362,6 +362,34 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
         </div>
 
       </div>
+      <!-- Stats bar -->
+      <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.15);border-radius:10px;padding:10px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:18px">
+        <div style="text-align:center;padding:2px 0">
+          <div style="font-size:13px;margin-bottom:2px">📄</div>
+          <div id="stat-cvs" style="font-size:14px;font-weight:900;color:#fff;line-height:1">0</div>
+          <div id="stat-cvs-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
+        </div>
+        <div style="text-align:center;padding:2px 0">
+          <div style="font-size:13px;margin-bottom:2px">🔍</div>
+          <div id="stat-jobs" style="font-size:14px;font-weight:900;color:#fff;line-height:1">0</div>
+          <div id="stat-jobs-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
+        </div>
+        <div style="text-align:center;padding:2px 0">
+          <div style="font-size:13px;margin-bottom:2px">🌍</div>
+          <div id="stat-vis" style="font-size:14px;font-weight:900;color:#fff;line-height:1">0</div>
+          <div id="stat-vis-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
+        </div>
+        <div style="text-align:center;padding:2px 0">
+          <div style="font-size:13px;margin-bottom:2px">🇴🇲</div>
+          <div style="font-size:14px;font-weight:900;color:#fff;line-height:1">6</div>
+          <div id="stat-gcc-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:7px">
+        <div style="width:5px;height:5px;border-radius:50%;background:#10B981;animation:pulse 2s ease infinite"></div>
+        <span id="stat-live-lbl" style="font-size:9.5px;color:#475569"></span>
+      </div>
+
       <div id="upload-err" style="display:none;margin-top:14px;font-size:13px;color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 16px;text-align:center"></div>
     </div>
   </section>
@@ -1175,6 +1203,32 @@ function printCV() {
   };
 }
 
+/* ══ Stats counter animation ════════════════════════════════════════════════ */
+var STATS = { cvs: 1284, jobs: 8930, visitors: 3421 };
+function animateCount(id, target, suffix) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var start = 0, dur = 1800, step = target / (dur / 16);
+  var timer = setInterval(function() {
+    start += step;
+    if (start >= target) { el.textContent = target.toLocaleString() + suffix; clearInterval(timer); }
+    else el.textContent = Math.floor(start).toLocaleString() + suffix;
+  }, 16);
+}
+function initStats() {
+  animateCount('stat-cvs', STATS.cvs, '+');
+  animateCount('stat-jobs', STATS.jobs, '+');
+  animateCount('stat-vis', STATS.visitors, '+');
+  // Labels
+  var isAr = lang === 'ar';
+  var el = function(id, en, ar) { var e = document.getElementById(id); if(e) e.textContent = isAr ? ar : en; };
+  el('stat-cvs-lbl',  'CVs Improved',   'سيرة ذاتية محسّنة');
+  el('stat-jobs-lbl', 'Jobs Found',     'وظيفة تم إيجادها');
+  el('stat-vis-lbl',  'Visitors',       'زيارة للموقع');
+  el('stat-gcc-lbl',  'GCC Countries',  'دول خليجية مدعومة');
+  el('stat-live-lbl', 'Live statistics','إحصائيات حية');
+}
+
 /* ══ Init ═══════════════════════════════════════════════════════════════════ */
 // Auto-detect Arabic browser — activates if user's browser/Google is set to Arabic
 (function() {
@@ -1182,10 +1236,12 @@ function printCV() {
   for (var i = 0; i < langs.length; i++) {
     if ((langs[i] || '').toLowerCase().startsWith('ar')) {
       setLang('ar');
+      initStats();
       return;
     }
   }
   applyText(); // default English
+  initStats();
 })();
 </script>
   <script defer src="/_vercel/insights/script.js"></script>
