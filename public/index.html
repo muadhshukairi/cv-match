@@ -848,6 +848,7 @@ async function runAutoSearch(){
     var p=await r1.json();
     if(!r1.ok)throw new Error(p.error||'CV analysis failed');
     cvProfile=p;
+    fetch('/api/track?event=cvs').catch(function(){});
     // Use AI-extracted name if detectName() failed
     if(p.candidateName && (!userName || userName==='')) userName=p.candidateName;
     // Store contact info from profile for CV template
@@ -882,6 +883,7 @@ async function runAutoSearch(){
     }).sort(function(a,b){return b.pct-a.pct;});
 
     setJobSub('',false);
+    fetch('/api/track?event=searches').catch(function(){});
     renderCards(JOBS);
 
   }catch(err){
@@ -999,6 +1001,7 @@ async function doTailor(jobId){
     var data=await res.json();
     if(!res.ok)throw new Error(data.error||'Generation failed');
     lastResult=data;currentTpl='executive';
+    fetch('/api/track?event=improved').catch(function(){});
     renderResult(data);goResult();
   }catch(e){
     var errEl=document.getElementById('jobs-err');
