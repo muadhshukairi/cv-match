@@ -1,26 +1,22 @@
 // /api/track.js — Seerah AI
-// Called from browser after each user action. Just increments a counter.
+// Logs events to Google Sheets via Apps Script webhook
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzo9yLuujndd1KKl1hQ-yd8Av_GgL7yJ_8m_IcZycsr1nMe9BTfO2ZqYQgCqiKjMFzV/exec';
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
 
-  const event = req.query.event;
-  const url   = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const event  = req.query.event  || 'unknown';
+  const detail = req.query.detail || '-';
 
-  if (!event || !url || !token) {
-    res.status(200).json({ ok: false });
-    return;
-  }
-
-  const cleanUrl = url.replace(/\/+$/, '');
   try {
-    const r = await fetch(`${cleanUrl}/INCR/seerah_${event}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, detail }),
     });
-    const d = await r.json();
-    res.status(200).json({ ok: true, value: d.result });
+    res.status(200).json({ ok: true });
   } catch(e) {
-    res.status(200).json({ ok: false });
+    res.status(200).json({ ok: false, error: e.message });
   }
 };
