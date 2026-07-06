@@ -1232,6 +1232,16 @@ function initStats() {
   el('stat-live-lbl', 'Live statistics','إحصائيات حية');
 }
 
+/* ══ Visit tracking ═════════════════════════════════════════════════════════ */
+(function(){
+  try {
+    // Only track once per session
+    if (sessionStorage.getItem('sv')) return;
+    sessionStorage.setItem('sv', '1');
+    fetch('/api/visit').then(function(){}).catch(function(){});
+  } catch(e) {}
+})();
+
 /* ══ Init ═══════════════════════════════════════════════════════════════════ */
 // Auto-detect Arabic browser — activates if user's browser/Google is set to Arabic
 (function() {

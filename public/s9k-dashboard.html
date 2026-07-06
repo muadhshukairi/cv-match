@@ -59,7 +59,7 @@
   <div id="status-msg"></div>
 
   <!-- Stat cards -->
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
     <div class="stat-card">
       <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">📄 CVs Uploaded</div>
       <div class="big-num v" id="count-cvs">—</div>
@@ -75,12 +75,23 @@
       <div class="big-num gold" id="count-improved">—</div>
       <div style="font-size:12px;color:#475569;margin-top:8px">AI rewrites done</div>
     </div>
+    <div class="stat-card">
+      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">🌍 Visitors</div>
+      <div class="big-num" style="color:#38BDF8" id="count-visits">—</div>
+      <div style="font-size:12px;color:#475569;margin-top:8px">Unique sessions</div>
+    </div>
   </div>
 
   <!-- Funnel -->
   <div class="card">
     <h2 style="font-size:14px;font-weight:700;margin-bottom:20px">Conversion Funnel</h2>
     <div id="funnel"><div style="color:#475569;font-size:13px">Loading…</div></div>
+  </div>
+
+  <!-- Countries -->
+  <div class="card" style="margin-bottom:20px">
+    <h2 style="font-size:14px;font-weight:700;margin-bottom:16px">🌍 Visitors by Country</h2>
+    <div id="countries-table"><div style="color:#475569;font-size:13px">Loading…</div></div>
   </div>
 
   <!-- Vercel -->
@@ -133,14 +144,35 @@ async function loadStats() {
     document.getElementById('count-cvs').textContent      = (d.cvs      || 0).toLocaleString();
     document.getElementById('count-searches').textContent = (d.searches  || 0).toLocaleString();
     document.getElementById('count-improved').textContent = (d.improved  || 0).toLocaleString();
+    document.getElementById('count-visits').textContent   = (d.visits    || 0).toLocaleString();
     document.getElementById('last-updated').textContent   = 'Updated: ' + new Date().toLocaleTimeString();
 
+    // Countries table
+    var countries = d.countries || {};
+    var sorted = Object.entries(countries).sort(function(a,b){return b[1]-a[1];});
+    if (sorted.length === 0) {
+      document.getElementById('countries-table').innerHTML = '<p style="color:#475569;font-size:13px">No visits recorded yet.</p>';
+    } else {
+      var total = Object.values(countries).reduce(function(a,b){return a+b;},0);
+      document.getElementById('countries-table').innerHTML =
+        '<table><tr><th>Country</th><th>Visits</th><th>Share</th><th></th></tr>' +
+        sorted.map(function(row){
+          var pct = Math.round(row[1]/total*100);
+          return '<tr><td><strong style="color:#fff">'+row[0]+'</strong></td>' +
+            '<td style="color:#38BDF8;font-weight:700">'+row[1]+'</td>' +
+            '<td style="color:#475569">'+pct+'%</td>' +
+            '<td style="width:120px"><div style="height:6px;background:#1E1535;border-radius:999px">' +
+            '<div style="height:100%;width:'+pct+'%;background:#38BDF8;border-radius:999px"></div></div></td></tr>';
+        }).join('') + '</table>';
+    }
+
     // Funnel
-    var cvs = d.cvs || 0, searches = d.searches || 0, improved = d.improved || 0;
+    var cvs = d.cvs || 0, searches = d.searches || 0, improved = d.improved || 0, visits = d.visits || 0;
     var rows = [
-      { label:'Uploaded CV',       val:cvs,      pct:100,                                                    col:'#8B5CF6' },
-      { label:'Ran job search',    val:searches, pct:cvs>0?Math.round(searches/cvs*100):0,                  col:'#10B981' },
-      { label:'Improved their CV', val:improved, pct:searches>0?Math.round(improved/searches*100):0,         col:'#F59E0B' },
+      { label:'Visited site',       val:visits,   pct:100,                                                    col:'#38BDF8' },
+      { label:'Uploaded CV',        val:cvs,      pct:visits>0?Math.round(cvs/visits*100):0,                  col:'#8B5CF6' },
+      { label:'Ran job search',     val:searches, pct:cvs>0?Math.round(searches/cvs*100):0,                   col:'#10B981' },
+      { label:'Improved their CV',  val:improved, pct:searches>0?Math.round(improved/searches*100):0,          col:'#F59E0B' },
     ];
     document.getElementById('funnel').innerHTML = rows.map(function(row) {
       return '<div style="display:grid;grid-template-columns:200px 1fr 60px;align-items:center;gap:16px;margin-bottom:16px">' +
