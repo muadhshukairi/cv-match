@@ -1,5 +1,5 @@
 // /api/track.js — Seerah AI
-// Logs events to Google Sheets via Apps Script webhook
+// Logs events to Google Sheets via Apps Script GET webhook
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzo9yLuujndd1KKl1hQ-yd8Av_GgL7yJ_8m_IcZycsr1nMe9BTfO2ZqYQgCqiKjMFzV/exec';
 
 module.exports = async function handler(req, res) {
@@ -10,13 +10,14 @@ module.exports = async function handler(req, res) {
   const detail = req.query.detail || '-';
 
   try {
-    await fetch(SHEETS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event, detail }),
-    });
-    res.status(200).json({ ok: true });
+    // Use GET with query params — more reliable with Apps Script
+    const url = `${SHEETS_URL}?event=${encodeURIComponent(event)}&detail=${encodeURIComponent(detail)}`;
+    const r = await fetch(url, { method: 'GET' });
+    const text = await r.text();
+    console.log('Sheets response:', r.status, text);
+    res.status(200).json({ ok: true, sheets_response: text });
   } catch(e) {
+    console.log('Track error:', e.message);
     res.status(200).json({ ok: false, error: e.message });
   }
 };
