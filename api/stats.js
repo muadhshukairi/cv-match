@@ -1,57 +1,24 @@
 // /api/stats.js — Seerah AI
+// Reads event counts from Google Sheets
+
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzo9yLuujndd1KKl1hQ-yd8Av_GgL7yJ_8m_IcZycsr1nMe9BTfO2ZqYQgCqiKjMFzV/exec';
+
 module.exports = async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
-
-  const url   = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-  if (!url || !token) {
-    res.status(200).json({ cvs:0, searches:0, improved:0, error:'Upstash env vars missing' });
-    return;
-  }
-
-  const cleanUrl = url.replace(/\/+$/, '');
-  async function redisCmd(cmd, key) {
-    try {
-      const r = await fetch(`${cleanUrl}/${cmd}/${encodeURIComponent(key)}`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const text = await r.text();
-      console.log(`Redis ${cmd} ${key} → ${r.status}: ${text}`);
-      const d = JSON.parse(text);
-      return d.result;
-    } catch(e) {
-      console.log(`Redis error ${cmd} ${key}: ${e.message}`);
-      return null;
-    }
-  }
-
   try {
-    if (req.method === 'POST') {
-      const key = req.query.key;
-      if (!key) { res.status(400).json({ error:'key required' }); return; }
-      const result = await redisCmd('INCR', `seerah_${key}`);
-      res.status(200).json({ ok: true, new_value: result });
-      return;
-    }
-
-    // GET — read all counters
-    const [cvs, searches, improved] = await Promise.all([
-      redisCmd('GET', 'seerah_cvs'),
-      redisCmd('GET', 'seerah_searches'),
-      redisCmd('GET', 'seerah_improved'),
-    ]);
-
+    const r = await fetch(`${SHEETS_URL}?action=count`);
+    const text = await r.text();
+    console.log('Sheets count response:', text);
+    const d = JSON.parse(text);
     res.status(200).json({
-      cvs:      parseInt(cvs      || 0),
-      searches: parseInt(searches || 0),
-      improved: parseInt(improved || 0),
+      cvs:      d.cvs      || 0,
+      searches: d.searches || 0,
+      improved: d.improved || 0,
       upstash_connected: true,
     });
-
   } catch(e) {
+    console.log('Stats error:', e.message);
     res.status(200).json({ cvs:0, searches:0, improved:0, error: e.message });
   }
 };
