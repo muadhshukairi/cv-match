@@ -20,6 +20,7 @@ module.exports = async function handler(req, res) {
       requirements: (job.requirements || []).join('|'),
       contact:      job.contact      || '',
       source:       job.source       || 'Instagram',
+      qr_url:       job.qr_url       || '',
       omani_only:   job.omani_only   ? 'true' : 'false',
     });
     const r = await fetch(`${SHEETS_URL}?${params.toString()}`);

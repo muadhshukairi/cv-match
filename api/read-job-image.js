@@ -1,5 +1,5 @@
 // /api/read-job-image.js — Seerah AI
-// Receives a base64 image, sends to Claude Vision, returns structured jobs array
+// Claude Vision reads the screenshot, extracts jobs with bounding boxes + QR code URLs
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).end(); return; }
@@ -12,37 +12,46 @@ module.exports = async function handler(req, res) {
   if (!apiKey) { res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY' }); return; }
 
   try {
-    const prompt = `You are a job listing extractor. Read this image carefully — it is an Instagram post or screenshot advertising job vacancies.
+    const prompt = `You are a job listing extractor. Read this image carefully — it may contain one or multiple Instagram job posts.
 
-Extract ALL job listings you can find. For each job return:
-- title_en: English job title (translate if Arabic)
-- title_ar: Arabic job title (transliterate if English)
+For EACH job listing you find, return:
+- title_en: English job title
+- title_ar: Arabic job title
 - company: company name
 - location: city/country (default "Oman" if not specified)
 - type: Full-time / Part-time / Internship / Contract
 - deadline: application deadline if mentioned, null if not
-- requirements: array of requirement strings (empty array if not mentioned)
-- contact: email, phone, or apply link
+- requirements: array of requirement strings
+- contact: email, phone, WhatsApp number, or website
 - source: "Instagram"
-- omani_only: true if post says "Omani nationals only" or similar, false otherwise
+- omani_only: true if post says Omani nationals only, else false
+- qr_url: If there is a QR code visible in this specific job post, decode it and return the full URL it encodes. Return null if no QR code or unreadable.
+- bbox: Bounding box of THIS job post within the full image, as percentage of total image dimensions:
+  { "x": left edge %, "y": top edge %, "w": width %, "h": height % }
+  Example: if the job post occupies the top-left quarter → {"x":0,"y":0,"w":50,"h":50}
+  If only one job in the image → {"x":0,"y":0,"w":100,"h":100}
 
-Return ONLY valid JSON array, no fences, no extra text:
+IMPORTANT for bbox: Be as accurate as possible. Each job post has its own distinct visual boundary. Estimate the pixel region carefully.
+
+Return ONLY valid JSON array, no fences:
 [
   {
     "title_en": "...",
     "title_ar": "...",
     "company": "...",
     "location": "...",
-    "type": "...",
+    "type": "Full-time",
     "deadline": null,
     "requirements": [],
     "contact": "...",
     "source": "Instagram",
-    "omani_only": false
+    "omani_only": false,
+    "qr_url": null,
+    "bbox": {"x":0,"y":0,"w":100,"h":100}
   }
 ]
 
-If no jobs found, return empty array: []`;
+If no jobs found, return: []`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -53,7 +62,7 @@ If no jobs found, return empty array: []`;
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
+        max_tokens: 2000,
         messages: [{
           role: 'user',
           content: [
