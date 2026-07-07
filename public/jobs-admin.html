@@ -67,6 +67,24 @@
     <div id="status-msg" style="margin-top:12px;font-size:13px;text-align:center;color:#475569"></div>
   </div>
 
+  <!-- Auto-fetch from Instagram RSS -->
+  <div class="card" style="margin-bottom:20px;border-color:rgba(16,185,129,.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:18px">📡</span>
+          <span style="font-weight:700;font-size:15px">Auto-fetch from @kazi.oman</span>
+          <span style="font-size:10px;background:rgba(16,185,129,.15);color:#10B981;border:1px solid rgba(16,185,129,.3);border-radius:999px;padding:2px 8px">Last 14 days</span>
+        </div>
+        <div style="font-size:12px;color:#475569">Automatically pulls latest Instagram posts and reads them with Claude AI</div>
+      </div>
+      <button class="btn btn-g" onclick="autoFetch()" id="auto-fetch-btn">
+        📡 Fetch Latest Posts
+      </button>
+    </div>
+    <div id="rss-posts" style="margin-top:16px"></div>
+  </div>
+
   <!-- Extracted jobs -->
   <div id="jobs-container"></div>
 
@@ -308,6 +326,101 @@ function resetAll() {
 
 function setStatus(msg) {
   document.getElementById('status-msg').textContent = msg;
+}
+
+async function autoFetch() {
+  var btn = document.getElementById('auto-fetch-btn');
+  btn.innerHTML = '<span class="spinner"></span> Fetching…';
+  btn.disabled = true;
+  document.getElementById('rss-posts').innerHTML = '';
+
+  try {
+    var r = await fetch('/api/fetch-rss');
+    var d = await r.json();
+    if (d.error) throw new Error(d.error);
+    if (!d.posts || !d.posts.length) {
+      document.getElementById('rss-posts').innerHTML = '<p style="color:#475569;font-size:13px">No posts found in the last 14 days.</p>';
+      btn.innerHTML = '📡 Fetch Latest Posts';
+      btn.disabled = false;
+      return;
+    }
+    btn.innerHTML = '✓ ' + d.posts.length + ' posts found — select to extract';
+    renderRssPosts(d.posts);
+  } catch(e) {
+    document.getElementById('rss-posts').innerHTML = '<p style="color:#EF4444;font-size:13px">Error: ' + e.message + '</p>';
+    btn.innerHTML = '📡 Fetch Latest Posts';
+    btn.disabled = false;
+  }
+}
+
+function renderRssPosts(posts) {
+  var el = document.getElementById('rss-posts');
+  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">' +
+    posts.map(function(p, i) {
+      var thumb = p.imageUrl
+        ? '<img src="'+p.imageUrl+'" style="width:100%;height:120px;object-fit:cover;border-radius:8px;display:block;margin-bottom:8px">'
+        : '<div style="width:100%;height:120px;background:#1E1535;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:28px">📄</div>';
+      return '<div style="background:#080612;border:1px solid #2D1F4E;border-radius:10px;padding:10px;cursor:pointer;transition:border-color .15s" ' +
+        'onmouseover="this.style.borderColor='#8B5CF6'" onmouseout="this.style.borderColor='#2D1F4E'" ' +
+        'onclick="extractFromRssPost('+i+')">' +
+        thumb +
+        '<div style="font-size:10px;color:#10B981;margin-bottom:4px">' + (p.daysAgo===0?'Today':p.daysAgo+'d ago') + '</div>' +
+        '<div style="font-size:11px;color:#94A3B8;line-height:1.4;overflow:hidden;max-height:44px">' + esc(p.caption.slice(0,80)) + '</div>' +
+        '<button style="width:100%;margin-top:8px;background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:6px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Extract Jobs</button>' +
+        '</div>';
+    }).join('') + '</div>';
+  // store posts globally for extraction
+  window._rssPosts = posts;
+}
+
+async function extractFromRssPost(idx) {
+  var post = window._rssPosts[idx];
+  if (!post) return;
+
+  if (!post.imageUrl) {
+    setStatus('⚠ This post has no image — cannot extract jobs from it.');
+    return;
+  }
+
+  setStatus('🤖 Claude is reading the post image…');
+  document.getElementById('jobs-container').innerHTML = '';
+  document.getElementById('publish-summary').style.display = 'none';
+
+  try {
+    // Fetch the image and convert to base64
+    var imgR = await fetch(post.imageUrl);
+    if (!imgR.ok) throw new Error('Could not load post image (status ' + imgR.status + ')');
+    var blob = await imgR.blob();
+    var dataUrl = await new Promise(function(resolve) {
+      var reader = new FileReader();
+      reader.onload = function(e) { resolve(e.target.result); };
+      reader.readAsDataURL(blob);
+    });
+    currentImageUrl = dataUrl;
+    var base64 = dataUrl.split(',')[1];
+    var mediaType = blob.type || 'image/jpeg';
+
+    var r = await fetch('/api/read-job-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: base64, mediaType: mediaType }),
+    });
+    var data = await r.json();
+
+    if (!data.jobs || !data.jobs.length) {
+      setStatus('⚠ No jobs found in this post. Try another one.');
+      return;
+    }
+    setStatus('✓ Found ' + data.jobs.length + ' job(s) — review and publish below');
+    var cropPromises = data.jobs.map(async function(job) {
+      var cropped = await cropImage(currentImageUrl, job.bbox);
+      return { job: job, status: 'pending', imageDataUrl: currentImageUrl, croppedUrl: cropped };
+    });
+    allJobs = allJobs.concat(await Promise.all(cropPromises));
+    renderJobs();
+  } catch(e) {
+    setStatus('❌ Error: ' + e.message);
+  }
 }
 
 function esc(s) {
