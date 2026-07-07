@@ -78,9 +78,14 @@
         </div>
         <div style="font-size:12px;color:#475569">Automatically pulls latest Instagram posts and reads them with Claude AI</div>
       </div>
-      <button class="btn btn-g" onclick="autoFetch()" id="auto-fetch-btn">
-        📡 Fetch Latest Posts
-      </button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-g" onclick="autoFetch()" id="auto-fetch-btn">
+          📡 Fetch Latest Posts
+        </button>
+        <a href="/api/fetch-rss" target="_blank" style="font-size:11px;color:#475569;border:1px solid #1E1535;border-radius:6px;padding:5px 10px;text-decoration:none">
+          🔍 Test API
+        </a>
+      </div>
     </div>
     <div id="rss-posts" style="margin-top:16px"></div>
   </div>
