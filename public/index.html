@@ -399,20 +399,24 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
     </div>
   </section>
   <!-- ══ PUBLIC JOBS BOARD ══ -->
-  <section id="jobs-board" style="max-width:840px;margin:0 auto;padding:0 20px 60px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+  <section id="jobs-board" style="padding:0 0 60px">
+    <div style="max-width:840px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:8px;height:8px;border-radius:50%;background:#10B981;animation:pulse 2s ease infinite"></div>
-        <h2 style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--t)" id="jb-title">Latest Jobs</h2>
+        <h2 style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--t)">Latest Jobs</h2>
       </div>
-      <div style="font-size:11px;color:var(--tD);background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.15);border-radius:999px;padding:3px 12px" id="jb-sub">Updated daily · curated by Seerah AI</div>
+      <div style="font-size:11px;color:var(--tD);background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.15);border-radius:999px;padding:3px 12px">Updated daily · curated by Seerah AI</div>
     </div>
 
     <!-- Filter pills -->
-    <div id="jb-filters" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap"></div>
+    <div id="jb-filters" style="max-width:840px;margin:0 auto;padding:0 20px;display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap"></div>
 
-    <!-- Job cards -->
-    <div id="jb-cards"><div style="text-align:center;padding:40px;color:var(--tD);font-size:14px">Loading jobs…</div></div>
+    <!-- Horizontal scrolling job cards -->
+    <div style="overflow-x:auto;padding:8px 20px 20px;scrollbar-width:thin;-webkit-overflow-scrolling:touch">
+      <div id="jb-cards" style="display:flex;gap:14px;min-width:max-content">
+        <div style="color:var(--tD);font-size:14px;padding:40px">Loading jobs…</div>
+      </div>
+    </div>
   </section>
 
   <!-- Footer -->
@@ -1423,45 +1427,39 @@ function renderJobBoard(){
   });
   var el=document.getElementById('jb-cards');
   if(!el) return;
+  el.style.cssText='display:flex;gap:14px;min-width:max-content';
   if(!filtered.length){
-    el.innerHTML='<p style="color:var(--tD);text-align:center;padding:32px;font-size:14px">No jobs yet. Check back soon.</p>';
+    el.innerHTML='<p style="color:var(--tD);padding:40px;font-size:14px;min-width:300px">No jobs yet. Check back soon.</p>';
     return;
   }
   el.innerHTML='';
   filtered.forEach(function(job,i){
     var wrap=document.createElement('div');
-    wrap.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:14px;overflow:hidden;margin-bottom:10px;animation:fadeUp .4s '+(i*.05)+'s ease both;opacity:0';
+    wrap.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:16px;overflow:hidden;width:280px;flex-shrink:0;animation:fadeUp .4s '+(i*.07)+'s ease both;opacity:0;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s';
+    wrap.onmouseenter=function(){this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(139,92,246,.2)';};
+    wrap.onmouseleave=function(){this.style.transform='';this.style.boxShadow='';};
     var acL=job.omani_only?'#10B981':'#8B5CF6';
+    // Top accent bar
+    var bar=document.createElement('div');
+    bar.style.cssText='height:4px;background:linear-gradient(90deg,'+(job.omani_only?'#059669,#10B981':'#6D28D9,#8B5CF6')+';flex-shrink:0';
+    wrap.appendChild(bar);
     var hdr=document.createElement('div');
-    hdr.style.cssText='display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:14px 16px;cursor:pointer';
-    hdr.innerHTML='<div style="background:'+acL+';opacity:.75;align-self:stretch;border-radius:2px"></div>'+
-      '<div>'+
-        '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">'+
-          '<span style="font-weight:700;font-size:14px;color:var(--t)">'+esc(lang==='ar'?job.title_ar:job.title_en)+'</span>'+
-          '<span style="font-size:10px;background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px;color:var(--tD)">'+esc(job.type||'Full-time')+'</span>'+
-          (job.omani_only?'<span style="font-size:10px;background:rgba(16,185,129,.1);color:#10B981;border:1px solid rgba(16,185,129,.3);border-radius:999px;padding:2px 8px;font-weight:600">🇴🇲 '+(lang==='ar'?'عُماني فقط':'Omani Only')+'</span>':'')+
-          (job.deadline?'<span style="font-size:10px;color:var(--gold)">⏰ '+esc(job.deadline)+'</span>':'')+
-        '</div>'+
-        '<div style="font-size:12px;color:var(--tM)">'+esc(job.company||'')+' · '+esc(job.location||'Oman')+'</div>'+
-      '</div>'+
-      '<span class="jb-arr" style="color:var(--tD);font-size:14px">▾</span>';
-    var det=document.createElement('div');
-    det.style.cssText='display:none;padding:0 16px 16px 32px;border-top:1px solid var(--b)';
-    var reqHtml='';
-    if(job.requirements&&job.requirements.length){
-      reqHtml='<div style="margin:12px 0 10px"><div style="font-size:10px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">'+(lang==='ar'?'المتطلبات':'Requirements')+'</div>'+
-        job.requirements.map(function(r){return '<div style="font-size:12.5px;color:var(--tM);margin-bottom:4px">· '+esc(r)+'</div>';}).join('')+'</div>';
-    }
-    det.innerHTML=reqHtml+(job.contact?'<div style="background:var(--vDim);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;color:var(--v)">'+(lang==='ar'?'للتواصل: ':'Contact: ')+esc(job.contact)+'</div>':'');
-    var btn=document.createElement('button');
-    btn.style.cssText='background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit';
-    btn.textContent='✦ '+(lang==='ar'?'تحسين سيرتي لهذه الوظيفة':'Improve my CV for this job');
-    btn.addEventListener('click',function(){ useJobForCV(job); });
-    det.appendChild(btn);
-    hdr.addEventListener('click',function(){
+    hdr.style.cssText='padding:16px 16px 12px;cursor:pointer;flex:1';
+    var titleTxt=lang==='ar'?job.title_ar:job.title_en;
+    var deadlineBadge=job.deadline?('<span style="font-size:10px;color:var(--gold);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:999px;padding:2px 8px">⏰ '+esc(job.deadline)+'</span>'):'';
+    var omaniB=job.omani_only?('<span style="font-size:10px;background:rgba(16,185,129,.1);color:#10B981;border:1px solid rgba(16,185,129,.3);border-radius:999px;padding:2px 8px;font-weight:600">🇴🇲 '+(lang==='ar'?'عُماني فقط':'Omani Only')+'</span>'):'';
+    var typeB='<span style="font-size:10px;background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px;color:var(--tD)">'+esc(job.type||'Full-time')+'</span>';
+    hdr.innerHTML=
+      '<div style="font-weight:700;font-size:13.5px;color:var(--t);line-height:1.35;margin-bottom:8px">'+esc(titleTxt)+'</div>'+
+      '<div style="font-size:11.5px;color:var(--tM);margin-bottom:10px">'+esc(job.company||'')+' · '+esc(job.location||'Oman')+'</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">'+typeB+omaniB+deadlineBadge+'</div>'+
+      '<button class="jb-tog" style="width:100%;background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'+(lang==='ar'?'عرض التفاصيل ▾':'View Details ▾')+'</button>';
+    var togBtn=hdr.querySelector('.jb-tog');
+    if(togBtn) togBtn.addEventListener('click',function(e){
+      e.stopPropagation();
       var isOpen=det.style.display==='block';
       det.style.display=isOpen?'none':'block';
-      hdr.querySelector('.jb-arr').textContent=isOpen?'▾':'▴';
+      this.textContent=isOpen?(lang==='ar'?'عرض التفاصيل ▾':'View Details ▾'):(lang==='ar'?'إخفاء ▴':'Hide ▴');
     });
     wrap.appendChild(hdr); wrap.appendChild(det); el.appendChild(wrap);
   });
