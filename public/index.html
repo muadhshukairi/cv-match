@@ -1400,3 +1400,202 @@ async function loadJobBoard(){
   }
 }
 
+
+/* ══ Render Jobs Board ═══════════════════════════════════════════════════════ */
+function renderJobBoard(){
+  var categories=['All','Engineering','Sales & Marketing','Technology','Finance','Omani Only'];
+  var fp=document.getElementById('jb-filters');
+  if(fp){
+    fp.innerHTML='';
+    categories.forEach(function(f){
+      var active=(JB_FILTER==='all'&&f==='All')||(JB_FILTER===f.toLowerCase());
+      var btn=document.createElement('button');
+      btn.textContent=f;
+      btn.style.cssText='font-size:11.5px;font-weight:600;padding:5px 14px;border-radius:999px;cursor:pointer;font-family:inherit;border:1px solid '+(active?'var(--v)':'var(--b)')+';background:'+(active?'var(--vDim)':'transparent')+';color:'+(active?'var(--v)':'var(--tD)');
+      var cat=f.toLowerCase();
+      btn.addEventListener('click',function(){filterJB(cat);});
+      fp.appendChild(btn);
+    });
+  }
+  var filtered=JB_FILTER==='all'?JB_JOBS:JB_JOBS.filter(function(j){
+    if(JB_FILTER==='omani only') return j.omani_only;
+    return (j.title_en+' '+j.type+' '+(j.requirements||[]).join(' ')).toLowerCase().includes(JB_FILTER);
+  });
+  var el=document.getElementById('jb-cards');
+  if(!el) return;
+  if(!filtered.length){
+    el.innerHTML='<p style="color:var(--tD);text-align:center;padding:32px;font-size:14px">No jobs yet. Check back soon.</p>';
+    return;
+  }
+  el.innerHTML='';
+  filtered.forEach(function(job,i){
+    var wrap=document.createElement('div');
+    wrap.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:14px;overflow:hidden;margin-bottom:10px;animation:fadeUp .4s '+(i*.05)+'s ease both;opacity:0';
+    var acL=job.omani_only?'#10B981':'#8B5CF6';
+    var hdr=document.createElement('div');
+    hdr.style.cssText='display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:14px 16px;cursor:pointer';
+    hdr.innerHTML='<div style="background:'+acL+';opacity:.75;align-self:stretch;border-radius:2px"></div>'+
+      '<div>'+
+        '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">'+
+          '<span style="font-weight:700;font-size:14px;color:var(--t)">'+esc(lang==='ar'?job.title_ar:job.title_en)+'</span>'+
+          '<span style="font-size:10px;background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px;color:var(--tD)">'+esc(job.type||'Full-time')+'</span>'+
+          (job.omani_only?'<span style="font-size:10px;background:rgba(16,185,129,.1);color:#10B981;border:1px solid rgba(16,185,129,.3);border-radius:999px;padding:2px 8px;font-weight:600">🇴🇲 '+(lang==='ar'?'عُماني فقط':'Omani Only')+'</span>':'')+
+          (job.deadline?'<span style="font-size:10px;color:var(--gold)">⏰ '+esc(job.deadline)+'</span>':'')+
+        '</div>'+
+        '<div style="font-size:12px;color:var(--tM)">'+esc(job.company||'')+' · '+esc(job.location||'Oman')+'</div>'+
+      '</div>'+
+      '<span class="jb-arr" style="color:var(--tD);font-size:14px">▾</span>';
+    var det=document.createElement('div');
+    det.style.cssText='display:none;padding:0 16px 16px 32px;border-top:1px solid var(--b)';
+    var reqHtml='';
+    if(job.requirements&&job.requirements.length){
+      reqHtml='<div style="margin:12px 0 10px"><div style="font-size:10px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">'+(lang==='ar'?'المتطلبات':'Requirements')+'</div>'+
+        job.requirements.map(function(r){return '<div style="font-size:12.5px;color:var(--tM);margin-bottom:4px">· '+esc(r)+'</div>';}).join('')+'</div>';
+    }
+    det.innerHTML=reqHtml+(job.contact?'<div style="background:var(--vDim);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;color:var(--v)">'+(lang==='ar'?'للتواصل: ':'Contact: ')+esc(job.contact)+'</div>':'');
+    var btn=document.createElement('button');
+    btn.style.cssText='background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit';
+    btn.textContent='✦ '+(lang==='ar'?'تحسين سيرتي لهذه الوظيفة':'Improve my CV for this job');
+    btn.addEventListener('click',function(){ useJobForCV(job); });
+    det.appendChild(btn);
+    hdr.addEventListener('click',function(){
+      var isOpen=det.style.display==='block';
+      det.style.display=isOpen?'none':'block';
+      hdr.querySelector('.jb-arr').textContent=isOpen?'▾':'▴';
+    });
+    wrap.appendChild(hdr); wrap.appendChild(det); el.appendChild(wrap);
+  });
+}
+function filterJB(f){JB_FILTER=f;renderJobBoard();}
+
+/* ══ Use published job for CV improvement ═══════════════════════════════════ */
+function useJobForCV(job){
+  if(!cvText){
+    document.getElementById('s-upload').scrollIntoView({behavior:'smooth'});
+    var errEl=document.getElementById('upload-err');
+    errEl.textContent=lang==='ar'?'ارفع سيرتك الذاتية أولاً':'Upload your CV first — then we will tailor it for this job.';
+    errEl.style.display='';
+    setTimeout(function(){errEl.style.display='none';},4000);
+  } else {
+    currentJob={id:'jb',en:job.title_en,ar:job.title_ar,company:job.company,loc:job.location,ten:job.type,tar:job.type,url:'',desc:(job.requirements||[]).join('. '),pct:70,match:'high',days_ago:null};
+    doTailor('jb');
+  }
+}
+
+/* ══ Search published jobs for CV matches ═══════════════════════════════════ */
+async function searchPublishedJobs(profile){
+  try{
+    var r=await fetch('/api/get-jobs');
+    var d=await r.json();
+    var jobs=d.jobs||[];
+    if(!jobs.length) return [];
+    return jobs.map(function(j){
+      var desc=[j.title_en,j.title_ar].concat(j.requirements||[]).join(' ');
+      var pct=calcMatch(cvText,desc,profile);
+      return {id:'pb-'+(j.id||j.title_en),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
+        en:j.title_en||'',ar:j.title_ar||'',company:j.company||'',loc:j.location||'Oman',
+        ten:j.type||'Full-time',tar:j.type||'Full-time',url:'',desc:desc,days_ago:null,
+        source:'Seerah AI',omani_only:j.omani_only||false};
+    }).filter(function(j){return j.pct>=30;}).sort(function(a,b){return b.pct-a.pct;}).slice(0,5);
+  }catch(e){return [];}
+}
+
+/* ══ Interview Prep Page ═════════════════════════════════════════════════════ */
+function openInterviewPrep() {
+  if (!lastResult || !currentJob) return;
+  var questions = lastResult.interview_questions || [];
+  var job = currentJob;
+  var rows = questions.map(function(item, i) {
+    var q = typeof item==='object' ? (item.q||item) : item;
+    var a = typeof item==='object' ? (item.a||'') : '';
+    return '<div style="margin-bottom:28px;padding-bottom:28px;border-bottom:1px solid #E5E7EB">' +
+      '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px">' +
+        '<div style="min-width:28px;height:28px;border-radius:50%;background:#D97706;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(i+1)+'</div>' +
+        '<div style="font-size:15px;font-weight:700;color:#1A1A2E;line-height:1.5">'+esc(q)+'</div>' +
+      '</div>' +
+      (a?'<div style="margin-left:40px;background:#FEF3C7;border-left:3px solid #D97706;padding:12px 16px;border-radius:0 8px 8px 0">' +
+        '<div style="font-size:10.5px;font-weight:800;color:#D97706;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Suggested Answer</div>' +
+        '<div style="font-size:13.5px;color:#374151;line-height:1.75">'+esc(a)+'</div></div>':'') +
+      '</div>';
+  }).join('');
+  var html='<!doctype html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Interview Prep</title>' +
+    '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">' +
+    '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,sans-serif;background:#FAFAF8;color:#1A1A2E;padding:40px 24px}@media print{.no-print{display:none!important}}</style></head><body>' +
+    '<div style="max-width:720px;margin:0 auto">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+      '<span style="font-size:18px;font-weight:900">Seerah <span style="color:#8B5CF6">AI</span></span>' +
+      '<button class="no-print" onclick="window.print()" style="background:#D97706;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">🖨 Print / Save PDF</button>' +
+    '</div>' +
+    '<hr style="border:none;border-top:2px solid #8B5CF6;margin:16px 0 24px"/>' +
+    '<h1 style="font-size:24px;font-weight:900;margin-bottom:4px">Interview Preparation Q/A</h1>' +
+    '<div style="font-size:14px;color:#6B7280;margin-bottom:20px">📋 '+esc(job.en)+' · '+esc(job.company)+'</div>' +
+    '<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px 18px;margin-bottom:32px;font-size:13px;color:#1E40AF;line-height:1.6">' +
+      '<strong>ℹ Disclaimer:</strong> These questions are AI-generated examples of <em>possible</em> interview questions based on the job description and your CV. They are intended to help you prepare — not a guarantee of what will be asked. Adapt the answers in your own words and practise out loud before your interview.' +
+    '</div>' + rows +
+    '<div style="margin-top:32px;padding-top:20px;border-top:1px solid #E5E7EB;font-size:11px;color:#9CA3AF;text-align:center">Generated by Seerah AI · seerah-ai.com · © 2026</div>' +
+    '</div></body></html>';
+  var win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+}
+
+/* ══ Interview Q&A toggle ════════════════════════════════════════════════════ */
+function toggleIQ(el) {
+  var answer = el.nextElementSibling;
+  var arrow  = el.querySelector('.iq-arrow');
+  if (!answer) return;
+  if (answer.classList.contains('open')) {
+    answer.classList.remove('open');
+    arrow.textContent = '▼';
+  } else {
+    answer.classList.add('open');
+    arrow.textContent = '▲';
+  }
+}
+
+/* ══ Print CV ════════════════════════════════════════════════════════════════ */
+function printCV() {
+  var docEl = document.getElementById('cv-doc');
+  if (!docEl) return;
+  var cvStyles = '';
+  document.querySelectorAll('style').forEach(function(s) { cvStyles += s.textContent; });
+  var name = userName || 'CV';
+  var html = ['<!doctype html><html><head>','<meta charset="UTF-8"/>',
+    '<title>'+name+' — Seerah AI</title>',
+    '<link rel="preconnect" href="https://fonts.googleapis.com">',
+    '<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">',
+    '<style>',cvStyles,'body{margin:0;padding:24px;background:#fff;}@page{margin:0.55in;size:A4;}.cv{max-width:100%;}','</style>',
+    '</head><body>',docEl.outerHTML,'</body></html>'].join('');
+  var win = window.open('', '_blank', 'width=860,height=1100');
+  win.document.write(html);
+  win.document.close();
+  win.onload = function() { setTimeout(function() { win.print(); }, 800); };
+}
+
+/* ══ Visit tracking ══════════════════════════════════════════════════════════ */
+(function(){
+  try {
+    if (sessionStorage.getItem('sv')) return;
+    sessionStorage.setItem('sv', '1');
+    fetch('/api/visit').then(function(){}).catch(function(){});
+  } catch(e) {}
+})();
+
+/* ══ Init ════════════════════════════════════════════════════════════════════ */
+(function() {
+  var langs = navigator.languages || [navigator.language || ''];
+  for (var i = 0; i < langs.length; i++) {
+    if ((langs[i] || '').toLowerCase().startsWith('ar')) {
+      setLang('ar');
+      initStats();
+      loadJobBoard();
+      return;
+    }
+  }
+  applyText();
+  initStats();
+  loadJobBoard();
+})();
+</script>
+</body>
+</html>
