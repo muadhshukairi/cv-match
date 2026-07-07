@@ -81,7 +81,8 @@
 </div>
 
 <script>
-var allJobs = []; // {job, status: 'pending'|'duplicate'|'published'}
+var allJobs = []; // {job, status, imageDataUrl}
+var currentImageUrl = null; // thumbnail of current screenshot
 
 async function handleFiles(files) {
   if (!files.length) return;
@@ -97,12 +98,14 @@ async function handleFiles(files) {
 async function processFile(file) {
   setStatus('🤖 Claude is reading ' + file.name + '…');
 
-  // Convert to base64
-  var base64 = await new Promise(function(resolve) {
+  // Convert to base64 + store preview
+  var fullDataUrl = await new Promise(function(resolve) {
     var reader = new FileReader();
-    reader.onload = function(e) { resolve(e.target.result.split(',')[1]); };
+    reader.onload = function(e) { resolve(e.target.result); };
     reader.readAsDataURL(file);
   });
+  currentImageUrl = fullDataUrl;
+  var base64 = fullDataUrl.split(',')[1];
 
   try {
     var r = await fetch('/api/read-job-image', {
@@ -119,7 +122,7 @@ async function processFile(file) {
 
     setStatus('✓ Found ' + data.jobs.length + ' job(s) in ' + file.name + ' — review and publish below');
     data.jobs.forEach(function(job) {
-      allJobs.push({ job: job, status: 'pending' });
+      allJobs.push({ job: job, status: 'pending', imageDataUrl: currentImageUrl });
     });
     renderJobs();
 
@@ -141,8 +144,9 @@ function renderJobs() {
     var job = item.job;
     var isDup = item.status === 'duplicate';
     var isPub = item.status === 'published';
+    var thumb = item.imageDataUrl ? '<img src="'+item.imageDataUrl+'" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #1E1535;flex-shrink:0;cursor:pointer" onclick="window.open(this.src)" title="Click to view full screenshot">' : '';
     return '<div class="card" style="margin-bottom:14px;opacity:' + (isPub?'.5':'1') + '">' +
-      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">' +
+      '<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;flex-wrap:wrap">' + thumb +
         '<div>' +
           '<div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">' + esc(job.title_en) + '</div>' +
           '<div style="font-size:13px;color:#6B7280">' + esc(job.title_ar) + ' · ' + esc(job.company) + '</div>' +
@@ -153,7 +157,6 @@ function renderJobs() {
           (job.omani_only ? '<span class="tag tag-omani">🇴🇲 Omani Only</span>' : '') +
         '</div>' +
       '</div>' +
-
       // Editable fields
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">' +
         '<div><label>Title (English)</label><input id="j'+idx+'_ten" value="' + esc(job.title_en) + '"></div>' +
