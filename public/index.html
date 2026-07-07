@@ -1388,12 +1388,6 @@ var JB_JOBS=[], JB_FILTER='all';
 
 async function loadJobBoard(){
   try{
-    var countryRes=await fetch('/api/country');
-    var countryData=await countryRes.json();
-    var vis=countryData.country||'Unknown';
-    var show=vis==='OM'||vis==='Unknown'||location.hostname==='localhost';
-    var boardEl=document.getElementById('jobs-board');
-    if(!show){if(boardEl)boardEl.style.display='none';return;}
     var r=await fetch('/api/get-jobs');
     var d=await r.json();
     JB_JOBS=d.jobs||[];
