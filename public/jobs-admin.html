@@ -262,6 +262,7 @@ async function publishOne(idx, force) {
     requirements: document.getElementById('j'+idx+'_req').value.split('\n').filter(Boolean),
     omani_only:   document.getElementById('j'+idx+'_om').checked,
     source:       item.job.source || 'Instagram',
+    image_thumb:  item.croppedUrl || '',
   };
 
   try {
@@ -304,6 +305,7 @@ async function publishAll() {
       requirements: document.getElementById('j'+i+'_req').value.split('\n').filter(Boolean),
       omani_only:   document.getElementById('j'+i+'_om').checked,
       source:       item.job.source || 'Instagram',
+      image_thumb:  allJobs[i] ? allJobs[i].croppedUrl || '' : '',
     };
     try {
       var r = await fetch('/api/publish-jobs', {
