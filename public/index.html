@@ -1429,13 +1429,14 @@ function renderJobBoard(){
   el.innerHTML='';
   filtered.forEach(function(job,i){
     var wrap=document.createElement('div');
-    wrap.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:16px;overflow:hidden;width:280px;flex-shrink:0;animation:fadeUp .4s '+(i*.07)+'s ease both;opacity:0;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s';
+    wrap.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:16px;overflow:hidden;width:280px;flex-shrink:0;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s';
     wrap.onmouseenter=function(){this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(139,92,246,.2)';};
     wrap.onmouseleave=function(){this.style.transform='';this.style.boxShadow='';};
     var acL=job.omani_only?'#10B981':'#8B5CF6';
     // Top accent bar
     var bar=document.createElement('div');
-    bar.style.cssText='height:4px;background:linear-gradient(90deg,'+(job.omani_only?'#059669,#10B981':'#6D28D9,#8B5CF6')+';flex-shrink:0';
+    var barColor=job.omani_only?'linear-gradient(90deg,#059669,#10B981)':'linear-gradient(90deg,#6D28D9,#8B5CF6)';
+    bar.style.cssText='height:4px;background:'+barColor+';flex-shrink:0';
     wrap.appendChild(bar);
     var hdr=document.createElement('div');
     hdr.style.cssText='padding:16px 16px 12px;cursor:pointer;flex:1';
@@ -1449,6 +1450,23 @@ function renderJobBoard(){
       '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">'+typeB+omaniB+deadlineBadge+'</div>'+
       '<button class="jb-tog" style="width:100%;background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'+(lang==='ar'?'عرض التفاصيل ▾':'View Details ▾')+'</button>';
     var togBtn=hdr.querySelector('.jb-tog');
+    // Create detail panel
+    var det=document.createElement('div');
+    det.className='jb-det';
+    det.style.cssText='display:none;padding:12px 16px;border-top:1px solid var(--b);background:var(--cardH)';
+    var reqHtml='';
+    if(job.requirements&&job.requirements.length){
+      reqHtml='<div style="font-size:10px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px">'+(lang==='ar'?'المتطلبات':'Requirements')+'</div>'+
+        job.requirements.map(function(r){return '<div style="font-size:12px;color:var(--tM);margin-bottom:3px">· '+esc(r)+'</div>';}).join('');
+    }
+    var ctHtml=job.contact?'<div style="background:var(--vDim);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:8px 10px;margin:10px 0;font-size:11.5px;color:var(--v)">'+(lang==='ar'?'للتواصل: ':'Contact: ')+esc(job.contact)+'</div>':'';
+    det.innerHTML=reqHtml+ctHtml;
+    var improveBtn=document.createElement('button');
+    improveBtn.style.cssText='width:100%;background:linear-gradient(135deg,#6D28D9,#10B981);color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px';
+    improveBtn.textContent='✦ '+(lang==='ar'?'تحسين سيرتي':'Improve my CV');
+    improveBtn.addEventListener('click',function(){useJobForCV(job);});
+    det.appendChild(improveBtn);
+
     if(togBtn) togBtn.addEventListener('click',function(e){
       e.stopPropagation();
       var isOpen=det.style.display==='block';
