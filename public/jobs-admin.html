@@ -81,8 +81,30 @@
 </div>
 
 <script>
-var allJobs = []; // {job, status, imageDataUrl}
+var allJobs = []; // {job, status, imageDataUrl, croppedUrl}
 var currentImageUrl = null; // thumbnail of current screenshot
+
+// Crop image to bounding box percentage coordinates
+async function cropImage(dataUrl, bbox) {
+  if (!bbox || !dataUrl) return dataUrl;
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var x = Math.max(0, (bbox.x||0) / 100 * img.width);
+        var y = Math.max(0, (bbox.y||0) / 100 * img.height);
+        var w = Math.min(img.width - x, (bbox.w||100) / 100 * img.width);
+        var h = Math.min(img.height - y, (bbox.h||100) / 100 * img.height);
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, x, y, w, h, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch(e) { resolve(dataUrl); }
+    };
+    img.onerror = function() { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
 
 async function handleFiles(files) {
   if (!files.length) return;
@@ -121,9 +143,12 @@ async function processFile(file) {
     }
 
     setStatus('✓ Found ' + data.jobs.length + ' job(s) in ' + file.name + ' — review and publish below');
-    data.jobs.forEach(function(job) {
-      allJobs.push({ job: job, status: 'pending', imageDataUrl: currentImageUrl });
+    // Crop each job to its bounding box
+    var cropPromises = data.jobs.map(async function(job) {
+      var cropped = await cropImage(currentImageUrl, job.bbox);
+      return { job: job, status: 'pending', imageDataUrl: currentImageUrl, croppedUrl: cropped };
     });
+    allJobs = allJobs.concat(await Promise.all(cropPromises));
     renderJobs();
 
   } catch(e) {
@@ -144,9 +169,12 @@ function renderJobs() {
     var job = item.job;
     var isDup = item.status === 'duplicate';
     var isPub = item.status === 'published';
-    var thumb = item.imageDataUrl ? '<img src="'+item.imageDataUrl+'" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #1E1535;flex-shrink:0;cursor:pointer" onclick="window.open(this.src)" title="Click to view full screenshot">' : '';
+    var thumbSrc = item.croppedUrl || item.imageDataUrl;
+    var thumb = thumbSrc ? '<img src="'+thumbSrc+'" style="width:80px;min-width:80px;height:100px;object-fit:cover;border-radius:8px;border:1px solid #2D1F4E;flex-shrink:0;cursor:pointer" onclick="window.open(\''+item.imageDataUrl+'\')" title="Click to view full screenshot">' : '';
     return '<div class="card" style="margin-bottom:14px;opacity:' + (isPub?'.5':'1') + '">' +
       '<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;flex-wrap:wrap">' + thumb +
+      '<div style="flex:1">' +
+      (job.qr_url ? '<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:7px 12px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px"><span style="font-size:16px">📱</span><div><div style="font-size:10px;font-weight:700;color:#10B981;margin-bottom:2px">QR CODE LINK</div><a href="'+esc(job.qr_url)+'" target="_blank" style="color:#10B981;word-break:break-all">'+esc(job.qr_url)+'</a></div></div>' : '') +
         '<div>' +
           '<div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">' + esc(job.title_en) + '</div>' +
           '<div style="font-size:13px;color:#6B7280">' + esc(job.title_ar) + ' · ' + esc(job.company) + '</div>' +
@@ -156,6 +184,7 @@ function renderJobs() {
           (isPub ? '<span class="tag tag-ok">✓ Published</span>' : '') +
           (job.omani_only ? '<span class="tag tag-omani">🇴🇲 Omani Only</span>' : '') +
         '</div>' +
+      '</div>' +
       '</div>' +
       // Editable fields
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">' +
