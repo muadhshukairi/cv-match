@@ -1,7 +1,13 @@
 // /api/fetch-rss.js — Seerah AI
 // Fetches the RSS.app feed for @kazi.oman, returns recent posts with image URLs
 
-const RSS_URL = 'https://rss.app/feeds/EPEieyFsTxHWq8Ri.xml';
+// rss.app feed URL — try multiple formats
+const FEED_ID = 'EPEieyFsTxHWq8Ri';
+const RSS_URLS = [
+  'https://rss.app/feeds/' + FEED_ID + '.xml',
+  'https://rss.app/feeds/v1.1/' + FEED_ID + '.xml',
+  'https://rss.app/feeds/v1.2/' + FEED_ID + '.xml',
+];
 const MAX_DAYS = 14; // only posts from last 14 days
 
 module.exports = async function handler(req, res) {
