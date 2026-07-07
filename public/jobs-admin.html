@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Seerah AI · Jobs Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{background:#080612;color:#F1F5F9;font-family:'Inter',sans-serif;min-height:100vh;padding:28px 20px}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .card{background:#0F0B1F;border:1px solid #1E1535;border-radius:14px;padding:24px}
+  .btn{border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s}
+  .btn:hover{opacity:.85}
+  .btn-v{background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff}
+  .btn-g{background:linear-gradient(135deg,#059669,#10B981);color:#fff}
+  .btn-o{background:linear-gradient(135deg,#D97706,#F59E0B);color:#fff}
+  .btn-ghost{background:transparent;color:#6B7280;border:1px solid #1E1535}
+  .tag{font-size:10.5px;font-weight:600;border-radius:999px;padding:2px 10px;display:inline-block}
+  .tag-dup{background:rgba(239,68,68,.12);color:#EF4444;border:1px solid rgba(239,68,68,.3)}
+  .tag-ok{background:rgba(16,185,129,.12);color:#10B981;border:1px solid rgba(16,185,129,.3)}
+  .tag-omani{background:rgba(16,185,129,.12);color:#10B981;border:1px solid rgba(16,185,129,.3)}
+  .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+  input,select,textarea{background:#080612;color:#F1F5F9;border:1px solid #2D1F4E;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;width:100%;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:#8B5CF6}
+  label{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px}
+</style>
+</head>
+<body>
+<div style="max-width:860px;margin:0 auto">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:28px;flex-wrap:wrap">
+    <svg width="34" height="34" viewBox="0 0 44 44" fill="none">
+      <defs>
+        <linearGradient id="b" x1="0" y1="44" x2="44" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#0A0618"/><stop offset="100%" stop-color="#1A1040"/></linearGradient>
+        <linearGradient id="r" x1="5" y1="0" x2="39" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#6D28D9"/><stop offset="48%" stop-color="#8B5CF6"/><stop offset="100%" stop-color="#10B981"/></linearGradient>
+      </defs>
+      <rect width="44" height="44" rx="12" fill="url(#b)"/>
+      <rect x="5" y="28" width="9" height="10" rx="2.5" fill="url(#r)"/>
+      <rect x="18" y="20" width="9" height="18" rx="2.5" fill="url(#r)"/>
+      <rect x="31" y="10" width="9" height="28" rx="2.5" fill="url(#r)"/>
+    </svg>
+    <div>
+      <h1 style="font-size:20px;font-weight:800">Seerah AI · Jobs Admin</h1>
+      <div style="font-size:12px;color:#475569">Upload Instagram screenshots → AI extracts jobs → Publish to site</div>
+    </div>
+    <a href="/" style="margin-left:auto;font-size:12px;color:#475569;text-decoration:none;background:#0F0B1F;border:1px solid #1E1535;border-radius:8px;padding:5px 14px">← Back to site</a>
+  </div>
+
+  <!-- Upload zone -->
+  <div class="card" style="margin-bottom:20px">
+    <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+
+    <div id="drop-zone" onclick="document.getElementById('file-input').click()"
+      style="border:2px dashed #2D1F4E;border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all .2s"
+      ondragover="event.preventDefault();this.style.borderColor='#8B5CF6';this.style.background='rgba(139,92,246,.06)'"
+      ondragleave="this.style.borderColor='#2D1F4E';this.style.background='transparent'"
+      ondrop="event.preventDefault();this.style.borderColor='#2D1F4E';this.style.background='transparent';handleFiles(event.dataTransfer.files)">
+      <div style="font-size:36px;margin-bottom:10px">📸</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px">Drop Instagram screenshots here</div>
+      <div style="font-size:12px;color:#475569">or click to select · JPG, PNG · multiple files supported</div>
+    </div>
+
+    <div id="status-msg" style="margin-top:12px;font-size:13px;text-align:center;color:#475569"></div>
+  </div>
+
+  <!-- Extracted jobs -->
+  <div id="jobs-container"></div>
+
+  <!-- Published counter -->
+  <div id="publish-summary" style="display:none;text-align:center;padding:20px" class="card">
+    <div style="font-size:32px;margin-bottom:8px">🎉</div>
+    <div id="publish-msg" style="font-size:16px;font-weight:700;margin-bottom:8px"></div>
+    <div style="font-size:13px;color:#475569;margin-bottom:16px">Jobs are now live on seerah-ai.com</div>
+    <button class="btn btn-v" onclick="resetAll()">Upload another screenshot</button>
+  </div>
+
+</div>
+
+<script>
+var allJobs = []; // {job, status: 'pending'|'duplicate'|'published'}
+
+async function handleFiles(files) {
+  if (!files.length) return;
+  allJobs = [];
+  document.getElementById('jobs-container').innerHTML = '';
+  document.getElementById('publish-summary').style.display = 'none';
+
+  for (var i = 0; i < files.length; i++) {
+    await processFile(files[i]);
+  }
+}
+
+async function processFile(file) {
+  setStatus('🤖 Claude is reading ' + file.name + '…');
+
+  // Convert to base64
+  var base64 = await new Promise(function(resolve) {
+    var reader = new FileReader();
+    reader.onload = function(e) { resolve(e.target.result.split(',')[1]); };
+    reader.readAsDataURL(file);
+  });
+
+  try {
+    var r = await fetch('/api/read-job-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: base64, mediaType: file.type }),
+    });
+    var data = await r.json();
+
+    if (!data.jobs || !data.jobs.length) {
+      setStatus('⚠ No jobs found in ' + file.name);
+      return;
+    }
+
+    setStatus('✓ Found ' + data.jobs.length + ' job(s) in ' + file.name + ' — review and publish below');
+    data.jobs.forEach(function(job) {
+      allJobs.push({ job: job, status: 'pending' });
+    });
+    renderJobs();
+
+  } catch(e) {
+    setStatus('❌ Error reading ' + file.name + ': ' + e.message);
+  }
+}
+
+function renderJobs() {
+  var container = document.getElementById('jobs-container');
+  if (!allJobs.length) { container.innerHTML = ''; return; }
+
+  var html = '<div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">' +
+    '<h2 style="font-size:15px;font-weight:700">' + allJobs.length + ' job(s) extracted</h2>' +
+    '<button class="btn btn-g" onclick="publishAll()" id="publish-all-btn">🚀 Publish all to site</button>' +
+    '</div>';
+
+  html += allJobs.map(function(item, idx) {
+    var job = item.job;
+    var isDup = item.status === 'duplicate';
+    var isPub = item.status === 'published';
+    return '<div class="card" style="margin-bottom:14px;opacity:' + (isPub?'.5':'1') + '">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">' +
+        '<div>' +
+          '<div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">' + esc(job.title_en) + '</div>' +
+          '<div style="font-size:13px;color:#6B7280">' + esc(job.title_ar) + ' · ' + esc(job.company) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">' +
+          (isDup ? '<span class="tag tag-dup">⚠ Duplicate — already published</span>' : '') +
+          (isPub ? '<span class="tag tag-ok">✓ Published</span>' : '') +
+          (job.omani_only ? '<span class="tag tag-omani">🇴🇲 Omani Only</span>' : '') +
+        '</div>' +
+      '</div>' +
+
+      // Editable fields
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">' +
+        '<div><label>Title (English)</label><input id="j'+idx+'_ten" value="' + esc(job.title_en) + '"></div>' +
+        '<div><label>Title (Arabic)</label><input id="j'+idx+'_tar" value="' + esc(job.title_ar) + '" dir="rtl"></div>' +
+        '<div><label>Company</label><input id="j'+idx+'_co" value="' + esc(job.company) + '"></div>' +
+        '<div><label>Location</label><input id="j'+idx+'_lo" value="' + esc(job.location||'Oman') + '"></div>' +
+        '<div><label>Type</label><select id="j'+idx+'_ty"><option>Full-time</option><option>Part-time</option><option>Internship</option><option>Contract</option></select></div>' +
+        '<div><label>Deadline</label><input id="j'+idx+'_dl" value="' + esc(job.deadline||'') + '" placeholder="e.g. 31 Jul 2026"></div>' +
+        '<div style="grid-column:1/-1"><label>Contact</label><input id="j'+idx+'_ct" value="' + esc(job.contact||'') + '"></div>' +
+        '<div style="grid-column:1/-1"><label>Requirements (one per line)</label><textarea id="j'+idx+'_req" rows="3">' + (job.requirements||[]).join('\n') + '</textarea></div>' +
+      '</div>' +
+
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+        '<label style="text-transform:none;letter-spacing:0;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer">' +
+          '<input type="checkbox" id="j'+idx+'_om" ' + (job.omani_only?'checked':'') + '> Omani Nationals Only' +
+        '</label>' +
+        (isDup || isPub ? '' :
+          '<button class="btn btn-v" style="margin-left:auto" onclick="publishOne(' + idx + ')">Publish this job</button>') +
+        (isDup ?
+          '<button class="btn btn-o" style="margin-left:auto" onclick="publishOne(' + idx + ',true)">Publish anyway</button>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  container.innerHTML = html;
+
+  // Set select values
+  allJobs.forEach(function(item, idx) {
+    var sel = document.getElementById('j'+idx+'_ty');
+    if (sel) sel.value = item.job.type || 'Full-time';
+  });
+}
+
+async function publishOne(idx, force) {
+  var item = allJobs[idx];
+  if (!item) return;
+
+  var job = {
+    title_en:     document.getElementById('j'+idx+'_ten').value,
+    title_ar:     document.getElementById('j'+idx+'_tar').value,
+    company:      document.getElementById('j'+idx+'_co').value,
+    location:     document.getElementById('j'+idx+'_lo').value,
+    type:         document.getElementById('j'+idx+'_ty').value,
+    deadline:     document.getElementById('j'+idx+'_dl').value,
+    contact:      document.getElementById('j'+idx+'_ct').value,
+    requirements: document.getElementById('j'+idx+'_req').value.split('\n').filter(Boolean),
+    omani_only:   document.getElementById('j'+idx+'_om').checked,
+    source:       item.job.source || 'Instagram',
+  };
+
+  try {
+    var r = await fetch('/api/publish-jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(job),
+    });
+    var d = await r.json();
+    if (d.ok) {
+      allJobs[idx].status = 'published';
+    } else if (d.reason === 'duplicate' && !force) {
+      allJobs[idx].status = 'duplicate';
+    } else if (force) {
+      allJobs[idx].status = 'published';
+    }
+    renderJobs();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function publishAll() {
+  var btn = document.getElementById('publish-all-btn');
+  btn.innerHTML = '<span class="spinner"></span> Publishing…';
+  btn.disabled = true;
+
+  var published = 0, duplicates = 0;
+  for (var i = 0; i < allJobs.length; i++) {
+    if (allJobs[i].status !== 'pending') continue;
+    var item = allJobs[i];
+    var job = {
+      title_en:     document.getElementById('j'+i+'_ten').value,
+      title_ar:     document.getElementById('j'+i+'_tar').value,
+      company:      document.getElementById('j'+i+'_co').value,
+      location:     document.getElementById('j'+i+'_lo').value,
+      type:         document.getElementById('j'+i+'_ty').value,
+      deadline:     document.getElementById('j'+i+'_dl').value,
+      contact:      document.getElementById('j'+i+'_ct').value,
+      requirements: document.getElementById('j'+i+'_req').value.split('\n').filter(Boolean),
+      omani_only:   document.getElementById('j'+i+'_om').checked,
+      source:       item.job.source || 'Instagram',
+    };
+    try {
+      var r = await fetch('/api/publish-jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(job),
+      });
+      var d = await r.json();
+      if (d.ok) { allJobs[i].status = 'published'; published++; }
+      else if (d.reason === 'duplicate') { allJobs[i].status = 'duplicate'; duplicates++; }
+    } catch(e) {}
+  }
+
+  renderJobs();
+  if (published > 0) {
+    document.getElementById('publish-summary').style.display = '';
+    document.getElementById('publish-msg').textContent =
+      published + ' job' + (published>1?'s':'') + ' published!' +
+      (duplicates > 0 ? ' (' + duplicates + ' duplicate' + (duplicates>1?'s':'') + ' skipped)' : '');
+  }
+}
+
+function resetAll() {
+  allJobs = [];
+  document.getElementById('jobs-container').innerHTML = '';
+  document.getElementById('publish-summary').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  setStatus('');
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

@@ -398,6 +398,23 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
       <div id="upload-err" style="display:none;margin-top:14px;font-size:13px;color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 16px;text-align:center"></div>
     </div>
   </section>
+  <!-- ══ PUBLIC JOBS BOARD ══ -->
+  <section id="jobs-board" style="max-width:840px;margin:0 auto;padding:0 20px 60px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:8px;height:8px;border-radius:50%;background:#10B981;animation:pulse 2s ease infinite"></div>
+        <h2 style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--t)" id="jb-title">Latest Jobs</h2>
+      </div>
+      <div style="font-size:11px;color:var(--tD);background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.15);border-radius:999px;padding:3px 12px" id="jb-sub">Updated daily · curated by Seerah AI</div>
+    </div>
+
+    <!-- Filter pills -->
+    <div id="jb-filters" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap"></div>
+
+    <!-- Job cards -->
+    <div id="jb-cards"><div style="text-align:center;padding:40px;color:var(--tD);font-size:14px">Loading jobs…</div></div>
+  </section>
+
   <!-- Footer -->
   <footer style="position:relative;z-index:10;text-align:center;padding:28px 24px 36px;border-top:1px solid rgba(255,255,255,.06);margin-top:auto">
     <a href="https://www.instagram.com/seerah.ai" target="_blank" rel="noopener"
@@ -1332,6 +1349,132 @@ function initStats() {
   el('stat-live-lbl', 'Live statistics','إحصائيات حية');
 }
 
+/* ══ Public Jobs Board ══════════════════════════════════════════════════════ */
+var JB_JOBS=[], JB_FILTER='all';
+
+async function loadJobBoard(){
+  try{
+    var r=await fetch('/api/get-jobs');
+    var d=await r.json();
+    JB_JOBS=d.jobs||[];
+    renderJobBoard();
+  }catch(e){
+    var el=document.getElementById('jb-cards');
+    if(el) el.innerHTML='<p style="color:var(--tD);text-align:center;padding:32px">Could not load jobs.</p>';
+  }
+}
+
+function renderJobBoard(){
+  var categories=['All','Engineering','Sales & Marketing','Technology','Finance','Omani Only'];
+  var fp=document.getElementById('jb-filters');
+  if(fp){
+    fp.innerHTML='';
+    categories.forEach(function(f){
+      var active=(JB_FILTER==='all'&&f==='All')||(JB_FILTER===f.toLowerCase());
+      var btn=document.createElement('button');
+      btn.textContent=f;
+      btn.style.cssText='font-size:11.5px;font-weight:600;padding:5px 14px;border-radius:999px;cursor:pointer;font-family:inherit;border:1px solid '+(active?'var(--v)':'var(--b)')+';background:'+(active?'var(--vDim)':'transparent')+';color:'+(active?'var(--v)':'var(--tD)');
+      var cat=f.toLowerCase();
+      btn.addEventListener('click',function(){filterJB(cat);});
+      fp.appendChild(btn);
+    });
+  }
+
+  var filtered=JB_FILTER==='all'?JB_JOBS:JB_JOBS.filter(function(j){
+    if(JB_FILTER==='omani only') return j.omani_only;
+    var txt=(j.title_en+' '+j.type+' '+(j.requirements||[]).join(' ')).toLowerCase();
+    return txt.includes(JB_FILTER);
+  });
+
+  var el=document.getElementById('jb-cards');
+  if(!el) return;
+  if(!filtered.length){
+    el.innerHTML='<p style="color:var(--tD);text-align:center;padding:32px;font-size:14px">No jobs in this category yet.</p>';
+    return;
+  }
+
+  el.innerHTML='';
+  filtered.forEach(function(job,i){
+    var wrap=document.createElement('div');
+    wrap.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:14px;overflow:hidden;margin-bottom:10px;animation:fadeUp .4s '+(i*.05)+'s ease both;opacity:0';
+
+    var acL=job.omani_only?'#10B981':'#8B5CF6';
+    var titleTxt=lang==='ar'?job.title_ar:job.title_en;
+
+    // Header
+    var hdr=document.createElement('div');
+    hdr.style.cssText='display:grid;grid-template-columns:4px 1fr auto;gap:12px;align-items:center;padding:14px 16px;cursor:pointer';
+    hdr.innerHTML=
+      '<div style="background:'+acL+';opacity:.75;align-self:stretch;border-radius:2px"></div>'+
+      '<div>'+
+        '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">'+
+          '<span style="font-weight:700;font-size:14px;color:var(--t)">'+esc(titleTxt)+'</span>'+
+          '<span style="font-size:10px;background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px;color:var(--tD)">'+esc(job.type||'Full-time')+'</span>'+
+          (job.omani_only?'<span style="font-size:10px;background:rgba(16,185,129,.1);color:#10B981;border:1px solid rgba(16,185,129,.3);border-radius:999px;padding:2px 8px;font-weight:600">🇴🇲 '+(lang==='ar'?'عُماني فقط':'Omani Only')+'</span>':'')+
+          (job.deadline?'<span style="font-size:10px;color:var(--gold)">⏰ '+esc(job.deadline)+'</span>':'')+
+        '</div>'+
+        '<div style="font-size:12px;color:var(--tM)">'+esc(job.company||'')+' · '+esc(job.location||'Oman')+'</div>'+
+      '</div>'+
+      '<span class="jb-arr" style="color:var(--tD);font-size:14px">▾</span>';
+
+    // Detail
+    var det=document.createElement('div');
+    det.style.cssText='display:none;padding:0 16px 16px 32px;border-top:1px solid var(--b)';
+
+    var reqHtml='';
+    if(job.requirements&&job.requirements.length){
+      reqHtml='<div style="margin:12px 0 10px"><div style="font-size:10px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">'+(lang==='ar'?'المتطلبات':'Requirements')+'</div>'+
+        job.requirements.map(function(r){return '<div style="font-size:12.5px;color:var(--tM);margin-bottom:4px">· '+esc(r)+'</div>';}).join('')+'</div>';
+    }
+    var ctHtml='';
+    if(job.contact){
+      ctHtml='<div style="background:var(--vDim);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;color:var(--v)">'+(lang==='ar'?'للتواصل: ':'Contact: ')+esc(job.contact)+'</div>';
+    }
+    det.innerHTML=reqHtml+ctHtml;
+
+    var btn=document.createElement('button');
+    btn.style.cssText='background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit';
+    btn.textContent='✦ '+(lang==='ar'?'تحسين سيرتي لهذه الوظيفة':'Improve my CV for this job');
+    btn.addEventListener('click',function(){ useJobForCV(job); });
+    det.appendChild(btn);
+
+    // Toggle
+    hdr.addEventListener('click',function(){
+      var isOpen=det.style.display==='block';
+      det.style.display=isOpen?'none':'block';
+      hdr.querySelector('.jb-arr').textContent=isOpen?'▾':'▴';
+    });
+
+    wrap.appendChild(hdr);
+    wrap.appendChild(det);
+    el.appendChild(wrap);
+  });
+}
+
+function toggleJBCard(el){
+  var det=el.parentElement.querySelector('.jb-detail');
+  var arr=el.querySelector('.jb-arr');
+  if(!det) return;
+  var isOpen=det.style.display==='block';
+  det.style.display=isOpen?'none':'block';
+  if(arr) arr.textContent=isOpen?'▾':'▴';
+}
+function filterJB(f){JB_FILTER=f;renderJobBoard();}
+
+function useJobForCV(job){
+  try{
+    if(!cvText){
+      document.getElementById('s-upload').scrollIntoView({behavior:'smooth'});
+      document.getElementById('upload-err').textContent=lang==='ar'?'ارفع سيرتك الذاتية أولاً':'Upload your CV first — then we will tailor it for this job.';
+      document.getElementById('upload-err').style.display='';
+      setTimeout(function(){document.getElementById('upload-err').style.display='none';},4000);
+    } else {
+      currentJob={id:'jb',en:job.title_en,ar:job.title_ar,company:job.company,loc:job.location,ten:job.type,tar:job.type,url:'',desc:(job.requirements||[]).join('. '),pct:70,match:'high',days_ago:null};
+      doTailor('jb');
+    }
+  }catch(e){}
+}
+
 /* ══ Visit tracking ═════════════════════════════════════════════════════════ */
 (function(){
   try {
@@ -1355,6 +1498,7 @@ function initStats() {
   }
   applyText(); // default English
   initStats();
+  loadJobBoard();
 })();
 </script>
   <script defer src="/_vercel/insights/script.js"></script>
