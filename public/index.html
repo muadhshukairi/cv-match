@@ -1771,6 +1771,7 @@ async function handleModalCV(file) {
 
 async function improveFromModal() {
   if (!_modalJob || !cvText) return;
+
   currentJob = {
     id: 'jb-'+(_modalJob.id||''),
     en: _modalJob.title_en||'',
@@ -1783,10 +1784,36 @@ async function improveFromModal() {
     desc: (_modalJob.requirements||[]).join('. '),
     pct: 80, match: 'high', days_ago: null, source: _modalJob.source||''
   };
-  closeJobModal();
+
   var btn = document.getElementById('modal-improve-btn');
-  if (btn) { btn.textContent = (lang==='ar'?'\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0633\u064a\u0646\u2026':'Improving\u2026'); btn.disabled = true; }
-  await doTailor(currentJob.id);
+  var statusEl = document.getElementById('modal-status');
+  if (btn) { btn.textContent = (lang==='ar'?'\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0633\u064a\u0646...':'Improving your CV...'); btn.disabled = true; }
+
+  try {
+    var jobDesc = [_modalJob.title_en||'', (_modalJob.requirements||[]).join('. ')].join(' ');
+    var r = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        cvText: cvText,
+        jobTitle: currentJob.en,
+        jobDescription: jobDesc,
+        company: currentJob.company,
+        location: currentJob.loc
+      })
+    });
+    var data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Generation failed');
+    lastResult = data;
+    currentTpl = 'executive';
+    fetch('/api/track?event=improved').catch(function(){});
+    closeJobModal();
+    renderResult(data);
+    goResult();
+  } catch(e) {
+    if (btn) { btn.textContent = (lang==='ar'?'\u2746 \u062a\u062d\u0633\u064a\u0646 \u0633\u064a\u0631\u062a\u064a':'\u2746 Improve my CV for this job'); btn.disabled = false; }
+    if (statusEl) statusEl.textContent = '\u274c ' + (e.message || 'Error — please try again');
+  }
 }
 /* == End Job Match Modal ============================================== */
 
