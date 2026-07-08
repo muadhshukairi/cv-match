@@ -142,13 +142,13 @@ async function autotrim(dataUrl) {
         var h = bottom - top + 1;
 
         // Compress to fit in Google Sheets (max ~35k chars)
-        var maxW = 320, maxH = 200;
+        var maxW = 280, maxH = 180;
         var ratio = Math.min(maxW/w, maxH/h, 1);
         var out = document.createElement('canvas');
         out.width = Math.round(w * ratio);
         out.height = Math.round(h * ratio);
         out.getContext('2d').drawImage(img, left, top, w, h, 0, 0, out.width, out.height);
-        resolve(out.toDataURL('image/jpeg', 0.55));
+        resolve(out.toDataURL('image/jpeg', 0.65));
       } catch(e) { resolve(dataUrl); }
     };
     img.onerror = function() { resolve(''); };
