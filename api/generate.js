@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { cvText, jobDescription, country, level, language } = req.body || {};
+    const { cvText, jobDescription, country, level, language, confirmedKeywords } = req.body || {};
 
     if (!cvText || !jobDescription) {
       res.status(400).json({ error: 'cvText and jobDescription are required' });
@@ -27,9 +27,13 @@ module.exports = async function handler(req, res) {
       ? `CRITICAL LANGUAGE REQUIREMENT: Generate ALL text content in formal Modern Standard Arabic (الفصحى). This includes: professional_summary, every item in the skills array, every bullet in experience, education entries, cover_letter, AND every interview question. Keep technical software names (AutoCAD, MS Project, Primavera P6, etc.), company names, certifications (PMP, NEBOSH, etc.), and universally English terms (like "AI", "SCADA", "FIDIC") in English or as bilingual Arabic/English as is professionally standard in the Arab Gulf region. All narrative text must be fluent, natural Arabic — not machine-translated.`
       : `Generate all content in English.`;
 
+    const confirmedInstruction = (confirmedKeywords && confirmedKeywords.length)
+      ? `\n\nIMPORTANT ADDITIONAL CONTEXT: After reviewing an earlier draft, the candidate has explicitly confirmed they genuinely possess the following skills, which you may have previously flagged as missing: ${confirmedKeywords.join(', ')}. Treat this as truthful first-hand input from the candidate. For each confirmed skill: find or create the most fitting spot in the experience bullets and rewrite that bullet to naturally demonstrate it (do not just append the term — show it in action, following the same grounding rule as the rest of this process), then include it in the skills list. Remove any of these now-confirmed skills from missing_keywords. Recompute match_score and improved_match_score honestly given this new information — improved_match_score should typically rise further since genuine additional skills are now demonstrated, but stay realistic and never exceed 92.`
+      : '';
+
     const prompt = `You are an expert ATS CV writer and career coach specialising in the GCC job market. Your goal is to maximise this candidate's chances of passing automated keyword filters AND impressing a human reviewer for THIS SPECIFIC job — while staying 100% truthful to their real background.
 
-${langInstruction}
+${langInstruction}${confirmedInstruction}
 
 Follow this process precisely:
 1. Read the job description carefully and identify its most important required skills, qualifications, and exact phrases/terminology.
