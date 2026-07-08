@@ -1485,25 +1485,22 @@ function renderJobBoard(){
     wrap.onmouseleave=function(){this.style.transform='';this.style.boxShadow='';this.style.borderColor='';};
     var barColor=job.omani_only?'linear-gradient(135deg,#059669,#10B981)':'linear-gradient(135deg,#6D28D9,#8B5CF6)';
 
-    // Clean gradient header with company initial (no blurry thumbnails)
+    // Image area — shows ImgBB hosted image at full quality
     var imgArea=document.createElement('div');
-    imgArea.style.cssText='height:64px;flex-shrink:0;background:'+barColor+';position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 12px';
-    var initial=(job.company||'?').trim().charAt(0).toUpperCase();
-    var initCircle=document.createElement('div');
-    initCircle.style.cssText='width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;flex-shrink:0';
-    initCircle.textContent=initial;
-    imgArea.appendChild(initCircle);
+    var jobImg=job.image_thumb||job.image_url||'';
+    imgArea.style.cssText='height:110px;flex-shrink:0;position:relative;overflow:hidden;background:'+barColor;
+    if(jobImg){
+      var imgEl=document.createElement('img');
+      imgEl.style.cssText='width:100%;height:100%;object-fit:cover;display:block';
+      imgEl.onerror=function(){imgArea.style.height='4px';imgEl.style.display='none';};
+      imgEl.src=jobImg;
+      imgArea.appendChild(imgEl);
+    }
     if(job.omani_only){
       var ob=document.createElement('div');
-      ob.style.cssText='background:rgba(0,0,0,.25);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px';
-      ob.textContent='🇴🇲 Omani';
+      ob.style.cssText='position:absolute;top:6px;right:6px;background:rgba(5,150,105,.9);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;backdrop-filter:blur(4px)';
+      ob.textContent='🇴🇲 Omani Only';
       imgArea.appendChild(ob);
-    }
-    if(job.source){
-      var src=document.createElement('div');
-      src.style.cssText='position:absolute;bottom:6px;right:8px;font-size:8.5px;color:rgba(255,255,255,.6)';
-      src.textContent=job.source||'';
-      imgArea.appendChild(src);
     }
     wrap.appendChild(imgArea);
     var hdr=document.createElement('div');
