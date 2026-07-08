@@ -1448,10 +1448,11 @@ function renderJobBoard(){
 
     // Image area at top
     var imgArea=document.createElement('div');
-    if(job.image_url){
+    var jobImg=job.image_thumb||job.image_url||'';
+    if(jobImg){
       imgArea.style.cssText='height:140px;overflow:hidden;flex-shrink:0;background:#0a0620';
       var imgEl=document.createElement('img');
-      imgEl.src=job.image_url;
+      imgEl.src=jobImg;
       imgEl.style.cssText='width:100%;height:100%;object-fit:cover';
       imgEl.onerror=function(){imgArea.style.cssText='height:4px;background:'+barColor+';flex-shrink:0';};
       imgArea.appendChild(imgEl);
