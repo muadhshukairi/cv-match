@@ -445,7 +445,7 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
     <div style="max-width:840px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:8px;height:8px;border-radius:50%;background:#10B981;animation:pulse 2s ease infinite"></div>
-        <h2 style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--t)">Latest Jobs</h2>
+        <h2 style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--t)">Daily Jobs</h2>
       </div>
       <div style="font-size:11px;color:var(--tD);background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.15);border-radius:999px;padding:3px 12px">Updated daily · curated by Seerah AI</div>
     </div>
@@ -1485,27 +1485,25 @@ function renderJobBoard(){
     wrap.onmouseleave=function(){this.style.transform='';this.style.boxShadow='';this.style.borderColor='';};
     var barColor=job.omani_only?'linear-gradient(135deg,#059669,#10B981)':'linear-gradient(135deg,#6D28D9,#8B5CF6)';
 
-    // Image area — fixed height, cover fill
+    // Clean gradient header with company initial (no blurry thumbnails)
     var imgArea=document.createElement('div');
-    var jobImg=job.image_thumb||job.image_url||'';
-    imgArea.style.cssText='height:80px;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#0f0b1f,#1a1040);position:relative';
-    if(jobImg){
-      var imgEl=document.createElement('img');
-      imgEl.style.cssText='width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s';
-      imgEl.onmouseover=function(){this.style.transform='scale(1.04)';};
-      imgEl.onmouseout=function(){this.style.transform='';};
-      imgEl.onerror=function(){imgArea.innerHTML='';imgArea.style.cssText='height:4px;background:'+barColor;};
-      imgEl.src=jobImg;
-      imgArea.appendChild(imgEl);
-    } else {
-      imgArea.style.cssText='height:4px;background:'+barColor+';flex-shrink:0';
-    }
-    // Omani badge overlay on image
-    if(job.omani_only && jobImg){
+    imgArea.style.cssText='height:64px;flex-shrink:0;background:'+barColor+';position:relative;display:flex;align-items:center;justify-content:space-between;padding:10px 12px';
+    var initial=(job.company||'?').trim().charAt(0).toUpperCase();
+    var initCircle=document.createElement('div');
+    initCircle.style.cssText='width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;flex-shrink:0';
+    initCircle.textContent=initial;
+    imgArea.appendChild(initCircle);
+    if(job.omani_only){
       var ob=document.createElement('div');
-      ob.style.cssText='position:absolute;top:8px;right:8px;background:rgba(5,150,105,.9);color:#fff;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:999px;backdrop-filter:blur(4px)';
-      ob.textContent='🇴🇲 Omani Only';
+      ob.style.cssText='background:rgba(0,0,0,.25);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px';
+      ob.textContent='🇴🇲 Omani';
       imgArea.appendChild(ob);
+    }
+    if(job.source){
+      var src=document.createElement('div');
+      src.style.cssText='position:absolute;bottom:6px;right:8px;font-size:8.5px;color:rgba(255,255,255,.6)';
+      src.textContent=job.source||'';
+      imgArea.appendChild(src);
     }
     wrap.appendChild(imgArea);
     var hdr=document.createElement('div');
