@@ -778,7 +778,9 @@ html,body{overflow-x:hidden;max-width:100vw}
         <span style="font-size:16px;flex-shrink:0">⚠</span>
         <div><div id="t-kwhead" style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px"></div>
         <div id="kw-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
-        <div id="kw-disclaimer" style="font-size:10.5px;color:var(--tD);line-height:1.5"></div></div>
+        <div id="kw-disclaimer" style="font-size:10.5px;color:var(--tD);line-height:1.5"></div>
+        <button id="kw-refresh-btn" onclick="refreshWithKeywords()" style="display:none;margin-top:10px;font-size:12px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6D28D9,#8B5CF6);border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-family:inherit"></button>
+        </div>
       </div>
     </div>
     <!-- Template picker -->
@@ -845,6 +847,7 @@ var I={
     catTechnology:'Technology',catFinance:'Finance',catOmani:'Omani Only',
     kwdisclaimer:'⚠ Only add keywords that genuinely reflect your real skills and experience. Adding something you can\'t back up may hurt you at interview or on the job.',
     kwtaphint:'Tap a keyword you actually have — it\'ll be added to your CV and your match score will update.',
+    kwrefresh:'✦ Update CV & Recalculate',kwrefreshing:'Rewriting your CV…',
   },
   ar:{
     badge:'مطابقة وظائف بالذكاء الاصطناعي · عُمان والخليج',
@@ -874,13 +877,14 @@ var I={
     catTechnology:'التقنية',catFinance:'المالية',catOmani:'عُمانيين فقط',
     kwdisclaimer:'⚠ أضف فقط الكلمات المفتاحية التي تعكس مهاراتك وخبرتك الحقيقية فعلاً. إضافة شيء لا تستطيع إثباته قد يضرّك في المقابلة أو العمل.',
     kwtaphint:'اضغط على كلمة تمتلكها فعلاً — ستُضاف إلى سيرتك الذاتية وستتحدّث نسبة التوافق.',
+    kwrefresh:'✦ تحديث السيرة وإعادة الحساب',kwrefreshing:'جارٍ إعادة كتابة سيرتك…',
   }
 };
 function t(k){return (I[lang]&&I[lang][k])||I.en[k]||k;}
 
 /* ══ State ══════════════════════════════════════════════════════════════════ */
 var lang='en', cvText='', userName='', cvProfile=null;
-var _addedKw=[], _allMissingKw=[], _origPct=0, _kwStateJobId=null;
+var _addedKw=[], _allMissingKw=[], _origPct=0, _kwStateJobId=null, _realAfterPct=0;
 var JOBS=[], currentJob=null, lastResult=null;
 var currentTpl='executive', busy=false;
 
@@ -1361,6 +1365,7 @@ function renderResult(data){
   document.getElementById('r-title').textContent=lang==='ar'?job.ar:job.en;
   document.getElementById('r-meta').textContent=job.company+' · '+job.loc;
   if(_kwStateJobId!==job.id){_addedKw=[];_allMissingKw=(data.missing_keywords||[]).slice();_origPct=job.pct;_kwStateJobId=job.id;}
+  _realAfterPct=data.improved_match_score||job.pct;
   renderFitBar();
   // Score rings
   setRing('ring-b','score-b',data.match_score||0,false);
@@ -1406,19 +1411,20 @@ function fitLabelFor(pct){
 }
 function fitColorFor(pct){ return pct>=70?'#10B981':pct>=45?'#F59E0B':'#EF4444'; }
 function currentPct(){
-  if(!_allMissingKw.length||!_addedKw.length) return _origPct;
-  var gap=Math.max(0,95-_origPct);
-  var share=gap/_allMissingKw.length;
-  return Math.min(95,Math.round(_origPct+share*_addedKw.length));
+  if(!_addedKw.length) return _realAfterPct;
+  var gap=Math.max(0,95-_realAfterPct);
+  var share=gap/Math.max(1,_allMissingKw.length);
+  return Math.min(95,Math.round(_realAfterPct+share*_addedKw.length));
 }
 function renderFitBar(){
   var before=_origPct, after=currentPct();
   var acL=fitColorFor(after);
   var grad='linear-gradient(90deg,#6D28D9,'+acL+')';
   var changed=after!==before;
+  var pendingTag=_addedKw.length?' <span style="color:var(--tD);font-weight:500">('+(lang==='ar'?'تقديري':'estimated')+')</span>':'';
   var valueHTML=changed?
-    '<span style="text-decoration:line-through;color:var(--tD);font-weight:500">'+before+'%</span> → <span style="color:'+acL+'">'+after+'%</span> · '+fitLabelFor(after):
-    '<span style="color:'+acL+'">'+after+'%</span> · '+fitLabelFor(after);
+    '<span style="text-decoration:line-through;color:var(--tD);font-weight:500">'+before+'%</span> → <span style="color:'+acL+'">'+after+'%</span> · '+fitLabelFor(after)+pendingTag:
+    '<span style="color:'+acL+'">'+after+'%</span> · '+fitLabelFor(after)+pendingTag;
   document.getElementById('r-fitbar').innerHTML=
     '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--tD);font-weight:500">'+(lang==='ar'?'التوافق':'Compatibility')+'</span><span style="font-size:11.5px;font-weight:700">'+valueHTML+'</span></div>'+
     '<div style="position:relative;height:4px;background:var(--b);border-radius:999px">'+
@@ -1447,6 +1453,42 @@ function toggleKw(k){
   renderKwList();
   renderFitBar();
   if(lastResult) buildCVDoc(currentTpl);
+  var btn=document.getElementById('kw-refresh-btn');
+  if(btn){
+    btn.style.display=_addedKw.length?'':'none';
+    btn.textContent=t('kwrefresh');
+    btn.disabled=false;
+  }
+}
+async function refreshWithKeywords(){
+  if(!_addedKw.length||!currentJob||busy) return;
+  busy=true;
+  var btn=document.getElementById('kw-refresh-btn');
+  var origBtnText=btn.textContent;
+  btn.disabled=true;
+  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="animation:spin .7s linear infinite;vertical-align:-2px;margin-inline-end:6px"><circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,.3)" stroke-width="3"/><path d="M12 3a9 9 0 0 1 9 9" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>'+t('kwrefreshing');
+  try{
+    var res=await fetch('/api/generate',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        cvText:cvText,jobDescription:currentJob.desc,
+        country:document.getElementById('country-sel')?document.getElementById('country-sel').value:'',
+        level:cvProfile?cvProfile.seniorityLevel:'senior',language:lang,
+        confirmedKeywords:_addedKw.slice()
+      }),
+    });
+    var data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Update failed');
+    lastResult=data;
+    _addedKw=[];_allMissingKw=(data.missing_keywords||[]).slice();
+    renderResult(data);
+    if(btn){btn.style.display='none';}
+  }catch(e){
+    btn.disabled=false;
+    btn.textContent=origBtnText;
+    var errEl=document.getElementById('kw-disclaimer');
+    if(errEl) errEl.textContent=(lang==='ar'?'تعذّر التحديث: ':'Could not update: ')+e.message;
+  }finally{busy=false;}
 }
 
 
