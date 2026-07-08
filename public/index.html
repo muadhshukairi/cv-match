@@ -973,6 +973,13 @@ function dAgo(n){
 /* ══ File upload ════════════════════════════════════════════════════════════ */
 document.getElementById('file-in').addEventListener('change',async function(e){
   var file=e.target.files[0];if(!file)return;
+  // Check if this was triggered from a job card direct upload
+  if(window._directJob){
+    var job=window._directJob; window._directJob=null;
+    directImproveForJob(file,job);
+    e.target.value='';
+    return;
+  }
   document.getElementById('t-ulbl').textContent=t('reading');
   document.getElementById('upload-err').style.display='none';
   try{
@@ -983,7 +990,7 @@ document.getElementById('file-in').addEventListener('change',async function(e){
       for(var i=1;i<=pdf.numPages;i++){
         var pg=await pdf.getPage(i);
         var ct=await pg.getTextContent();
-        txt+=ct.items.map(function(x){return x.str;}).join(' ')+'\n';
+        txt+=ct.items.map(function(x){return x.str;}).join(' ')+'\nn';
       }
     }else if(name.endsWith('.docx')){
       var ab=await file.arrayBuffer();
@@ -1642,7 +1649,7 @@ function renderJobBoard(){
     }
     wrap.appendChild(imgArea);
     var hdr=document.createElement('div');
-    hdr.style.cssText='padding:10px 12px 10px;flex:1;display:flex;flex-direction:column';
+    hdr.style.cssText='padding:10px 12px 10px;display:flex;flex-direction:column;height:100%';
     var titleTxt=lang==='ar'?job.title_ar:job.title_en;
     var typeB='<span style="font-size:9.5px;font-weight:600;background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:1.5px 8px;color:var(--tD)">'+esc(job.type||'Full-time')+'</span>';
     hdr.innerHTML=
@@ -1663,9 +1670,9 @@ function renderJobBoard(){
     var ctHtml=job.contact?'<div style="background:var(--vDim);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:8px 10px;margin:10px 0;font-size:11.5px;color:var(--v)">'+(lang==='ar'?'للتواصل: ':'Contact: ')+esc(job.contact)+'</div>':'';
     det.innerHTML=reqHtml+ctHtml;
     var improveBtn=document.createElement('button');
-    improveBtn.style.cssText='width:100%;background:linear-gradient(135deg,#6D28D9,#10B981);color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px';
-    improveBtn.textContent='✦ '+(lang==='ar'?'تحسين سيرتي':'Improve my CV');
-    improveBtn.addEventListener('click',function(){useJobForCV(job);});
+    improveBtn.style.cssText='width:100%;background:linear-gradient(135deg,#059669,#10B981);color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px';
+    improveBtn.textContent=(lang==='ar'?'📄 ارفع سيرتك وحسّنها':'📄 Upload & Match CV');
+    (function(j){ improveBtn.addEventListener('click',function(){ window._directJob=j; document.getElementById('file-in').click(); }); })(job);
     det.appendChild(improveBtn);
 
     if(togBtn) togBtn.addEventListener('click',function(e){
@@ -1684,6 +1691,74 @@ function scrollJB(dir){
 function filterJB(f){JB_FILTER=f;renderJobBoard();}
 
 /* ══ Use published job for CV improvement ═══════════════════════════════════ */
+// Direct CV upload from job card → skip search → straight to improvement
+async function directImproveForJob(file, job) {
+  currentJob = {
+    id: 'jb-'+(job.id||''),
+    en: job.title_en||'',
+    ar: job.title_ar||'',
+    company: job.company||'',
+    loc: job.location||'Oman',
+    ten: job.type||'Full-time',
+    tar: job.type||'Full-time',
+    url: job.contact||'',
+    desc: (job.requirements||[]).join('. '),
+    pct: 80, match: 'high', days_ago: null, source: job.source||''
+  };
+
+  goUpload();
+  var errEl = document.getElementById('upload-err');
+  errEl.style.display='';
+  errEl.style.background='rgba(16,185,129,.1)';
+  errEl.style.color='#10B981';
+  errEl.style.borderColor='rgba(16,185,129,.3)';
+  errEl.textContent = (lang==='ar' ? '\u{1F4C4} \u062C\u0627\u0631\u064A \u0642\u0631\u0627\u0621\u0629 \u0633\u064A\u0631\u062A\u0643...' : '\u{1F4C4} Reading your CV...');
+
+  try {
+    var name = file.name.toLowerCase(), txt = '';
+    if (name.endsWith('.pdf')) {
+      var buf = await file.arrayBuffer();
+      var pdf = await pdfjsLib.getDocument({data: buf}).promise;
+      for (var p = 1; p <= Math.min(pdf.numPages, 6); p++) {
+        var page = await pdf.getPage(p);
+        var tc = await page.getTextContent();
+        txt += tc.items.map(function(i){ return i.str; }).join(' ') + '\n';
+      }
+    } else if (name.endsWith('.docx')) {
+      var buf2 = await file.arrayBuffer();
+      var res2 = await mammoth.extractRawText({arrayBuffer: buf2});
+      txt = res2.value;
+    } else {
+      txt = await file.text();
+    }
+    cvText = txt.trim();
+    userName = detectName(txt);
+
+    errEl.textContent = (lang==='ar' ? '\u{1F916} \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u064A\u062D\u0644\u0644 \u0633\u064A\u0631\u062A\u0643...' : '\u{1F916} AI analysing your CV...');
+
+    var r1 = await fetch('/api/extract-cv', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cvText: cvText})
+    });
+    var p = await r1.json();
+    cvProfile = p;
+    if (p.candidateName && (!userName || userName==='')) userName = p.candidateName;
+    if (p.email)    cvProfile.email    = p.email;
+    if (p.phone)    cvProfile.phone    = p.phone;
+    if (p.location) cvProfile.location = p.location;
+    fetch('/api/track?event=cvs').catch(function(){});
+
+    errEl.textContent = (lang==='ar' ? '\u2746 \u062C\u0627\u0631\u064A \u062A\u062D\u0633\u064A\u0646 \u0633\u064A\u0631\u062A\u0643 \u0644\u0647\u0630\u0647 \u0627\u0644\u0648\u0638\u064A\u0641\u0629...' : '\u2746 Improving your CV for this job...');
+    await doTailor(currentJob.id);
+
+  } catch(e) {
+    errEl.style.background='rgba(239,68,68,.08)';
+    errEl.style.color='#EF4444';
+    errEl.style.borderColor='rgba(239,68,68,.2)';
+    errEl.textContent = '\u274C ' + (e.message || 'Error processing CV');
+  }
+}
 function useJobForCV(job){
   if(!cvText){
     document.getElementById('s-upload').scrollIntoView({behavior:'smooth'});
