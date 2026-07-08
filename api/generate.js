@@ -34,10 +34,11 @@ ${langInstruction}
 Follow this process precisely:
 1. Read the job description carefully and identify its most important required skills, qualifications, and exact phrases/terminology.
 2. Rewrite the professional summary so it leads with the strongest genuine matches between the candidate's background and this job, using the job posting's own terminology where the candidate truthfully has that skill.
-3. Reorder AND rewrite the skills list — most relevant to THIS specific job first. Where the candidate has a matching skill, phrase it using the exact term from the job description rather than a synonym (ATS keyword matching is often literal).
-4. For each role in experience, rewrite the bullet points to be achievement-oriented and quantified, and REORDER them so the most relevant to this job's requirements come first. Keep roles in standard reverse-chronological order.
-5. Score improved_match_score honestly — reordering and rephrasing existing true content can genuinely raise the score, but it should not reach 100 if skills are genuinely missing.
-6. Never invent employers, job titles, dates, or skills the candidate does not actually have. Genuinely missing skills go in missing_keywords.
+3. For each role in experience, rewrite the bullet points to be achievement-oriented and quantified, and REORDER them so the most relevant to this job's requirements come first. Keep roles in standard reverse-chronological order. As you write each bullet, actively work in the specific skill or tool it demonstrates, using the job description's own terminology where truthful — e.g. instead of "Oversaw contractor performance", write "Oversaw contractor performance and enforced FIDIC-based contract administration across three concurrent sites" if that skill is genuinely part of the story. The bullet should make the skill self-evident, not just imply it.
+4. ONLY AFTER writing the experience bullets, build the skills list from what the bullets actually demonstrate — most relevant to THIS job first. A skill is only allowed in the skills array if it is directly traceable to specific wording in at least one experience bullet (or is an unambiguous baseline qualification like a degree or language). Do not add a skill to the list that isn't backed by the experience section — this is a hard rule, not a suggestion. Where the candidate has a matching skill, phrase it using the exact term from the job description rather than a synonym (ATS keyword matching is often literal).
+5. Cross-check before finalising: read through the skills array one more time and confirm each entry's exact keyword or a close paraphrase of it appears somewhere in the experience bullets. Rewrite any bullet that's missing its corresponding skill mention, or remove the skill if it truly can't be grounded in a real bullet.
+6. Score improved_match_score honestly — reordering and rephrasing existing true content can genuinely raise the score, but it should not reach 100 if skills are genuinely missing.
+7. Never invent employers, job titles, dates, or skills the candidate does not actually have. Genuinely missing skills go in missing_keywords.
 
 Respond with ONLY valid JSON, no markdown fences, no commentary, matching exactly this schema:
 {
@@ -46,8 +47,8 @@ Respond with ONLY valid JSON, no markdown fences, no commentary, matching exactl
   "missing_keywords": [<up to 6 important job-description keywords genuinely absent from the candidate's background>],
   "generated_cv": {
     "professional_summary": "<3 ATS-friendly sentences, leads with strongest matches to this job>",
-    "skills": [<up to 10 strings, ordered most-relevant-to-this-job first>],
-    "experience": [{"title": "...", "company": "...", "dates": "...", "bullets": [<3-5 bullets, most relevant to this job first>]}],
+    "skills": [<up to 10 strings, ordered most-relevant-to-this-job first, each one traceable to an experience bullet>],
+    "experience": [{"title": "...", "company": "...", "dates": "...", "bullets": [<3-5 bullets, most relevant to this job first, each bullet naturally surfacing the skill terminology it demonstrates>]}],
     "education": [<plain strings>]
   },
   "cover_letter": "<3-4 paragraphs, plain text, tailored to this specific role and company>",
