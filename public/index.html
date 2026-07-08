@@ -1472,7 +1472,7 @@ function renderJobBoard(){
   });
   var el=document.getElementById('jb-cards');
   if(!el) return;
-  el.style.cssText='display:flex;gap:14px;min-width:max-content;padding:0 40px';
+  el.style.cssText='display:flex;gap:10px;min-width:max-content;padding:0 32px';
   if(!filtered.length){
     el.innerHTML='<p style="color:var(--tD);padding:40px;font-size:14px;min-width:300px">No jobs yet. Check back soon.</p>';
     return;
@@ -1480,7 +1480,7 @@ function renderJobBoard(){
   el.innerHTML='';
   filtered.forEach(function(job,i){
     var wrap=document.createElement('div');
-    wrap.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:12px;overflow:hidden;width:220px;min-width:220px;flex-shrink:0;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s;cursor:default';
+    wrap.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:10px;overflow:hidden;width:190px;min-width:190px;flex-shrink:0;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s;cursor:default';
     wrap.onmouseenter=function(){this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 28px rgba(139,92,246,.18)';this.style.borderColor='rgba(139,92,246,.4)';};
     wrap.onmouseleave=function(){this.style.transform='';this.style.boxShadow='';this.style.borderColor='';};
     var barColor=job.omani_only?'linear-gradient(135deg,#059669,#10B981)':'linear-gradient(135deg,#6D28D9,#8B5CF6)';
@@ -1488,7 +1488,7 @@ function renderJobBoard(){
     // Image area — fixed height, cover fill
     var imgArea=document.createElement('div');
     var jobImg=job.image_thumb||job.image_url||'';
-    imgArea.style.cssText='height:110px;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#0f0b1f,#1a1040);position:relative';
+    imgArea.style.cssText='height:80px;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#0f0b1f,#1a1040);position:relative';
     if(jobImg){
       var imgEl=document.createElement('img');
       imgEl.style.cssText='width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s';
@@ -1509,7 +1509,7 @@ function renderJobBoard(){
     }
     wrap.appendChild(imgArea);
     var hdr=document.createElement('div');
-    hdr.style.cssText='padding:12px 13px 11px;flex:1;display:flex;flex-direction:column';
+    hdr.style.cssText='padding:10px 12px 10px;flex:1;display:flex;flex-direction:column';
     var titleTxt=lang==='ar'?job.title_ar:job.title_en;
     var typeB='<span style="font-size:9.5px;font-weight:600;background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:1.5px 8px;color:var(--tD)">'+esc(job.type||'Full-time')+'</span>';
     hdr.innerHTML=
