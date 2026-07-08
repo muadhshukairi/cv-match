@@ -614,65 +614,6 @@ html,body{overflow-x:hidden;max-width:100vw}
   </section>
 
   <!-- ══ JOB MATCH MODAL ══ -->
-  <div id="job-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9998;overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div style="max-width:720px;margin:0 auto;padding:20px 16px 40px;min-height:100vh;display:flex;flex-direction:column">
-      <!-- Modal header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <div id="modal-src" style="font-size:11px;color:#6B7280;background:rgba(255,255,255,.06);border-radius:999px;padding:3px 12px"></div>
-        <button onclick="closeJobModal()" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
-      </div>
-
-      <!-- Job image -->
-      <div id="modal-img-wrap" style="display:none;border-radius:14px;overflow:hidden;margin-bottom:20px;max-height:260px">
-        <img id="modal-img" style="width:100%;object-fit:cover;display:block">
-      </div>
-
-      <!-- Job info -->
-      <div style="margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-          <h2 id="modal-title" style="font-size:20px;font-weight:900;color:#fff;line-height:1.3"></h2>
-          <span id="modal-omani" style="display:none;font-size:10.5px;background:rgba(16,185,129,.15);color:#10B981;border:1px solid rgba(16,185,129,.3);border-radius:999px;padding:2px 9px;font-weight:700">🇴🇲 Omani Only</span>
-        </div>
-        <div id="modal-meta" style="font-size:13px;color:#94A3B8;margin-bottom:14px"></div>
-        <div id="modal-reqs" style="margin-bottom:14px"></div>
-        <div id="modal-contact" style="display:none;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:10px 14px;font-size:12.5px;color:#8B5CF6"></div>
-      </div>
-
-      <!-- CV upload area -->
-      <div id="modal-upload-area" style="background:#0F0B1F;border:2px dashed #2D1F4E;border-radius:14px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px"
-        onclick="document.getElementById('modal-file-in').click()"
-        ondragover="event.preventDefault();this.style.borderColor='#8B5CF6';this.style.background='rgba(139,92,246,.06)'"
-        ondragleave="this.style.borderColor='#2D1F4E';this.style.background='#0F0B1F'"
-        ondrop="event.preventDefault();this.style.borderColor='#2D1F4E';this.style.background='#0F0B1F';handleModalDrop(event)">
-        <input type="file" id="modal-file-in" accept=".pdf,.docx,.txt" style="display:none" onchange="handleModalCV(this.files[0])">
-        <div style="font-size:28px;margin-bottom:8px">📄</div>
-        <div id="modal-upload-lbl" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">Upload your CV to see match score</div>
-        <div style="font-size:12px;color:#475569">PDF, DOCX or TXT</div>
-      </div>
-
-      <!-- Score + improve (shown after upload) -->
-      <div id="modal-score-area" style="display:none">
-        <div style="display:flex;align-items:center;gap:20px;background:#0F0B1F;border:1px solid #1E1535;border-radius:14px;padding:20px;margin-bottom:14px">
-          <div style="position:relative;width:80px;height:80px;flex-shrink:0">
-            <div id="modal-ring" style="width:80px;height:80px;border-radius:50%;background:conic-gradient(#8B5CF6 0deg,#1E1535 0deg);display:flex;align-items:center;justify-content:center">
-              <div style="width:58px;height:58px;border-radius:50%;background:#0F0B1F;display:flex;align-items:center;justify-content:center">
-                <span id="modal-score-num" style="font-size:20px;font-weight:900;color:#fff">0%</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <div id="modal-score-lbl" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px"></div>
-            <div id="modal-score-sub" style="font-size:12px;color:#6B7280;line-height:1.5"></div>
-          </div>
-        </div>
-        <button id="modal-improve-btn" onclick="improveFromModal()" style="width:100%;background:linear-gradient(135deg,#6D28D9,#10B981);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit">
-          ✦ Improve my CV for this job
-        </button>
-      </div>
-
-      <div id="modal-status" style="font-size:13px;text-align:center;color:#8B5CF6;padding:8px 0"></div>
-    </div>
-  </div>
 
   <!-- Footer -->
   <footer style="position:relative;z-index:10;text-align:center;padding:28px 24px 36px;border-top:1px solid rgba(255,255,255,.06);margin-top:auto">
@@ -2135,5 +2076,66 @@ function printCV() {
   document.body.style.overflow = '';
 })();
 </script>
+
+<!-- ═══ JOB MATCH MODAL (moved to body level to escape any ancestor transform) ═══ -->
+  <div id="job-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9998;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div style="max-width:720px;margin:0 auto;padding:20px 16px 40px;min-height:100vh;display:flex;flex-direction:column">
+      <!-- Modal header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div id="modal-src" style="font-size:11px;color:#6B7280;background:rgba(255,255,255,.06);border-radius:999px;padding:3px 12px"></div>
+        <button onclick="closeJobModal()" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+
+      <!-- Job image -->
+      <div id="modal-img-wrap" style="display:none;border-radius:14px;overflow:hidden;margin-bottom:20px;max-height:260px">
+        <img id="modal-img" style="width:100%;object-fit:cover;display:block">
+      </div>
+
+      <!-- Job info -->
+      <div style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+          <h2 id="modal-title" style="font-size:20px;font-weight:900;color:#fff;line-height:1.3"></h2>
+          <span id="modal-omani" style="display:none;font-size:10.5px;background:rgba(16,185,129,.15);color:#10B981;border:1px solid rgba(16,185,129,.3);border-radius:999px;padding:2px 9px;font-weight:700">🇴🇲 Omani Only</span>
+        </div>
+        <div id="modal-meta" style="font-size:13px;color:#94A3B8;margin-bottom:14px"></div>
+        <div id="modal-reqs" style="margin-bottom:14px"></div>
+        <div id="modal-contact" style="display:none;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:10px 14px;font-size:12.5px;color:#8B5CF6"></div>
+      </div>
+
+      <!-- CV upload area -->
+      <div id="modal-upload-area" style="background:#0F0B1F;border:2px dashed #2D1F4E;border-radius:14px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px"
+        onclick="document.getElementById('modal-file-in').click()"
+        ondragover="event.preventDefault();this.style.borderColor='#8B5CF6';this.style.background='rgba(139,92,246,.06)'"
+        ondragleave="this.style.borderColor='#2D1F4E';this.style.background='#0F0B1F'"
+        ondrop="event.preventDefault();this.style.borderColor='#2D1F4E';this.style.background='#0F0B1F';handleModalDrop(event)">
+        <input type="file" id="modal-file-in" accept=".pdf,.docx,.txt" style="display:none" onchange="handleModalCV(this.files[0])">
+        <div style="font-size:28px;margin-bottom:8px">📄</div>
+        <div id="modal-upload-lbl" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">Upload your CV to see match score</div>
+        <div style="font-size:12px;color:#475569">PDF, DOCX or TXT</div>
+      </div>
+
+      <!-- Score + improve (shown after upload) -->
+      <div id="modal-score-area" style="display:none">
+        <div style="display:flex;align-items:center;gap:20px;background:#0F0B1F;border:1px solid #1E1535;border-radius:14px;padding:20px;margin-bottom:14px">
+          <div style="position:relative;width:80px;height:80px;flex-shrink:0">
+            <div id="modal-ring" style="width:80px;height:80px;border-radius:50%;background:conic-gradient(#8B5CF6 0deg,#1E1535 0deg);display:flex;align-items:center;justify-content:center">
+              <div style="width:58px;height:58px;border-radius:50%;background:#0F0B1F;display:flex;align-items:center;justify-content:center">
+                <span id="modal-score-num" style="font-size:20px;font-weight:900;color:#fff">0%</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div id="modal-score-lbl" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px"></div>
+            <div id="modal-score-sub" style="font-size:12px;color:#6B7280;line-height:1.5"></div>
+          </div>
+        </div>
+        <button id="modal-improve-btn" onclick="improveFromModal()" style="width:100%;background:linear-gradient(135deg,#6D28D9,#10B981);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit">
+          ✦ Improve my CV for this job
+        </button>
+      </div>
+
+      <div id="modal-status" style="font-size:13px;text-align:center;color:#8B5CF6;padding:8px 0"></div>
+    </div>
+  </div>
 </body>
 </html>
