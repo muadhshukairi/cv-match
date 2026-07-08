@@ -777,7 +777,8 @@ html,body{overflow-x:hidden;max-width:100vw}
       <div style="display:flex;gap:12px;align-items:flex-start">
         <span style="font-size:16px;flex-shrink:0">⚠</span>
         <div><div id="t-kwhead" style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px"></div>
-        <div id="kw-list" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
+        <div id="kw-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+        <div id="kw-disclaimer" style="font-size:10.5px;color:var(--tD);line-height:1.5"></div></div>
       </div>
     </div>
     <!-- Template picker -->
@@ -826,7 +827,7 @@ var I={
     newcv:'← New CV',jtitle:'Jobs matched to your profile',
     portals:'Search also on',
     tfor:'Improved for',before:'Before',after:'After',
-    origcv:'Original CV',rewrcv:'Rewritten CV',improved:'IMPROVED',
+    origcv:'Original CV',rewrcv:'Rewritten CV',improved:'QUALITY IMPROVED',
     dlpdf:'⬇ Download PDF',dlword:'⬇ Download Word',
     kwhead:'Missing keywords — add these to close the gap',
     tpllbl:'Template',covhd:'Cover letter',iqhd:'Interview questions',
@@ -842,6 +843,8 @@ var I={
     omanionly:'🇴🇲 Omani Only',requirements:'Requirements',contactlbl:'Contact:',
     catAll:'All',catEngineering:'Engineering',catSales:'Sales & Marketing',
     catTechnology:'Technology',catFinance:'Finance',catOmani:'Omani Only',
+    kwdisclaimer:'⚠ Only add keywords that genuinely reflect your real skills and experience. Adding something you can\'t back up may hurt you at interview or on the job.',
+    kwtaphint:'Tap a keyword you actually have — it\'ll be added to your CV and your match score will update.',
   },
   ar:{
     badge:'مطابقة وظائف بالذكاء الاصطناعي · عُمان والخليج',
@@ -853,7 +856,7 @@ var I={
     newcv:'← سيرة جديدة',jtitle:'وظائف تناسب سيرتك الذاتية',
     portals:'ابحث أيضاً في',
     tfor:'مخصّصة لـ',before:'قبل',after:'بعد',
-    origcv:'السيرة الأصلية',rewrcv:'السيرة المحسّنة',improved:'محسّنة',
+    origcv:'السيرة الأصلية',rewrcv:'السيرة المحسّنة',improved:'تحسّنت الجودة',
     dlpdf:'⬇ تنزيل PDF',dlword:'⬇ تنزيل Word',
     kwhead:'الكلمات المفتاحية الناقصة — أضفها لتقوية طلبك',
     tpllbl:'قالب السيرة',covhd:'خطاب التغطية',iqhd:'أسئلة المقابلة المتوقعة',
@@ -869,12 +872,15 @@ var I={
     omanionly:'🇴🇲 عُمانيين فقط',requirements:'المتطلبات',contactlbl:'للتواصل:',
     catAll:'الكل',catEngineering:'الهندسة',catSales:'المبيعات والتسويق',
     catTechnology:'التقنية',catFinance:'المالية',catOmani:'عُمانيين فقط',
+    kwdisclaimer:'⚠ أضف فقط الكلمات المفتاحية التي تعكس مهاراتك وخبرتك الحقيقية فعلاً. إضافة شيء لا تستطيع إثباته قد يضرّك في المقابلة أو العمل.',
+    kwtaphint:'اضغط على كلمة تمتلكها فعلاً — ستُضاف إلى سيرتك الذاتية وستتحدّث نسبة التوافق.',
   }
 };
 function t(k){return (I[lang]&&I[lang][k])||I.en[k]||k;}
 
 /* ══ State ══════════════════════════════════════════════════════════════════ */
 var lang='en', cvText='', userName='', cvProfile=null;
+var _addedKw=[], _allMissingKw=[], _origPct=0, _kwStateJobId=null;
 var JOBS=[], currentJob=null, lastResult=null;
 var currentTpl='executive', busy=false;
 
@@ -1354,12 +1360,8 @@ function renderResult(data){
   // Banner
   document.getElementById('r-title').textContent=lang==='ar'?job.ar:job.en;
   document.getElementById('r-meta').textContent=job.company+' · '+job.loc;
-  var acL=job.match==='high'?'#10B981':job.match==='medium'?'#F59E0B':'#EF4444';
-  var grad=job.match==='high'?'linear-gradient(90deg,#6D28D9,#10B981)':job.match==='medium'?'linear-gradient(90deg,#6D28D9,#F59E0B)':'linear-gradient(90deg,#6D28D9,#EF4444)';
-  var fitLbl=job.match==='high'?(lang==='ar'?'توافق ممتاز':'Strong fit'):job.match==='medium'?(lang==='ar'?'توافق جزئي':'Partial fit'):(lang==='ar'?'توافق منخفض':'Low fit');
-  document.getElementById('r-fitbar').innerHTML=
-    '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--tD);font-weight:500">'+(lang==='ar'?'التوافق':'Compatibility')+'</span><span style="font-size:11.5px;font-weight:700;color:'+acL+'">'+job.pct+'% · '+fitLbl+'</span></div>'+
-    '<div style="height:4px;background:var(--b);border-radius:999px"><div style="height:100%;width:'+job.pct+'%;background:'+grad+';border-radius:999px;animation:barIn .9s cubic-bezier(.4,0,.2,1) both"></div></div>';
+  if(_kwStateJobId!==job.id){_addedKw=[];_allMissingKw=(data.missing_keywords||[]).slice();_origPct=job.pct;_kwStateJobId=job.id;}
+  renderFitBar();
   // Score rings
   setRing('ring-b','score-b',data.match_score||0,false);
   setRing('ring-a','score-a',data.improved_match_score||0,true);
@@ -1370,15 +1372,11 @@ function renderResult(data){
   var ab=document.getElementById('t-apply');
   if(ab)ab.onclick=function(){if(job.url)window.open(job.url,'_blank');};
   // Keywords
-  var kwCard=document.getElementById('kw-card'),kwList=document.getElementById('kw-list');
-  kwList.innerHTML='';
+  var kwCard=document.getElementById('kw-card');
   if(data.missing_keywords&&data.missing_keywords.length){
     kwCard.style.display='';
-    data.missing_keywords.forEach(function(k){
-      var sp=document.createElement('span');
-      sp.style.cssText='font-size:12px;background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.3);border-radius:999px;padding:3px 12px';
-      sp.textContent=k;kwList.appendChild(sp);
-    });
+    document.getElementById('kw-disclaimer').textContent=t('kwtaphint')+'  '+t('kwdisclaimer');
+    renderKwList();
   }else{kwCard.style.display='none';}
   // Cover + IQ
   document.getElementById('cover-txt').textContent=data.cover_letter||'';
@@ -1400,6 +1398,57 @@ function renderResult(data){
   // Template picker + CV doc
   buildPicker();buildCVDoc(currentTpl);
 }
+
+function fitLabelFor(pct){
+  if(pct>=70) return lang==='ar'?'توافق ممتاز':'Strong fit';
+  if(pct>=45) return lang==='ar'?'توافق جزئي':'Partial fit';
+  return lang==='ar'?'توافق منخفض':'Low fit';
+}
+function fitColorFor(pct){ return pct>=70?'#10B981':pct>=45?'#F59E0B':'#EF4444'; }
+function currentPct(){
+  if(!_allMissingKw.length||!_addedKw.length) return _origPct;
+  var gap=Math.max(0,95-_origPct);
+  var share=gap/_allMissingKw.length;
+  return Math.min(95,Math.round(_origPct+share*_addedKw.length));
+}
+function renderFitBar(){
+  var before=_origPct, after=currentPct();
+  var acL=fitColorFor(after);
+  var grad='linear-gradient(90deg,#6D28D9,'+acL+')';
+  var changed=after!==before;
+  var valueHTML=changed?
+    '<span style="text-decoration:line-through;color:var(--tD);font-weight:500">'+before+'%</span> → <span style="color:'+acL+'">'+after+'%</span> · '+fitLabelFor(after):
+    '<span style="color:'+acL+'">'+after+'%</span> · '+fitLabelFor(after);
+  document.getElementById('r-fitbar').innerHTML=
+    '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--tD);font-weight:500">'+(lang==='ar'?'التوافق':'Compatibility')+'</span><span style="font-size:11.5px;font-weight:700">'+valueHTML+'</span></div>'+
+    '<div style="position:relative;height:4px;background:var(--b);border-radius:999px">'+
+      '<div style="height:100%;width:'+after+'%;background:'+grad+';border-radius:999px;transition:width .4s ease"></div>'+
+      (changed?'<div style="position:absolute;top:-2px;left:'+before+'%;width:2px;height:8px;background:#fff;opacity:.5" title="'+(lang==='ar'?'قبل':'Before')+': '+before+'%"></div>':'')+
+    '</div>';
+}
+function renderKwList(){
+  var kwList=document.getElementById('kw-list');
+  kwList.innerHTML='';
+  _allMissingKw.forEach(function(k){
+    var added=_addedKw.indexOf(k)!==-1;
+    var sp=document.createElement('span');
+    sp.style.cssText='cursor:pointer;user-select:none;font-size:12px;border-radius:999px;padding:3px 12px;transition:all .15s;'+
+      (added?'background:rgba(16,185,129,.12);color:#10B981;border:1px solid rgba(16,185,129,.4);text-decoration:line-through;':
+             'background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.3)');
+    sp.textContent=(added?'✓ ':'+ ')+k;
+    sp.title=lang==='ar'?'اضغط لإضافتها إن كانت تنطبق عليك':'Click to add if this genuinely applies to you';
+    sp.addEventListener('click',function(){toggleKw(k);});
+    kwList.appendChild(sp);
+  });
+}
+function toggleKw(k){
+  var idx=_addedKw.indexOf(k);
+  if(idx===-1) _addedKw.push(k); else _addedKw.splice(idx,1);
+  renderKwList();
+  renderFitBar();
+  if(lastResult) buildCVDoc(currentTpl);
+}
+
 
 function setRing(rid,nid,score,glow){
   var c=score>=75?'#10B981':score>=50?'#F59E0B':'#EF4444';
@@ -1447,7 +1496,8 @@ function buildCVDoc(tplId){
   var contactLine=contactParts.join('  ·  ');
   var stColor={executive:'#0f1f4b',zurich:'#c0392b',ember:'#b05e3a',slate:'#0ea5e9',pearl:'#111',aurora:'#2c5364',onyx:'#4ade80',sand:'#8b5e3c',prism:'#7c3aed',titanium:'#52525b'};
   var ac=stColor[tplId]||'#8B5CF6';
-  var skillsHTML=buildSkills(cv.skills||[],tplId,ac);
+  var skillsForDisplay=(cv.skills||[]).concat(_addedKw.filter(function(k){return (cv.skills||[]).indexOf(k)===-1;}));
+  var skillsHTML=buildSkills(skillsForDisplay,tplId,ac);
   var expHTML=buildExp(cv.experience||[],tplId);
   var eduHTML=(cv.education||[]).map(function(e){return '<p style="font-size:11.5px;margin-bottom:2px">'+esc(e)+'</p>';}).join('');
   var body=
