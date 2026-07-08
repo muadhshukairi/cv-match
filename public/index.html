@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr" id="root">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
 <title>سيرة | Seerah AI — Improve Your CV. Land the Job.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,6 +18,7 @@
   --g:#10B981;--gold:#F59E0B;--red:#EF4444;
   --t:#F1F5F9;--tM:#94A3B8;--tD:#475569;
 }
+html,body{overflow-x:hidden;width:100%;max-width:100vw}
 body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -38,6 +39,12 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
 .no-scroll::-webkit-scrollbar{display:none}
 .no-scroll{-ms-overflow-style:none;scrollbar-width:none}
 @media(max-width:768px){
+  /* Global overflow fix */
+  *{max-width:100%;box-sizing:border-box}
+  
+  /* Upload grid - single column */
+  #upload-grid{grid-template-columns:1fr!important;gap:24px!important;padding:28px 16px 24px!important}
+  
   /* Upload screen layout */
   #s-upload>div{flex-direction:column!important;padding:16px!important}
   #s-upload>div>div:first-child{max-width:100%!important;text-align:center!important}
@@ -51,6 +58,17 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
   /* Result screen */
   #s-result>div{flex-direction:column!important;padding:10px!important;gap:12px!important}
   #cv-doc{width:100%!important;min-width:unset!important}
+  
+  /* Jobs results */
+  #s-jobs{padding:0!important}
+  #jobs-inner{flex-direction:column!important;padding:12px 16px!important;gap:12px!important}
+  .job-card{width:100%!important;min-width:unset!important}
+  
+  /* Header */
+  header{padding:10px 16px!important}
+  
+  /* Daily jobs carousel */
+  #jb-track>div{padding:0 20px!important}
   
   /* Score rings */
   #scores-row{gap:10px!important}
@@ -288,6 +306,114 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
   #tpl-picker .topt { transform: scale(0.9); transform-origin: left; }
 }
 
+
+/* ── Hero grid ───────────────────────────────────────── */
+@media(max-width:767px){
+  .hero-grid{
+    grid-template-columns:1fr!important;
+    padding:20px 16px!important;
+    gap:24px!important;
+  }
+}
+/* ── Mobile viewport fix ─────────────────────────────── */
+html,body{overflow-x:hidden;max-width:100vw}
+*{box-sizing:border-box}
+
+/* ── Upload screen ───────────────────────────────────── */
+@media(max-width:767px){
+  #s-upload{padding:12px!important}
+  #s-upload>div{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:20px!important;
+    padding:0!important;
+    width:100%!important;
+    max-width:100%!important;
+  }
+  #s-upload>div>div:first-child{
+    max-width:100%!important;
+    width:100%!important;
+    padding-right:0!important;
+  }
+  #s-upload>div>div:first-child h1{
+    font-size:24px!important;
+    line-height:1.2!important;
+  }
+  #s-upload>div>div:last-child{
+    width:100%!important;
+    max-width:100%!important;
+  }
+  /* Stats bar in card */
+  #stats-bar{
+    grid-template-columns:repeat(2,1fr)!important;
+    gap:8px!important;
+  }
+  /* Feature pills */
+  .feat-pills{flex-wrap:wrap!important;gap:6px!important}
+  /* Steps row */
+  .steps-row{gap:0!important}
+  /* Upload card */
+  .upload-card{min-width:unset!important;width:100%!important}
+}
+
+/* ── Jobs screen ─────────────────────────────────────── */
+@media(max-width:767px){
+  #s-jobs{padding:10px!important}
+  #s-jobs>div{
+    flex-direction:column!important;
+    gap:10px!important;
+    padding:0!important;
+  }
+  #jobs-col{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:unset!important;
+  }
+  .job-card{min-width:unset!important;width:100%!important}
+}
+
+/* ── Result screen ───────────────────────────────────── */
+@media(max-width:767px){
+  #s-result{padding:10px!important}
+  #s-result>div{
+    flex-direction:column!important;
+    gap:12px!important;
+    padding:0!important;
+  }
+  #cv-doc{
+    width:100%!important;
+    min-width:unset!important;
+    font-size:10px!important;
+  }
+  #scores-row{
+    gap:8px!important;
+    flex-wrap:wrap!important;
+  }
+  #dl-row{
+    flex-wrap:wrap!important;
+    gap:6px!important;
+    justify-content:center!important;
+  }
+  #dl-row button{
+    font-size:11px!important;
+    padding:7px 10px!important;
+    flex:1!important;
+    min-width:120px!important;
+  }
+  .result-side{
+    width:100%!important;
+    max-width:100%!important;
+  }
+}
+
+/* ── Daily Jobs board ────────────────────────────────── */
+@media(max-width:767px){
+  #jobs-board>div:first-child{padding:0 12px!important}
+  #jb-filters{padding:0 12px!important;gap:5px!important}
+  #jb-filters button{font-size:10px!important;padding:4px 9px!important}
+  #jb-track{padding:4px 0 16px!important}
+  #jb-track .jb-cards-inner,#jb-cards{padding:0 28px!important}
+}
 </style>
 </head>
 <body>
@@ -462,7 +588,7 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
       <button onclick="scrollJB(-1)" style="position:absolute;left:20px;top:50%;transform:translateY(-50%);z-index:20;width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--b);color:var(--t);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s" onmouseover="this.style.background='var(--v)'" onmouseout="this.style.background='var(--card)'">‹</button>
       <button onclick="scrollJB(1)" style="position:absolute;right:20px;top:50%;transform:translateY(-50%);z-index:20;width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--b);color:var(--t);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s" onmouseover="this.style.background='var(--v)'" onmouseout="this.style.background='var(--card)'">›</button>
       <!-- Scrollable track -->
-      <div id="jb-track" style="overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;padding:8px 0 16px" class="no-scroll">
+      <div id="jb-track" style="overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;padding:8px 0 16px;width:100%;max-width:100vw" class="no-scroll">
         <div id="jb-cards" style="display:flex;gap:14px;min-width:max-content;padding:0 40px">
           <div style="color:var(--tD);font-size:14px;padding:40px">Loading jobs…</div>
         </div>
@@ -1302,7 +1428,7 @@ function openInterviewPrep() {
 
   var html = '<!doctype html><html><head>' +
     '<meta charset="UTF-8"/>' +
-    '<meta name="viewport" content="width=device-width,initial-scale=1.0"/>' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">' +
     '<title>Interview Prep — ' + esc(job.en) + '</title>' +
     '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">' +
     '<style>' +
@@ -1607,7 +1733,7 @@ function openInterviewPrep() {
         '<div style="font-size:13.5px;color:#374151;line-height:1.75">'+esc(a)+'</div></div>':'') +
       '</div>';
   }).join('');
-  var html='<!doctype html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Interview Prep</title>' +
+  var html='<!doctype html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"><title>Interview Prep</title>' +
     '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">' +
     '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,sans-serif;background:#FAFAF8;color:#1A1A2E;padding:40px 24px}@media print{.no-print{display:none!important}}</style></head><body>' +
     '<div style="max-width:720px;margin:0 auto">' +

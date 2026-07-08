@@ -86,6 +86,26 @@
 var allJobs = []; // {job, status, imageDataUrl, croppedUrl}
 var currentImageUrl = null; // thumbnail of current screenshot
 
+// Compress image for ImgBB upload (max 1500px wide, high quality)
+async function compressForUpload(dataUrl) {
+  return new Promise(function(resolve) {
+    if (!dataUrl) { resolve(''); return; }
+    var img = new Image();
+    img.onload = function() {
+      var maxW = 800, maxH = 600;
+      var ratio = Math.min(maxW/img.width, maxH/img.height, 1);
+      var w = Math.round(img.width * ratio);
+      var h = Math.round(img.height * ratio);
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.88));
+    };
+    img.onerror = function() { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
 // Crop to Claude's bbox percentage coordinates
 async function cropToBbox(dataUrl, bbox) {
   if (!bbox || !dataUrl) return dataUrl;
@@ -171,13 +191,13 @@ async function autotrim(dataUrl) {
         var h = bottom - top + 1;
 
         // Compress to fit in Google Sheets (max ~35k chars)
-        var maxW = 280, maxH = 180;
+        var maxW = 800, maxH = 600;
         var ratio = Math.min(maxW/w, maxH/h, 1);
         var out = document.createElement('canvas');
         out.width = Math.round(w * ratio);
         out.height = Math.round(h * ratio);
         out.getContext('2d').drawImage(img, left, top, w, h, 0, 0, out.width, out.height);
-        resolve(out.toDataURL('image/jpeg', 0.65));
+        resolve(out.toDataURL('image/jpeg', 0.88));
       } catch(e) { resolve(dataUrl); }
     };
     img.onerror = function() { resolve(''); };
@@ -252,13 +272,16 @@ async function processFile(file) {
     setStatus('✓ Found ' + data.jobs.length + ' job(s) in ' + file.name + ' — review and publish below');
     // Crop each job to its bounding box
     var cropPromises = data.jobs.map(async function(job) {
-      // Step 1: Crop to Claude's bbox region
-      var bboxCropped = currentImageUrl;
-      if (job.bbox && (job.bbox.w < 95 || job.bbox.h < 95)) {
-        bboxCropped = await cropToBbox(currentImageUrl, job.bbox);
+      // Crop to Claude's bbox, then auto-trim white borders
+      var thumb;
+      if (job.bbox && job.bbox.w && job.bbox.h && (job.bbox.w < 92 || job.bbox.h < 92)) {
+        // Multi-post screenshot: crop to individual job bbox first
+        var bboxImg = await cropToBbox(currentImageUrl, job.bbox);
+        thumb = await autotrim(bboxImg);
+      } else {
+        // Single post: just auto-trim the full image
+        thumb = await autotrim(currentImageUrl);
       }
-      // Step 2: Auto-trim white borders from that region
-      var thumb = await autotrim(bboxCropped);
       return { job: job, status: 'pending', imageDataUrl: currentImageUrl, croppedUrl: thumb, thumb: thumb };
     });
     allJobs = allJobs.concat(await Promise.all(cropPromises));
