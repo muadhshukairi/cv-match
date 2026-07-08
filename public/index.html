@@ -1440,37 +1440,43 @@ function renderJobBoard(){
   el.innerHTML='';
   filtered.forEach(function(job,i){
     var wrap=document.createElement('div');
-    wrap.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:16px;overflow:hidden;width:280px;flex-shrink:0;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s';
-    wrap.onmouseenter=function(){this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(139,92,246,.2)';};
-    wrap.onmouseleave=function(){this.style.transform='';this.style.boxShadow='';};
-    var acL=job.omani_only?'#10B981':'#8B5CF6';
-    var barColor=job.omani_only?'linear-gradient(90deg,#059669,#10B981)':'linear-gradient(90deg,#6D28D9,#8B5CF6)';
+    wrap.style.cssText='background:var(--card);border:1px solid var(--b);border-radius:14px;overflow:hidden;width:260px;min-width:260px;flex-shrink:0;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s;cursor:default';
+    wrap.onmouseenter=function(){this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 28px rgba(139,92,246,.18)';this.style.borderColor='rgba(139,92,246,.4)';};
+    wrap.onmouseleave=function(){this.style.transform='';this.style.boxShadow='';this.style.borderColor='';};
+    var barColor=job.omani_only?'linear-gradient(135deg,#059669,#10B981)':'linear-gradient(135deg,#6D28D9,#8B5CF6)';
 
-    // Image area at top
+    // Image area — fixed height, cover fill
     var imgArea=document.createElement('div');
     var jobImg=job.image_thumb||job.image_url||'';
+    imgArea.style.cssText='height:148px;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#0f0b1f,#1a1040);position:relative';
     if(jobImg){
-      imgArea.style.cssText='height:140px;overflow:hidden;flex-shrink:0;background:#0a0620';
       var imgEl=document.createElement('img');
+      imgEl.style.cssText='width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s';
+      imgEl.onmouseover=function(){this.style.transform='scale(1.04)';};
+      imgEl.onmouseout=function(){this.style.transform='';};
+      imgEl.onerror=function(){imgArea.innerHTML='';imgArea.style.cssText='height:4px;background:'+barColor;};
       imgEl.src=jobImg;
-      imgEl.style.cssText='width:100%;height:100%;object-fit:cover';
-      imgEl.onerror=function(){imgArea.style.cssText='height:4px;background:'+barColor+';flex-shrink:0';};
       imgArea.appendChild(imgEl);
     } else {
       imgArea.style.cssText='height:4px;background:'+barColor+';flex-shrink:0';
     }
+    // Omani badge overlay on image
+    if(job.omani_only && jobImg){
+      var ob=document.createElement('div');
+      ob.style.cssText='position:absolute;top:8px;right:8px;background:rgba(5,150,105,.9);color:#fff;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:999px;backdrop-filter:blur(4px)';
+      ob.textContent='🇴🇲 Omani Only';
+      imgArea.appendChild(ob);
+    }
     wrap.appendChild(imgArea);
     var hdr=document.createElement('div');
-    hdr.style.cssText='padding:16px 16px 12px;cursor:pointer;flex:1';
+    hdr.style.cssText='padding:14px 16px 12px;flex:1;display:flex;flex-direction:column';
     var titleTxt=lang==='ar'?job.title_ar:job.title_en;
-    var deadlineBadge=job.deadline?('<span style="font-size:10px;color:var(--gold);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:999px;padding:2px 8px">⏰ '+esc(job.deadline)+'</span>'):'';
-    var omaniB=job.omani_only?('<span style="font-size:10px;background:rgba(16,185,129,.1);color:#10B981;border:1px solid rgba(16,185,129,.3);border-radius:999px;padding:2px 8px;font-weight:600">🇴🇲 '+(lang==='ar'?'عُماني فقط':'Omani Only')+'</span>'):'';
-    var typeB='<span style="font-size:10px;background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 8px;color:var(--tD)">'+esc(job.type||'Full-time')+'</span>';
+    var typeB='<span style="font-size:10px;font-weight:600;background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:2px 9px;color:var(--tD)">'+esc(job.type||'Full-time')+'</span>';
     hdr.innerHTML=
-      '<div style="font-weight:700;font-size:13.5px;color:var(--t);line-height:1.35;margin-bottom:8px">'+esc(titleTxt)+'</div>'+
-      '<div style="font-size:11.5px;color:var(--tM);margin-bottom:10px">'+esc(job.company||'')+' · '+esc(job.location||'Oman')+'</div>'+
-      '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">'+typeB+omaniB+'</div>'+
-      '<button class="jb-tog" style="width:100%;background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">'+(lang==='ar'?'عرض التفاصيل ▾':'View Details ▾')+'</button>';
+      '<div style="font-weight:800;font-size:13.5px;color:var(--t);line-height:1.4;margin-bottom:6px">'+ esc(titleTxt)+'</div>'+
+      '<div style="font-size:11.5px;color:var(--tM);margin-bottom:10px;line-height:1.3">'+esc(job.company||'')+' · '+esc(job.location||'Oman')+'</div>'+
+      '<div style="margin-bottom:12px">'+typeB+'</div>'+
+      '<button class="jb-tog" style="width:100%;background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:9px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">'+( lang==='ar'?'عرض التفاصيل ▾':'View Details ▾')+'</button>';
     var togBtn=hdr.querySelector('.jb-tog');
     // Create detail panel
     var det=document.createElement('div');

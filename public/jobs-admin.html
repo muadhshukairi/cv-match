@@ -86,45 +86,79 @@
 var allJobs = []; // {job, status, imageDataUrl, croppedUrl}
 var currentImageUrl = null; // thumbnail of current screenshot
 
-// Compress image to tiny thumbnail that fits in Google Sheets cell
-async function compressThumb(dataUrl, maxW, maxH, quality) {
-  maxW = maxW || 160; maxH = maxH || 110; quality = quality || 0.5;
+// Auto-trim white/light borders from image using pixel scanning
+async function autotrim(dataUrl) {
   return new Promise(function(resolve) {
+    if (!dataUrl) { resolve(''); return; }
     var img = new Image();
     img.onload = function() {
-      var ratio = Math.min(maxW/img.width, maxH/img.height, 1);
-      var w = Math.round(img.width * ratio);
-      var h = Math.round(img.height * ratio);
-      var canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      try {
+        var canvas = document.createElement('canvas');
+        canvas.width = img.width; canvas.height = img.height;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        var px = ctx.getImageData(0, 0, img.width, img.height).data;
+        var W = img.width, H = img.height, T = 235; // threshold for "near white"
+
+        function isLight(x, y) {
+          var i = (y * W + x) * 4;
+          return px[i] >= T && px[i+1] >= T && px[i+2] >= T;
+        }
+
+        var top = 0, bottom = H-1, left = 0, right = W-1;
+
+        // Scan top
+        for (var y = 0; y < H; y++) {
+          var allLight = true;
+          for (var x = 0; x < W; x++) { if (!isLight(x, y)) { allLight = false; break; } }
+          if (!allLight) { top = y; break; }
+        }
+        // Scan bottom
+        for (var y = H-1; y >= 0; y--) {
+          var allLight = true;
+          for (var x = 0; x < W; x++) { if (!isLight(x, y)) { allLight = false; break; } }
+          if (!allLight) { bottom = y; break; }
+        }
+        // Scan left
+        for (var x = 0; x < W; x++) {
+          var allLight = true;
+          for (var y = top; y <= bottom; y++) { if (!isLight(x, y)) { allLight = false; break; } }
+          if (!allLight) { left = x; break; }
+        }
+        // Scan right
+        for (var x = W-1; x >= 0; x--) {
+          var allLight = true;
+          for (var y = top; y <= bottom; y++) { if (!isLight(x, y)) { allLight = false; break; } }
+          if (!allLight) { right = x; break; }
+        }
+
+        var pad = 8;
+        top = Math.max(0, top - pad);
+        bottom = Math.min(H-1, bottom + pad);
+        left = Math.max(0, left - pad);
+        right = Math.min(W-1, right + pad);
+
+        var w = right - left + 1;
+        var h = bottom - top + 1;
+
+        // Compress to fit in Google Sheets (max ~35k chars)
+        var maxW = 320, maxH = 200;
+        var ratio = Math.min(maxW/w, maxH/h, 1);
+        var out = document.createElement('canvas');
+        out.width = Math.round(w * ratio);
+        out.height = Math.round(h * ratio);
+        out.getContext('2d').drawImage(img, left, top, w, h, 0, 0, out.width, out.height);
+        resolve(out.toDataURL('image/jpeg', 0.55));
+      } catch(e) { resolve(dataUrl); }
     };
     img.onerror = function() { resolve(''); };
     img.src = dataUrl;
   });
 }
 
-// Crop image to bounding box percentage coordinates
+// Crop image to bounding box (kept for compatibility)
 async function cropImage(dataUrl, bbox) {
-  if (!bbox || !dataUrl) return dataUrl;
-  return new Promise(function(resolve) {
-    var img = new Image();
-    img.onload = function() {
-      try {
-        var x = Math.max(0, (bbox.x||0) / 100 * img.width);
-        var y = Math.max(0, (bbox.y||0) / 100 * img.height);
-        var w = Math.min(img.width - x, (bbox.w||100) / 100 * img.width);
-        var h = Math.min(img.height - y, (bbox.h||100) / 100 * img.height);
-        var canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, x, y, w, h, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      } catch(e) { resolve(dataUrl); }
-    };
-    img.onerror = function() { resolve(dataUrl); };
-    img.src = dataUrl;
-  });
+  return await autotrim(dataUrl);
 }
 
 async function handleFiles(files) {
@@ -189,10 +223,9 @@ async function processFile(file) {
     setStatus('✓ Found ' + data.jobs.length + ' job(s) in ' + file.name + ' — review and publish below');
     // Crop each job to its bounding box
     var cropPromises = data.jobs.map(async function(job) {
-      var cropped = await cropImage(currentImageUrl, job.bbox);
-      // Compress to tiny size so it fits in Google Sheets (target: <30KB = ~40k chars base64)
-      var thumb = await compressThumb(cropped || currentImageUrl, 240, 160, 0.35);
-      return { job: job, status: 'pending', imageDataUrl: currentImageUrl, croppedUrl: cropped, thumb: thumb };
+      // Auto-trim white borders and compress
+      var thumb = await autotrim(currentImageUrl);
+      return { job: job, status: 'pending', imageDataUrl: currentImageUrl, croppedUrl: thumb, thumb: thumb };
     });
     allJobs = allJobs.concat(await Promise.all(cropPromises));
     renderJobs();
