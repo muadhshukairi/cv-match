@@ -86,6 +86,25 @@
 var allJobs = []; // {job, status, imageDataUrl, croppedUrl}
 var currentImageUrl = null; // thumbnail of current screenshot
 
+// Compress image to tiny thumbnail that fits in Google Sheets cell
+async function compressThumb(dataUrl, maxW, maxH, quality) {
+  maxW = maxW || 160; maxH = maxH || 110; quality = quality || 0.5;
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var ratio = Math.min(maxW/img.width, maxH/img.height, 1);
+      var w = Math.round(img.width * ratio);
+      var h = Math.round(img.height * ratio);
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = function() { resolve(''); };
+    img.src = dataUrl;
+  });
+}
+
 // Crop image to bounding box percentage coordinates
 async function cropImage(dataUrl, bbox) {
   if (!bbox || !dataUrl) return dataUrl;
@@ -171,7 +190,9 @@ async function processFile(file) {
     // Crop each job to its bounding box
     var cropPromises = data.jobs.map(async function(job) {
       var cropped = await cropImage(currentImageUrl, job.bbox);
-      return { job: job, status: 'pending', imageDataUrl: currentImageUrl, croppedUrl: cropped };
+      // Compress to tiny size so it fits in Google Sheets (target: <30KB = ~40k chars base64)
+      var thumb = await compressThumb(cropped || currentImageUrl, 240, 160, 0.35);
+      return { job: job, status: 'pending', imageDataUrl: currentImageUrl, croppedUrl: cropped, thumb: thumb };
     });
     allJobs = allJobs.concat(await Promise.all(cropPromises));
     renderJobs();
@@ -262,7 +283,7 @@ async function publishOne(idx, force) {
     requirements: document.getElementById('j'+idx+'_req').value.split('\n').filter(Boolean),
     omani_only:   document.getElementById('j'+idx+'_om').checked,
     source:       item.job.source || 'Instagram',
-    image_thumb:  item.croppedUrl || '',
+    image_thumb:  item.thumb || item.croppedUrl || '',
   };
 
   try {
@@ -305,7 +326,7 @@ async function publishAll() {
       requirements: document.getElementById('j'+i+'_req').value.split('\n').filter(Boolean),
       omani_only:   document.getElementById('j'+i+'_om').checked,
       source:       item.job.source || 'Instagram',
-      image_thumb:  allJobs[i] ? allJobs[i].croppedUrl || '' : '',
+      image_thumb:  allJobs[i] ? allJobs[i].thumb || allJobs[i].croppedUrl || '' : '',
     };
     try {
       var r = await fetch('/api/publish-jobs', {
