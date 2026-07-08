@@ -596,6 +596,67 @@ html,body{overflow-x:hidden;max-width:100vw}
     </div>
   </section>
 
+  <!-- ══ JOB MATCH MODAL ══ -->
+  <div id="job-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9998;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div style="max-width:720px;margin:0 auto;padding:20px 16px 40px;min-height:100vh;display:flex;flex-direction:column">
+      <!-- Modal header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div id="modal-src" style="font-size:11px;color:#6B7280;background:rgba(255,255,255,.06);border-radius:999px;padding:3px 12px"></div>
+        <button onclick="closeJobModal()" style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+
+      <!-- Job image -->
+      <div id="modal-img-wrap" style="display:none;border-radius:14px;overflow:hidden;margin-bottom:20px;max-height:260px">
+        <img id="modal-img" style="width:100%;object-fit:cover;display:block">
+      </div>
+
+      <!-- Job info -->
+      <div style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+          <h2 id="modal-title" style="font-size:20px;font-weight:900;color:#fff;line-height:1.3"></h2>
+          <span id="modal-omani" style="display:none;font-size:10.5px;background:rgba(16,185,129,.15);color:#10B981;border:1px solid rgba(16,185,129,.3);border-radius:999px;padding:2px 9px;font-weight:700">🇴🇲 Omani Only</span>
+        </div>
+        <div id="modal-meta" style="font-size:13px;color:#94A3B8;margin-bottom:14px"></div>
+        <div id="modal-reqs" style="margin-bottom:14px"></div>
+        <div id="modal-contact" style="display:none;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:10px 14px;font-size:12.5px;color:#8B5CF6"></div>
+      </div>
+
+      <!-- CV upload area -->
+      <div id="modal-upload-area" style="background:#0F0B1F;border:2px dashed #2D1F4E;border-radius:14px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px"
+        onclick="document.getElementById('modal-file-in').click()"
+        ondragover="event.preventDefault();this.style.borderColor='#8B5CF6';this.style.background='rgba(139,92,246,.06)'"
+        ondragleave="this.style.borderColor='#2D1F4E';this.style.background='#0F0B1F'"
+        ondrop="event.preventDefault();this.style.borderColor='#2D1F4E';this.style.background='#0F0B1F';handleModalDrop(event)">
+        <input type="file" id="modal-file-in" accept=".pdf,.docx,.txt" style="display:none" onchange="handleModalCV(this.files[0])">
+        <div style="font-size:28px;margin-bottom:8px">📄</div>
+        <div id="modal-upload-lbl" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px">Upload your CV to see match score</div>
+        <div style="font-size:12px;color:#475569">PDF, DOCX or TXT</div>
+      </div>
+
+      <!-- Score + improve (shown after upload) -->
+      <div id="modal-score-area" style="display:none">
+        <div style="display:flex;align-items:center;gap:20px;background:#0F0B1F;border:1px solid #1E1535;border-radius:14px;padding:20px;margin-bottom:14px">
+          <div style="position:relative;width:80px;height:80px;flex-shrink:0">
+            <div id="modal-ring" style="width:80px;height:80px;border-radius:50%;background:conic-gradient(#8B5CF6 0deg,#1E1535 0deg);display:flex;align-items:center;justify-content:center">
+              <div style="width:58px;height:58px;border-radius:50%;background:#0F0B1F;display:flex;align-items:center;justify-content:center">
+                <span id="modal-score-num" style="font-size:20px;font-weight:900;color:#fff">0%</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div id="modal-score-lbl" style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px"></div>
+            <div id="modal-score-sub" style="font-size:12px;color:#6B7280;line-height:1.5"></div>
+          </div>
+        </div>
+        <button id="modal-improve-btn" onclick="improveFromModal()" style="width:100%;background:linear-gradient(135deg,#6D28D9,#10B981);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit">
+          ✦ Improve my CV for this job
+        </button>
+      </div>
+
+      <div id="modal-status" style="font-size:13px;text-align:center;color:#8B5CF6;padding:8px 0"></div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer style="position:relative;z-index:10;text-align:center;padding:28px 24px 36px;border-top:1px solid rgba(255,255,255,.06);margin-top:auto">
     <a href="https://www.instagram.com/seerah.ai" target="_blank" rel="noopener"
@@ -1583,7 +1644,153 @@ async function loadJobBoard(){
 }
 
 
-/* ══ Render Jobs Board ═══════════════════════════════════════════════════════ */
+
+/* == Job Match Modal ================================================== */
+var _modalJob = null;
+
+function openJobModal(job) {
+  _modalJob = job;
+  // Populate modal
+  document.getElementById('modal-title').textContent = (lang==='ar' ? job.title_ar : job.title_en) || '';
+  document.getElementById('modal-meta').textContent = (job.company||'') + ' \u00b7 ' + (job.location||'Oman') + (job.type ? ' \u00b7 '+job.type : '');
+  document.getElementById('modal-src').textContent = job.source || '';
+  var omaniEl = document.getElementById('modal-omani');
+  omaniEl.style.display = job.omani_only ? '' : 'none';
+
+  // Image
+  var imgWrap = document.getElementById('modal-img-wrap');
+  var imgEl = document.getElementById('modal-img');
+  if (job.image_thumb) {
+    imgEl.src = job.image_thumb;
+    imgWrap.style.display = '';
+  } else {
+    imgWrap.style.display = 'none';
+  }
+
+  // Requirements
+  var reqEl = document.getElementById('modal-reqs');
+  if (job.requirements && job.requirements.length) {
+    reqEl.innerHTML = '<div style="font-size:10.5px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">'+(lang==='ar'?'المتطلبات':'Requirements')+'</div>'+
+      job.requirements.map(function(r){ return '<div style="font-size:13px;color:#94A3B8;margin-bottom:5px;display:flex;gap:8px"><span style="color:var(--v);flex-shrink:0">\u00b7</span>'+esc(r)+'</div>'; }).join('');
+  } else { reqEl.innerHTML = ''; }
+
+  // Contact
+  var ctEl = document.getElementById('modal-contact');
+  if (job.contact) {
+    ctEl.style.display = '';
+    ctEl.innerHTML = '<span style="font-weight:700;margin-right:6px">'+(lang==='ar'?'\u0644\u0644\u062a\u0648\u0627\u0635\u0644:':'Contact:')+'</span>'+esc(job.contact);
+  } else { ctEl.style.display = 'none'; }
+
+  // Reset upload area
+  document.getElementById('modal-upload-lbl').textContent = (lang==='ar'?'\u0627\u0631\u0641\u0639 \u0633\u064a\u0631\u062a\u0643 \u0644\u0631\u0624\u064a\u0629 \u0646\u0633\u0628\u0629 \u0627\u0644\u062a\u0637\u0627\u0628\u0642':'Upload your CV to see match score');
+  document.getElementById('modal-upload-area').style.display = '';
+  document.getElementById('modal-score-area').style.display = 'none';
+  document.getElementById('modal-status').textContent = '';
+  document.getElementById('modal-file-in').value = '';
+
+  // Show modal
+  document.getElementById('job-modal').style.display = '';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeJobModal() {
+  document.getElementById('job-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  _modalJob = null;
+}
+
+// Close on background click
+document.getElementById('job-modal').addEventListener('click', function(e){
+  if (e.target === this) closeJobModal();
+});
+
+function handleModalDrop(e) {
+  var file = e.dataTransfer.files[0];
+  if (file) handleModalCV(file);
+}
+
+async function handleModalCV(file) {
+  if (!file || !_modalJob) return;
+  var status = document.getElementById('modal-status');
+  var uploadArea = document.getElementById('modal-upload-area');
+  uploadArea.style.display = 'none';
+  status.textContent = (lang==='ar'?'\u{1f916} \u062c\u0627\u0631\u064a \u062a\u062d\u0644\u064a\u0644 \u0633\u064a\u0631\u062a\u0643\u2026':'\u{1f916} Analysing your CV\u2026');
+
+  try {
+    // Extract text
+    var name = file.name.toLowerCase(), txt = '';
+    if (name.endsWith('.pdf')) {
+      var buf = await file.arrayBuffer();
+      var pdf = await pdfjsLib.getDocument({data:buf}).promise;
+      for (var p=1; p<=Math.min(pdf.numPages,6); p++) {
+        var page = await pdf.getPage(p);
+        var tc = await page.getTextContent();
+        txt += tc.items.map(function(i){return i.str;}).join(' ') + '\n';
+      }
+    } else if (name.endsWith('.docx')) {
+      var buf2 = await file.arrayBuffer();
+      var res2 = await mammoth.extractRawText({arrayBuffer:buf2});
+      txt = res2.value;
+    } else { txt = await file.text(); }
+
+    cvText = txt.trim();
+    userName = detectName(txt);
+
+    // Extract profile
+    var r1 = await fetch('/api/extract-cv', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cvText:cvText})});
+    var profile = await r1.json();
+    cvProfile = profile;
+    if (profile.candidateName && !userName) userName = profile.candidateName;
+    if (profile.email) cvProfile.email = profile.email;
+    if (profile.phone) cvProfile.phone = profile.phone;
+    if (profile.location) cvProfile.location = profile.location;
+    fetch('/api/track?event=cvs').catch(function(){});
+
+    // Calculate match score
+    var jobDesc = [_modalJob.title_en, _modalJob.title_ar, (_modalJob.requirements||[]).join(' ')].join(' ');
+    var score = calcMatch(cvText, jobDesc, profile);
+
+    // Show score ring
+    var col = score>=65?'#10B981':score>=40?'#F59E0B':'#EF4444';
+    var ring = document.getElementById('modal-ring');
+    ring.style.background = 'conic-gradient('+col+' '+(score*3.6)+'deg,#1E1535 0deg)';
+    document.getElementById('modal-score-num').textContent = score+'%';
+    document.getElementById('modal-score-num').style.color = col;
+    var lbl = score>=65?(lang==='ar'?'\u062a\u0648\u0627\u0641\u0642 \u0645\u0645\u062a\u0627\u0632':'Strong Match'):score>=40?(lang==='ar'?'\u062a\u0648\u0627\u0641\u0642 \u062c\u064a\u062f':'Good Match'):(lang==='ar'?'\u062a\u0648\u0627\u0641\u0642 \u0636\u0639\u064a\u0641':'Low Match');
+    document.getElementById('modal-score-lbl').textContent = lbl;
+    document.getElementById('modal-score-lbl').style.color = col;
+    document.getElementById('modal-score-sub').textContent = (lang==='ar'?'\u0627\u0636\u063a\u0637 \u062a\u062d\u0633\u064a\u0646 \u0644\u062a\u0639\u0632\u064a\u0632 \u0641\u0631\u0635\u062a\u0643':'Click Improve to boost your chances for this role');
+    document.getElementById('modal-score-area').style.display = '';
+    status.textContent = '';
+
+  } catch(e) {
+    status.textContent = '\u274c ' + (e.message || 'Error processing CV');
+    uploadArea.style.display = '';
+  }
+}
+
+async function improveFromModal() {
+  if (!_modalJob || !cvText) return;
+  currentJob = {
+    id: 'jb-'+(_modalJob.id||''),
+    en: _modalJob.title_en||'',
+    ar: _modalJob.title_ar||'',
+    company: _modalJob.company||'',
+    loc: _modalJob.location||'Oman',
+    ten: _modalJob.type||'Full-time',
+    tar: _modalJob.type||'Full-time',
+    url: _modalJob.contact||'',
+    desc: (_modalJob.requirements||[]).join('. '),
+    pct: 80, match: 'high', days_ago: null, source: _modalJob.source||''
+  };
+  closeJobModal();
+  var btn = document.getElementById('modal-improve-btn');
+  if (btn) { btn.textContent = (lang==='ar'?'\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0633\u064a\u0646\u2026':'Improving\u2026'); btn.disabled = true; }
+  await doTailor(currentJob.id);
+}
+/* == End Job Match Modal ============================================== */
+
+/* == Render Jobs Board ═══════════════════════════════════════════════════════ */
 function renderJobBoard(){
   var categories=['All','Engineering','Sales & Marketing','Technology','Finance','Omani Only'];
   var fp=document.getElementById('jb-filters');
@@ -1649,39 +1856,22 @@ function renderJobBoard(){
     }
     wrap.appendChild(imgArea);
     var hdr=document.createElement('div');
-    hdr.style.cssText='padding:10px 12px 10px;display:flex;flex-direction:column;height:100%';
+    hdr.style.cssText='padding:10px 12px 12px;display:flex;flex-direction:column;flex:1';
     var titleTxt=lang==='ar'?job.title_ar:job.title_en;
-    var typeB='<span style="font-size:9.5px;font-weight:600;background:var(--cardH);border:1px solid var(--b);border-radius:999px;padding:1.5px 8px;color:var(--tD)">'+esc(job.type||'Full-time')+'</span>';
-    hdr.innerHTML=
-      '<div style="font-weight:800;font-size:13.5px;color:var(--t);line-height:1.4;margin-bottom:6px">'+ esc(titleTxt)+'</div>'+
-      '<div style="font-size:11.5px;color:var(--tM);margin-bottom:10px;line-height:1.3">'+esc(job.company||'')+' · '+esc(job.location||'Oman')+'</div>'+
-      '<div style="margin-bottom:12px">'+typeB+'</div>'+
-      '<button class="jb-tog" style="width:100%;background:linear-gradient(135deg,#6D28D9,#8B5CF6);color:#fff;border:none;border-radius:9px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">'+( lang==='ar'?'عرض التفاصيل ▾':'View Details ▾')+'</button>';
-    var togBtn=hdr.querySelector('.jb-tog');
-    // Create detail panel
-    var det=document.createElement('div');
-    det.className='jb-det';
-    det.style.cssText='display:none;padding:12px 16px;border-top:1px solid var(--b);background:var(--cardH)';
-    var reqHtml='';
-    if(job.requirements&&job.requirements.length){
-      reqHtml='<div style="font-size:10px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px">'+(lang==='ar'?'المتطلبات':'Requirements')+'</div>'+
-        job.requirements.map(function(r){return '<div style="font-size:12px;color:var(--tM);margin-bottom:3px">· '+esc(r)+'</div>';}).join('');
-    }
-    var ctHtml=job.contact?'<div style="background:var(--vDim);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:8px 10px;margin:10px 0;font-size:11.5px;color:var(--v)">'+(lang==='ar'?'للتواصل: ':'Contact: ')+esc(job.contact)+'</div>':'';
-    det.innerHTML=reqHtml+ctHtml;
-    var improveBtn=document.createElement('button');
-    improveBtn.style.cssText='width:100%;background:linear-gradient(135deg,#059669,#10B981);color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px';
-    improveBtn.textContent=(lang==='ar'?'📄 ارفع سيرتك وحسّنها':'📄 Upload & Match CV');
-    (function(j){ improveBtn.addEventListener('click',function(){ window._directJob=j; document.getElementById('file-in').click(); }); })(job);
-    det.appendChild(improveBtn);
-
-    if(togBtn) togBtn.addEventListener('click',function(e){
-      e.stopPropagation();
-      var isOpen=det.style.display==='block';
-      det.style.display=isOpen?'none':'block';
-      this.textContent=isOpen?(lang==='ar'?'عرض التفاصيل ▾':'View Details ▾'):(lang==='ar'?'إخفاء ▴':'Hide ▴');
-    });
-    wrap.appendChild(hdr); wrap.appendChild(det); el.appendChild(wrap);
+    var titleDiv=document.createElement('div');
+    titleDiv.style.cssText='font-weight:800;font-size:11.5px;color:var(--t);line-height:1.35;margin-bottom:4px;flex:1';
+    titleDiv.textContent=titleTxt;
+    var metaDiv=document.createElement('div');
+    metaDiv.style.cssText='font-size:10px;color:var(--tM);margin-bottom:10px;line-height:1.3';
+    metaDiv.textContent=(job.company||'')+' · '+(job.location||'Oman');
+    var matchBtn=document.createElement('button');
+    matchBtn.style.cssText='width:100%;background:linear-gradient(135deg,#059669,#10B981);color:#fff;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit';
+    matchBtn.textContent=(lang==='ar'?'ارفع سيرتك للمطابقة':'Upload CV to Match');
+    (function(j){matchBtn.addEventListener('click',function(){openJobModal(j);});})(job);
+    hdr.appendChild(titleDiv);
+    hdr.appendChild(metaDiv);
+    hdr.appendChild(matchBtn);
+    wrap.appendChild(hdr); el.appendChild(wrap);
   });
 }
 function scrollJB(dir){
