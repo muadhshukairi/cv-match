@@ -1652,7 +1652,7 @@ async function loadJobBoard(){
   try{
     var r=await fetch('/api/get-jobs');
     var d=await r.json();
-    JB_JOBS=d.jobs||[];
+    JB_JOBS=(d.jobs||[]).slice().reverse();
     renderJobBoard();
   }catch(e){
     var el=document.getElementById('jb-cards');
