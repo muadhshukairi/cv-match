@@ -1491,8 +1491,20 @@ function renderJobBoard(){
     imgArea.style.cssText='height:110px;flex-shrink:0;position:relative;overflow:hidden;background:'+barColor;
     if(jobImg){
       var imgEl=document.createElement('img');
-      imgEl.style.cssText='width:100%;height:100%;object-fit:cover;display:block';
+      imgEl.style.cssText='width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in';
+      imgEl.title='Click to view full image';
       imgEl.onerror=function(){imgArea.style.height='4px';imgEl.style.display='none';};
+      imgEl.addEventListener('click',function(e){
+        e.stopPropagation();
+        var overlay=document.createElement('div');
+        overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+        var bigImg=document.createElement('img');
+        bigImg.src=jobImg;
+        bigImg.style.cssText='max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)';
+        overlay.appendChild(bigImg);
+        overlay.addEventListener('click',function(){document.body.removeChild(overlay);});
+        document.body.appendChild(overlay);
+      });
       imgEl.src=jobImg;
       imgArea.appendChild(imgEl);
     }

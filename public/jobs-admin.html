@@ -86,6 +86,35 @@
 var allJobs = []; // {job, status, imageDataUrl, croppedUrl}
 var currentImageUrl = null; // thumbnail of current screenshot
 
+// Crop to Claude's bbox percentage coordinates
+async function cropToBbox(dataUrl, bbox) {
+  if (!bbox || !dataUrl) return dataUrl;
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var x = Math.max(0, (bbox.x||0)/100 * img.width);
+        var y = Math.max(0, (bbox.y||0)/100 * img.height);
+        var w = Math.min(img.width-x, (bbox.w||100)/100 * img.width);
+        var h = Math.min(img.height-y, (bbox.h||100)/100 * img.height);
+        // Add 2% padding
+        var padX = img.width * 0.02;
+        var padY = img.height * 0.02;
+        x = Math.max(0, x - padX);
+        y = Math.max(0, y - padY);
+        w = Math.min(img.width - x, w + padX*2);
+        h = Math.min(img.height - y, h + padY*2);
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, x, y, w, h, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.95));
+      } catch(e) { resolve(dataUrl); }
+    };
+    img.onerror = function() { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
 // Auto-trim white/light borders from image using pixel scanning
 async function autotrim(dataUrl) {
   return new Promise(function(resolve) {
@@ -223,8 +252,13 @@ async function processFile(file) {
     setStatus('✓ Found ' + data.jobs.length + ' job(s) in ' + file.name + ' — review and publish below');
     // Crop each job to its bounding box
     var cropPromises = data.jobs.map(async function(job) {
-      // Auto-trim white borders and compress
-      var thumb = await autotrim(currentImageUrl);
+      // Step 1: Crop to Claude's bbox region
+      var bboxCropped = currentImageUrl;
+      if (job.bbox && (job.bbox.w < 95 || job.bbox.h < 95)) {
+        bboxCropped = await cropToBbox(currentImageUrl, job.bbox);
+      }
+      // Step 2: Auto-trim white borders from that region
+      var thumb = await autotrim(bboxCropped);
       return { job: job, status: 'pending', imageDataUrl: currentImageUrl, croppedUrl: thumb, thumb: thumb };
     });
     allJobs = allJobs.concat(await Promise.all(cropPromises));
