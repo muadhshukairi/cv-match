@@ -51,6 +51,33 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    // Tawteen — Oman Ministry of Labour jobs portal
+    async function searchTawteen(query) {
+      const cleanQ = query.replace(/ Oman$/, '').trim();
+      const params = new URLSearchParams({
+        engine: 'google',
+        q: `${cleanQ} Oman site:tawteen.om`,
+        num: '8', hl: 'en', api_key: apiKey,
+      });
+      try {
+        const r = await fetch('https://serpapi.com/search.json?' + params.toString());
+        if (!r.ok) return [];
+        const d = await r.json();
+        return (d.organic_results || [])
+          .filter(x => x.link && x.link.includes('tawteen'))
+          .map(x => ({
+            job_id: x.link,
+            title: (x.title || '').replace(/\s*[-|].*$/,'').trim(),
+            company_name: 'Tawteen · وزارة العمل',
+            location: 'Oman',
+            job_employment_type: 'Full-time',
+            description: x.snippet || '',
+            job_apply_link: x.link,
+            _source: 'Tawteen',
+          }));
+      } catch(e) { return []; }
+    }
+
     // Jadarah OIA — search Google with site:jadarah.oia.gov.om
     async function searchJadarah(query) {
       const params = new URLSearchParams({
@@ -118,6 +145,7 @@ module.exports = async function handler(req, res) {
       ...queries.map(searchGoogle),
       searchLinkedIn(mainQ),
       searchJadarah(mainQ),
+      searchTawteen(mainQ),
     ]);
 
     // Merge + deduplicate
