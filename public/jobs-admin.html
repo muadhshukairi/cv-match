@@ -111,17 +111,20 @@ async function compressForUpload(dataUrl) {
 // Real QR decoding — Claude Vision can *see* a QR pattern but can't reliably
 // decode its exact bits like a proper scanner can, so we use jsQR here on the
 // actual image data and treat this as the authoritative source when it succeeds.
-async function decodeQR(dataUrl) {
+async function decodeQR(dataUrl, scale) {
   if (!window.jsQR || !dataUrl) return null;
+  scale = scale || 1;
   return new Promise(function(resolve) {
     var img = new Image();
     img.onload = function() {
       try {
         var canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
         var ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         var result = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
         resolve(result && result.data ? result.data : null);
@@ -131,6 +134,17 @@ async function decodeQR(dataUrl) {
     img.src = dataUrl;
   });
 }
+// Try a source at a few scales — small/compressed QR codes (common on
+// Instagram screenshots) often fail at native resolution but decode fine
+// once upscaled, since the decoder gets more effective pixels to work with.
+async function decodeQRMultiScale(dataUrl) {
+  for (var i = 0; i < QR_SCALES.length; i++) {
+    var res = await decodeQR(dataUrl, QR_SCALES[i]);
+    if (res) return res;
+  }
+  return null;
+}
+var QR_SCALES = [1, 2, 3];
 
 async function cropToBbox(dataUrl, bbox) {
   if (!bbox || !dataUrl) return dataUrl;
@@ -314,12 +328,21 @@ async function processFile(file) {
         thumb = await autotrim(currentImageUrl);
         sourceForQR = currentImageUrl;
       }
-      // Real QR decode — try the tight crop first (higher fidelity), fall back
-      // to the full screenshot in case the bbox slightly clipped the QR code.
-      // This overrides Claude's own visual guess, which isn't a reliable decode.
-      var realQR = await decodeQR(sourceForQR);
-      if (!realQR && data.jobs.length === 1) realQR = await decodeQR(currentImageUrl);
-      if (realQR) job.qr_url = realQR;
+      // Real QR decode — try the tight crop first (higher fidelity, multiple
+      // scales since small/compressed QR codes often need upscaling to decode),
+      // then fall back to the full screenshot. This overrides Claude's own
+      // visual guess, which isn't a reliable decode.
+      var realQR = await decodeQRMultiScale(sourceForQR);
+      if (!realQR && data.jobs.length === 1) realQR = await decodeQRMultiScale(currentImageUrl);
+      var aiThoughtQR = !!job.qr_url; // Claude visually flagged a QR code
+      if (realQR) {
+        job.qr_url = realQR;
+        job._qrDecodeFailed = false;
+      } else if (aiThoughtQR) {
+        // Claude saw something QR-like but we couldn't actually decode it —
+        // keep that info visible instead of silently dropping it
+        job._qrDecodeFailed = true;
+      }
       return { job: job, status: 'pending', imageDataUrl: currentImageUrl, croppedUrl: thumb, thumb: thumb };
     });
     allJobs = allJobs.concat(await Promise.all(cropPromises));
@@ -351,7 +374,8 @@ function renderJobs() {
     return '<div class="card" style="margin-bottom:14px;opacity:' + (isPub?'.5':'1') + '">' +
       '<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;flex-wrap:wrap">' + thumb +
       '<div style="flex:1">' +
-      (job.qr_url ? '<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:7px 12px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px"><span style="font-size:16px">📱</span><div><div style="font-size:10px;font-weight:700;color:#10B981;margin-bottom:2px">QR CODE LINK</div><a href="'+esc(job.qr_url)+'" target="_blank" style="color:#10B981;word-break:break-all">'+esc(job.qr_url)+'</a></div></div>' : '') +
+      (job.qr_url ? '<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:7px 12px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px"><span style="font-size:16px">📱</span><div><div style="font-size:10px;font-weight:700;color:#10B981;margin-bottom:2px">QR CODE LINK</div><a href="'+esc(job.qr_url)+'" target="_blank" style="color:#10B981;word-break:break-all">'+esc(job.qr_url)+'</a></div></div>' :
+        (job._qrDecodeFailed ? '<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:7px 12px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px"><span style="font-size:16px">⚠️</span><div style="color:#F59E0B">QR code spotted but couldn\'t be read automatically — check the screenshot and add contact manually.</div></div>' : '')) +
         '<div>' +
           '<div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">' + esc(job.title_en) + '</div>' +
           '<div style="font-size:13px;color:#6B7280">' + esc(job.title_ar) + ' · ' + esc(job.company) + '</div>' +
