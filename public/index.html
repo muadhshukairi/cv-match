@@ -753,9 +753,9 @@ html,body{overflow-x:hidden;max-width:100vw}
         <div><div id="t-cbefore" style="font-size:13px;font-weight:700;color:var(--t)"></div><div id="t-corigcv" style="font-size:11px;color:var(--tD);margin-top:1px"></div></div>
       </div>
       <div style="flex:1;display:flex;align-items:center;min-width:60px">
-        <div style="flex:1;height:2px;background:var(--b)"></div>
-        <span id="t-compatlbl" style="font-size:9.5px;color:var(--tD);font-weight:700;margin:0 8px;letter-spacing:.5px;white-space:nowrap"></span>
-        <div style="flex:1;height:2px;background:var(--b)"></div>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--b),rgba(139,92,246,.5))"></div>
+        <span id="t-compatlbl" style="font-size:9.5px;color:var(--v);font-weight:700;margin:0 8px;letter-spacing:.5px;white-space:nowrap"></span>
+        <div style="flex:1;height:2px;background:linear-gradient(90deg,rgba(139,92,246,.5),rgba(16,185,129,.5))"></div>
       </div>
       <div style="display:flex;align-items:center;gap:12px">
         <div id="ring-ca-c" style="width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -1443,7 +1443,7 @@ function renderResult(data){
   // Banner
   document.getElementById('r-title').textContent=lang==='ar'?job.ar:job.en;
   document.getElementById('r-meta').textContent=job.company+' · '+job.loc;
-  if(_kwStateJobId!==job.id){_addedKw=[];_allMissingKw=(data.missing_keywords||[]).slice();_origPct=job.pct;_kwStateJobId=job.id;}
+  if(_kwStateJobId!==job.id){_addedKw=[];_allMissingKw=(data.missing_keywords||[]).slice();_origPct=(typeof data.match_score==='number')?data.match_score:job.pct;_kwStateJobId=job.id;}
   _realAfterPct=data.improved_match_score||job.pct;
   renderCompatRings();
   // Score rings
@@ -1497,7 +1497,6 @@ function currentPct(){
 }
 function renderCompatRings(){
   var before=_origPct, after=currentPct();
-  var acL=fitColorFor(after);
   var pendingTag=_addedKw.length?(' ('+(lang==='ar'?'تقديري':'est.')+')'):'';
   setRing('ring-cb','score-cb',before,false);
   setRing('ring-ca-c','score-ca-c',after,after>before);
@@ -1506,10 +1505,10 @@ function renderCompatRings(){
   document.getElementById('t-compatlbl').textContent=lang==='ar'?'التوافق':'COMPATIBILITY';
   var afterEl=document.getElementById('t-cafterpct');
   afterEl.textContent=after+'%'+pendingTag;
-  afterEl.style.color=acL;
+  afterEl.style.color='var(--v)';
   var lblEl=document.getElementById('t-cafterlbl');
   lblEl.textContent=fitLabelFor(after);
-  lblEl.style.color=acL;
+  lblEl.style.color='var(--tD)';
 }
 function renderKwList(){
   var kwList=document.getElementById('kw-list');
