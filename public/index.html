@@ -1102,8 +1102,8 @@ function calcMatch(cv, desc, profile, jobTitle) {
 
   // A strong title match is a dominant real-world signal on its own — don't let
   // the rest of the formula drag it below a sensible floor
-  if(titleScore>=85) score = Math.max(score, 68);
-  else if(titleScore>=60) score = Math.max(score, 50);
+  if(titleScore>=85) score = Math.max(score, 55);
+  else if(titleScore>=60) score = Math.max(score, 40);
 
   return Math.min(Math.max(score, 10), 92);
 }
@@ -1390,7 +1390,7 @@ function renderCards(jobs){
         '<div style="font-size:12.5px;color:var(--tM);margin-bottom:12px">'+esc(j.company)+' · '+esc(j.loc)+'</div>'+
         '<div>'+
           '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
-            '<span style="font-size:11px;color:var(--tD);font-weight:500">'+(lang==='ar'?'التوافق':'Compatibility')+'</span>'+
+            '<span style="font-size:11px;color:var(--tD);font-weight:500">'+(lang==='ar'?'التوافق (تقديري)':'Compatibility (estimate)')+'</span>'+
             '<span style="font-size:11.5px;font-weight:700;color:'+acL+'">'+j.pct+'% · '+fitLbl+'</span>'+
           '</div>'+
           '<div style="height:4px;background:var(--b);border-radius:999px">'+
