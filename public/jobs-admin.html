@@ -28,6 +28,7 @@
   label{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 </head>
 <body>
 <div style="max-width:860px;margin:0 auto">
@@ -107,6 +108,30 @@ async function compressForUpload(dataUrl) {
 }
 
 // Crop to Claude's bbox percentage coordinates
+// Real QR decoding — Claude Vision can *see* a QR pattern but can't reliably
+// decode its exact bits like a proper scanner can, so we use jsQR here on the
+// actual image data and treat this as the authoritative source when it succeeds.
+async function decodeQR(dataUrl) {
+  if (!window.jsQR || !dataUrl) return null;
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var result = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+        resolve(result && result.data ? result.data : null);
+      } catch(e) { resolve(null); }
+    };
+    img.onerror = function() { resolve(null); };
+    img.src = dataUrl;
+  });
+}
+
 async function cropToBbox(dataUrl, bbox) {
   if (!bbox || !dataUrl) return dataUrl;
   return new Promise(function(resolve) {
@@ -273,15 +298,23 @@ async function processFile(file) {
     // Crop each job to its bounding box
     var cropPromises = data.jobs.map(async function(job) {
       // Crop to Claude's bbox, then auto-trim white borders
-      var thumb;
+      var thumb, sourceForQR;
       if (job.bbox && job.bbox.w && job.bbox.h && (job.bbox.w < 92 || job.bbox.h < 92)) {
         // Multi-post screenshot: crop to individual job bbox first
         var bboxImg = await cropToBbox(currentImageUrl, job.bbox);
         thumb = await autotrim(bboxImg);
+        sourceForQR = bboxImg;
       } else {
         // Single post: just auto-trim the full image
         thumb = await autotrim(currentImageUrl);
+        sourceForQR = currentImageUrl;
       }
+      // Real QR decode — try the tight crop first (higher fidelity), fall back
+      // to the full screenshot in case the bbox slightly clipped the QR code.
+      // This overrides Claude's own visual guess, which isn't a reliable decode.
+      var realQR = await decodeQR(sourceForQR);
+      if (!realQR && data.jobs.length === 1) realQR = await decodeQR(currentImageUrl);
+      if (realQR) job.qr_url = realQR;
       return { job: job, status: 'pending', imageDataUrl: currentImageUrl, croppedUrl: thumb, thumb: thumb };
     });
     allJobs = allJobs.concat(await Promise.all(cropPromises));
