@@ -802,20 +802,24 @@ html,body{overflow-x:hidden;max-width:100vw}
     </div>
     <!-- Action buttons -->
     <div id="action-buttons" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px">
-      <button onclick="handleVerifyClick()" style="position:relative;font-size:14px;font-weight:800;color:#EF4444;background:transparent;border:2px solid #EF4444;border-radius:999px;padding:10px 24px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;white-space:nowrap">
-        <span id="t-verify">✓ Verify</span>
+      <button onclick="handleVerifyClick()" style="position:relative;font-size:14px;font-weight:800;color:#C4B5FD;background:rgba(139,92,246,.14);border:1.5px solid rgba(139,92,246,.4);border-radius:999px;padding:10px 22px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;white-space:nowrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0">
+          <path d="M12 1.5l2.4 1.4 2.8-.3 1.4 2.4 2.4 1.4-.3 2.8 1.4 2.4-1.4 2.4.3 2.8-2.4 1.4-1.4 2.4-2.8-.3L12 22.5l-2.4-1.4-2.8.3-1.4-2.4-2.4-1.4.3-2.8L2 12.5l1.4-2.4-.3-2.8 2.4-1.4L6.8 3.5l2.8.3L12 1.5z" fill="#3B82F6"/>
+          <path d="M8.5 12.5l2.3 2.3 4.7-4.7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span id="t-verify">Verify</span>
         <span style="font-size:9px;font-weight:800;color:#F59E0B;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:999px;padding:2px 8px;letter-spacing:.3px;white-space:nowrap" id="t-comingsoon"></span>
       </button>
-      <button onclick="printCV()" style="font-size:13px;font-weight:600;color:var(--t);background:var(--cardH);border:1px solid var(--b);border-radius:10px;padding:10px 18px;cursor:pointer;font-family:inherit" id="t-dlpdf"></button>
+      <button onclick="printCV()" style="font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6D28D9,#8B5CF6);border:none;border-radius:10px;padding:10px 18px;cursor:pointer;font-family:inherit" id="t-dlpdf"></button>
       <button class="bp" id="dl-word-btn" onclick="downloadWordFree()" style="font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6D28D9,#8B5CF6);border:none;border-radius:10px;padding:10px 18px;display:flex;align-items:center;gap:8px;font-family:inherit;cursor:pointer">
         <span id="t-dlword"></span>
       </button>
-      <button onclick="openInterviewPrep()" style="margin-inline-start:auto;font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,#D97706,#F59E0B);border:none;border-radius:10px;padding:10px 18px;cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:6px">📋 <span id="t-interviewprep"></span></button>
     </div>
     <!-- CV doc + side panels -->
     <div id="result-grid" style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;margin-bottom:18px">
       <div id="cv-doc" style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05)"></div>
       <div style="display:flex;flex-direction:column;gap:12px">
+        <button onclick="openInterviewPrep()" style="width:100%;justify-content:center;font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,#D97706,#F59E0B);border:none;border-radius:10px;padding:10px 18px;cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:6px">📋 <span id="t-interviewprep"></span></button>
         <div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:16px 18px">
           <div id="t-covhd" style="font-size:10.5px;font-weight:700;color:var(--v);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px"></div>
           <p id="cover-txt" style="font-size:12px;line-height:1.75;color:var(--tM);white-space:pre-line"></p>
@@ -872,7 +876,7 @@ var I={
     kwdisclaimer:'⚠ Only add keywords that genuinely reflect your real skills and experience. Adding something you can\'t back up may hurt you at interview or on the job.',
     kwtaphint:'Tap a keyword you actually have — it\'ll be added to your CV and your match score will update.',
     kwrefresh:'✦ Update CV & Recalculate',kwrefreshing:'Rewriting your CV…',
-    verify:'✓ Verify',comingsoon:'COMING SOON',
+    verify:'Verify',comingsoon:'COMING SOON',
     verifysoon:'CV Verification is coming soon — we\'ll check your CV for accuracy before you apply.',
     interviewprep:'Interview Prep Q/A',
   },
@@ -905,7 +909,7 @@ var I={
     kwdisclaimer:'⚠ أضف فقط الكلمات المفتاحية التي تعكس مهاراتك وخبرتك الحقيقية فعلاً. إضافة شيء لا تستطيع إثباته قد يضرّك في المقابلة أو العمل.',
     kwtaphint:'اضغط على كلمة تمتلكها فعلاً — ستُضاف إلى سيرتك الذاتية وستتحدّث نسبة التوافق.',
     kwrefresh:'✦ تحديث السيرة وإعادة الحساب',kwrefreshing:'جارٍ إعادة كتابة سيرتك…',
-    verify:'✓ تحقّق',comingsoon:'قريباً',
+    verify:'تحقّق',comingsoon:'قريباً',
     verifysoon:'ميزة التحقّق من السيرة الذاتية قادمة قريباً — سنراجع دقة سيرتك قبل التقديم.',
     interviewprep:'التحضير للمقابلة',
   }
