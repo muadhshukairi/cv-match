@@ -243,6 +243,7 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
     gap: 28px !important;
   }
   #upload-grid h1 { font-size: 34px !important; }
+  #upload-grid p[id="t-sub"] { font-size: 14px !important; }
 
   /* ── Jobs screen ── */
   #jobs-header {
@@ -560,6 +561,7 @@ html,body{overflow-x:hidden;max-width:100vw}
         <span id="t-h1a"></span><br>
         <span id="t-h1b" style="background:linear-gradient(135deg,#8B5CF6,#10B981);-webkit-background-clip:text;-webkit-text-fill-color:transparent"></span>
       </h1>
+      <p class="a2" id="t-sub" style="font-size:15px;color:var(--tM);line-height:1.7;margin-bottom:28px;max-width:400px"></p>
     </div>
     <div class="a3" style="background:var(--card);border:1px solid var(--b2);border-radius:20px;padding:32px">
       <!-- Steps -->
@@ -938,7 +940,7 @@ function setLang(l){
   if(lastResult&&document.getElementById('s-result').style.display!=='none') renderResult(lastResult);
 }
 function applyText(){
-  sx('t-h1a','h1a');sx('t-h1b','h1b');
+  sx('t-h1a','h1a');sx('t-h1b','h1b');sx('t-sub','sub');
   sx('t-ulbl','ulbl');sx('t-usub','usub');
   sx('t-jtitle','jtitle');sx('t-portals','portals');
   sx('t-tfor','tfor');sx('t-before','before');sx('t-origcv','origcv');
