@@ -1,102 +1,37 @@
-// /api/checkout-word.js
-// POST  → creates a Stripe checkout session and returns the URL
-// GET   → Stripe redirects here after payment; generates and serves the .docx
-
-const PRICE_USD_CENTS = 399; // $3.99
-
-// ── tiny in-memory store mapping session_id → cv data ────────────────────
-// For a production app, persist this in a database (Supabase, Redis, etc.)
-// For MVP purposes, Vercel's serverless functions keep process memory alive
-// for a few minutes, which is long enough for the checkout → download flow.
-const sessionStore = {};
+// /api/checkout-word.js — Seerah AI
+// Free .docx download — no payment required. Previously this file ran a
+// Stripe checkout flow; that's been removed and replaced with a direct,
+// free download to stay within Vercel's Hobby-plan function limit.
 
 module.exports = async function handler(req, res) {
-  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
 
-  // ── POST: create checkout session ──────────────────────────────────────
-  if (req.method === 'POST') {
+  try {
     const { cv, name } = req.body || {};
-
     if (!cv) {
       res.status(400).json({ error: 'No CV data provided' });
       return;
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ||
-      `https://${req.headers.host}`;
+    const docxBuffer = await buildDocx(cv, name || 'Candidate');
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            unit_amount: PRICE_USD_CENTS,
-            product_data: {
-              name: 'CV Match AI — Word Download',
-              description: 'Download your tailored CV as a professionally formatted .docx file.',
-            },
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: `${baseUrl}/api/checkout-word?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}`,
-    });
-
-    // Store the CV data against this session id
-    sessionStore[session.id] = { cv, name: name || 'Candidate' };
-
-    res.status(200).json({ url: session.url });
-    return;
-  }
-
-  // ── GET: Stripe redirect after payment — generate and serve the .docx ──
-  if (req.method === 'GET') {
-    const sessionId = req.query.session_id;
-    if (!sessionId) {
-      res.status(400).send('Missing session_id');
-      return;
-    }
-
-    // Verify payment succeeded
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    if (session.payment_status !== 'paid') {
-      res.status(402).send('Payment not completed.');
-      return;
-    }
-
-    const stored = sessionStore[sessionId];
-    if (!stored) {
-      res.status(410).send(
-        'This download link has expired (server restarted). ' +
-        'Please go back to the site to generate your CV again.'
-      );
-      return;
-    }
-
-    const { cv, name } = stored;
-    delete sessionStore[sessionId]; // one-time use
-
-    // Generate docx
-    const docxBuffer = await buildDocx(cv, name);
-
-    const safeName = (name || 'CV').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_');
+    const safeName = (name || 'CV').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_') || 'CV';
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${safeName}_CV.docx"`);
-    res.send(Buffer.from(docxBuffer));
-    return;
+    res.status(200).send(Buffer.from(docxBuffer));
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to generate Word document', detail: err.message });
   }
-
-  res.status(405).json({ error: 'Method not allowed' });
 };
 
-// ── Build docx in memory using docx npm package ──────────────────────────
+// ── Build docx in memory using the docx npm package ───────────────────────
 async function buildDocx(cv, candidateName) {
   const {
     Document, Packer, Paragraph, TextRun, HeadingLevel,
-    AlignmentType, BorderStyle, Table, TableRow, TableCell, WidthType,
+    AlignmentType, BorderStyle,
   } = require('docx');
 
   const nameRun = new TextRun({
