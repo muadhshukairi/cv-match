@@ -333,7 +333,7 @@ function renderJobs() {
         '<div><label>Location</label><input id="j'+idx+'_lo" value="' + esc(job.location||'Oman') + '"></div>' +
         '<div><label>Type</label><select id="j'+idx+'_ty"><option>Full-time</option><option>Part-time</option><option>Internship</option><option>Contract</option></select></div>' +
         '<div><label>Deadline</label><input id="j'+idx+'_dl" value="' + esc(job.deadline||'') + '" placeholder="e.g. 31 Jul 2026"></div>' +
-        '<div style="grid-column:1/-1"><label>Contact</label><input id="j'+idx+'_ct" value="' + esc(job.contact||'') + '"></div>' +
+        '<div style="grid-column:1/-1"><label>Contact' + (!job.contact && job.qr_url ? ' <span style="font-weight:400;color:#10B981;text-transform:none;letter-spacing:0">(auto-filled from QR code)</span>' : '') + '</label><input id="j'+idx+'_ct" value="' + esc(job.contact || job.qr_url || '') + '"></div>' +
         '<div style="grid-column:1/-1"><label>Requirements (one per line)</label><textarea id="j'+idx+'_req" rows="3">' + (job.requirements||[]).join('\n') + '</textarea></div>' +
       '</div>' +
 
