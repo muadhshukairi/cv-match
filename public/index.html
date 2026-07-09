@@ -434,6 +434,18 @@ html,body{overflow-x:hidden;max-width:100vw}
 </style>
 </head>
 <body>
+<!-- ═══ DOWNLOAD GATE MODAL ═══ -->
+  <div id="dl-gate-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;padding:20px">
+    <div style="background:var(--card);border:1px solid var(--b2);border-radius:16px;padding:28px;max-width:380px;width:100%">
+      <div style="font-size:18px;font-weight:800;margin-bottom:6px" id="t-dlgate-title"></div>
+      <div style="font-size:13px;color:var(--tM);margin-bottom:20px;line-height:1.6" id="t-dlgate-sub"></div>
+      <input id="dlgate-name" type="text" style="width:100%;background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:11px 14px;color:#fff;font-family:inherit;font-size:14px;margin-bottom:10px">
+      <input id="dlgate-email" type="email" style="width:100%;background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:11px 14px;color:#fff;font-family:inherit;font-size:14px;margin-bottom:14px">
+      <div id="dlgate-err" style="display:none;font-size:12px;color:var(--red);margin-bottom:10px"></div>
+      <button onclick="submitDownloadGate()" style="width:100%;font-size:14px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6D28D9,#8B5CF6);border:none;border-radius:10px;padding:12px;cursor:pointer;font-family:inherit;margin-bottom:8px" id="t-dlgate-btn"></button>
+      <button onclick="closeDownloadGate()" style="width:100%;font-size:13px;font-weight:600;color:var(--tM);background:none;border:none;cursor:pointer;font-family:inherit" id="t-dlgate-cancel"></button>
+    </div>
+  </div>
 <!-- ═══ JOB MATCH MODAL (moved to body level to escape any ancestor transform) ═══ -->
   <div id="job-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.88);z-index:9998;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="max-width:720px;margin:0 auto;padding:20px 16px 40px;min-height:100vh;display:flex;flex-direction:column">
@@ -868,6 +880,10 @@ var I={
     kwrefresh:'✦ Update CV & Recalculate',kwrefreshing:'Rewriting your CV…',
     verify:'Verify',comingsoon:'COMING SOON',
     verifysoon:'CV Verification is coming soon — we\'ll check your CV for accuracy before you apply.',
+    dlgatetitle:'One quick step',dlgatesub:'Enter your name and email to download your CV as PDF or Word.',
+    dlgatebtn:'Continue to download',dlgatecancel:'Cancel',
+    dlgateerr:'Please enter a valid name and email.',
+    dlgatename:'Full name',dlgateemail:'Email address',
     interviewprep:'Interview Prep Q/A',
   },
   ar:{
@@ -901,6 +917,10 @@ var I={
     kwrefresh:'✦ تحديث السيرة وإعادة الحساب',kwrefreshing:'جارٍ إعادة كتابة سيرتك…',
     verify:'تحقّق',comingsoon:'قريباً',
     verifysoon:'ميزة التحقّق من السيرة الذاتية قادمة قريباً — سنراجع دقة سيرتك قبل التقديم.',
+    dlgatetitle:'خطوة سريعة',dlgatesub:'أدخل اسمك وبريدك الإلكتروني لتنزيل سيرتك بصيغة PDF أو Word.',
+    dlgatebtn:'متابعة التنزيل',dlgatecancel:'إلغاء',
+    dlgateerr:'الرجاء إدخال اسم وبريد إلكتروني صحيحين.',
+    dlgatename:'الاسم الكامل',dlgateemail:'البريد الإلكتروني',
     interviewprep:'التحضير للمقابلة',
   }
 };
@@ -947,6 +967,10 @@ function applyText(){
   sx('t-after','after');sx('t-rewrcv','rewrcv');sx('t-improved','improved');
   sx('t-dlpdf','dlpdf');sx('t-dlword','dlword');sx('t-kwhead','kwhead');
   sx('t-verify','verify');sx('t-comingsoon','comingsoon');sx('t-interviewprep','interviewprep');
+  sx('t-dlgate-title','dlgatetitle');sx('t-dlgate-sub','dlgatesub');
+  sx('t-dlgate-btn','dlgatebtn');sx('t-dlgate-cancel','dlgatecancel');
+  var _dgn=document.getElementById('dlgate-name'); if(_dgn) _dgn.placeholder=t('dlgatename');
+  var _dge=document.getElementById('dlgate-email'); if(_dge) _dge.placeholder=t('dlgateemail');
   sx('t-tpllbl','tpllbl');sx('t-covhd','covhd');sx('t-iqhd','iqhd');
   sx('t-ctahd','ctahd');sx('t-ctasub','ctasub');sx('t-more','more');sx('t-apply','apply');
   sx('t-dailyjobs','dailyjobs');sx('t-followinsta','followinsta');
@@ -1759,7 +1783,7 @@ function toggleIQ(el) {
    Opens a new window with just the CV content + template styles + fonts.
    No score rings, no UI, no page chrome — just the CV.
 ═══════════════════════════════════════════════════════════════════════════════ */
-function printCV() {
+function printCV_actual() {
   var docEl = document.getElementById('cv-doc');
   if (!docEl) return;
 
@@ -1796,10 +1820,79 @@ function printCV() {
     setTimeout(function() { win.print(); }, 800);
   };
 }
-function handleVerifyClick(){
-  alert(t('verifysoon'));
+function buildImprovedCvText(cv){
+  if(!cv) return '';
+  var parts=[];
+  if(cv.professional_summary) parts.push(cv.professional_summary);
+  if(cv.skills && cv.skills.length) parts.push('Skills: '+cv.skills.join(', '));
+  (cv.experience||[]).forEach(function(role){
+    parts.push((role.title||'')+' — '+(role.company||'')+(role.dates?' ('+role.dates+')':''));
+    (role.bullets||[]).forEach(function(b){ parts.push('- '+b); });
+  });
+  if(cv.education && cv.education.length) parts.push('Education: '+cv.education.join(', '));
+  return parts.join('\n');
 }
-async function downloadWordFree(){
+function handleVerifyClick(){
+  try{
+    var payload={
+      original: cvText || '',
+      improved: (lastResult && lastResult.generated_cv) ? buildImprovedCvText(lastResult.generated_cv) : '',
+      jobTitle: currentJob ? (currentJob.en||'') : ''
+    };
+    if(!payload.original && !payload.improved){
+      alert(t('verifysoon'));
+      return;
+    }
+    localStorage.setItem('seerah_verify_payload', JSON.stringify(payload));
+  }catch(e){}
+  window.open('/verify.html','_blank');
+}
+// ── Download gate: require name + email before PDF/Word download ──────────
+var _pendingDownloadAction = null;
+
+function hasDownloadLead(){
+  try{ return !!localStorage.getItem('seerah_lead'); }catch(e){ return false; }
+}
+function getDownloadLead(){
+  try{ return JSON.parse(localStorage.getItem('seerah_lead')||'null'); }catch(e){ return null; }
+}
+function printCV(){
+  if(hasDownloadLead()){ printCV_actual(); return; }
+  _pendingDownloadAction = printCV_actual;
+  openDownloadGate();
+}
+function downloadWordFree(){
+  if(hasDownloadLead()){ downloadWordFree_actual(); return; }
+  _pendingDownloadAction = downloadWordFree_actual;
+  openDownloadGate();
+}
+function openDownloadGate(){
+  var m=document.getElementById('dl-gate-modal');
+  m.style.display='flex';
+  document.getElementById('dlgate-err').style.display='none';
+}
+function closeDownloadGate(){
+  document.getElementById('dl-gate-modal').style.display='none';
+  _pendingDownloadAction=null;
+}
+function submitDownloadGate(){
+  var name=document.getElementById('dlgate-name').value.trim();
+  var email=document.getElementById('dlgate-email').value.trim();
+  var emailOk=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if(!name || !emailOk){
+    var errEl=document.getElementById('dlgate-err');
+    errEl.textContent=t('dlgateerr');
+    errEl.style.display='block';
+    return;
+  }
+  try{ localStorage.setItem('seerah_lead', JSON.stringify({name:name,email:email,ts:Date.now()})); }catch(e){}
+  fetch('/api/track?event=download_lead&detail='+encodeURIComponent(name+' | '+email)).catch(function(){});
+  document.getElementById('dl-gate-modal').style.display='none';
+  if(_pendingDownloadAction) _pendingDownloadAction();
+  _pendingDownloadAction=null;
+}
+
+async function downloadWordFree_actual(){
   if(!lastResult || !lastResult.generated_cv) return;
   var btn=document.getElementById('dl-word-btn');
   var origHTML=btn.innerHTML;
@@ -2345,7 +2438,7 @@ function toggleIQ(el) {
 }
 
 /* ══ Print CV ════════════════════════════════════════════════════════════════ */
-function printCV() {
+function printCV_actual() {
   var docEl = document.getElementById('cv-doc');
   if (!docEl) return;
   var cvStyles = '';
