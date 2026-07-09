@@ -1804,10 +1804,27 @@ function initStats() {
 var JB_JOBS=[], JB_FILTER='all';
 
 function jobDateLabel(job){
-  var raw = job.date_posted||job.posted_date||job.date||job.created_at||job.timestamp||job.publish_date||job.published_at||'';
-  if(!raw) return '';
-  var d = new Date(raw);
-  if(isNaN(d.getTime())) return (typeof raw==='string'?raw:'');
+  var d = null;
+  // Primary source: many job IDs embed the real publish timestamp (e.g. "J1783504111549")
+  // which has proven reliable — prefer it over the `date` field, which can be corrupted
+  // by the Google Sheets/Apps Script serialization step.
+  if(job.id){
+    var idMatch = String(job.id).match(/(\d{13})/);
+    if(idMatch){
+      var ts = parseInt(idMatch[1],10);
+      var candidate = new Date(ts);
+      if(!isNaN(candidate.getTime()) && candidate.getFullYear()>2020 && candidate.getTime() < Date.now()+86400000){
+        d = candidate;
+      }
+    }
+  }
+  if(!d){
+    var raw = job.date_posted||job.posted_date||job.date||job.created_at||job.timestamp||job.publish_date||job.published_at||'';
+    if(!raw) return '';
+    var parsed = new Date(raw);
+    if(isNaN(parsed.getTime())) return (typeof raw==='string'?raw:'');
+    d = parsed;
+  }
   var now=new Date();
   // Compare actual calendar dates (midnight to midnight), not raw elapsed hours —
   // otherwise something posted at 9pm yesterday and viewed at 10am today would
