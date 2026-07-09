@@ -1819,7 +1819,7 @@ async function downloadWordFree(){
     if(_addedKw && _addedKw.length){
       cvPayload.skills=(cvPayload.skills||[]).concat(_addedKw.filter(function(k){return (cvPayload.skills||[]).indexOf(k)===-1;}));
     }
-    var res=await fetch('/api/download-word',{
+    var res=await fetch('/api/checkout-word',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({cv:cvPayload,name:userName||'CV'}),
     });
