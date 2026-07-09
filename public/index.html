@@ -1052,18 +1052,23 @@ function calcMatch(cv, desc, profile, jobTitle) {
     kwScore = Math.round(hits / dW.size * 100);
   }
 
-  // Weighted combination — title match carries real weight since an exact/near
-  // title match is one of the strongest real-world fit signals
+  // Weighted combination — title match carries the most weight since an exact/near
+  // title match is one of the strongest real-world fit signals recruiters and ATS use
   var score;
   if(jobTitle && skills.length){
-    score = Math.round(titleScore*0.35 + skillScore*0.30 + kwScore*0.35);
+    score = Math.round(titleScore*0.45 + skillScore*0.28 + kwScore*0.27);
   }else if(jobTitle){
-    score = Math.round(titleScore*0.45 + kwScore*0.55);
+    score = Math.round(titleScore*0.55 + kwScore*0.45);
   }else if(skills.length){
     score = Math.round(skillScore*0.5 + kwScore*0.5);
   }else{
     score = kwScore;
   }
+
+  // A strong title match is a dominant real-world signal on its own — don't let
+  // the rest of the formula drag it below a sensible floor
+  if(titleScore>=85) score = Math.max(score, 68);
+  else if(titleScore>=60) score = Math.max(score, 50);
 
   return Math.min(Math.max(score, 10), 92);
 }
@@ -1444,11 +1449,11 @@ function renderResult(data){
 }
 
 function fitLabelFor(pct){
-  if(pct>=70) return lang==='ar'?'توافق ممتاز':'Strong fit';
-  if(pct>=45) return lang==='ar'?'توافق جزئي':'Partial fit';
+  if(pct>=65) return lang==='ar'?'توافق ممتاز':'Strong fit';
+  if(pct>=40) return lang==='ar'?'توافق جزئي':'Partial fit';
   return lang==='ar'?'توافق منخفض':'Low fit';
 }
-function fitColorFor(pct){ return pct>=70?'#10B981':pct>=45?'#F59E0B':'#EF4444'; }
+function fitColorFor(pct){ return pct>=65?'#10B981':pct>=40?'#F59E0B':'#EF4444'; }
 function currentPct(){
   if(!_addedKw.length) return _realAfterPct;
   var gap=Math.max(0,95-_realAfterPct);
@@ -1804,7 +1809,12 @@ function jobDateLabel(job){
   var d = new Date(raw);
   if(isNaN(d.getTime())) return (typeof raw==='string'?raw:'');
   var now=new Date();
-  var diffDays = Math.floor((now - d)/86400000);
+  // Compare actual calendar dates (midnight to midnight), not raw elapsed hours —
+  // otherwise something posted at 9pm yesterday and viewed at 10am today would
+  // show "Today" since less than 24 real hours have passed.
+  var d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var n0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var diffDays = Math.round((n0 - d0)/86400000);
   if(diffDays<0) diffDays=0;
   if(diffDays===0) return lang==='ar'?'اليوم':'Today';
   if(diffDays===1) return lang==='ar'?'أمس':'Yesterday';
