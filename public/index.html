@@ -564,18 +564,8 @@ html,body{overflow-x:hidden;max-width:100vw}
       <p class="a2" id="t-sub" style="font-size:15px;color:var(--tM);line-height:1.7;margin-bottom:28px;max-width:400px"></p>
     </div>
     <div class="a3" style="background:var(--card);border:1px solid var(--b2);border-radius:20px;padding:32px">
-      <input id="file-in" type="file" accept=".pdf,.docx,.txt" style="display:none">
-      <div class="uz" onclick="document.getElementById('file-in').click()" style="border:2px dashed var(--b2);border-radius:14px;padding:32px 20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;text-align:center">
-        <div style="width:52px;height:52px;border-radius:14px;background:var(--vDim);border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:center;font-size:24px">📄</div>
-        <div>
-          <div id="t-ulbl" style="font-weight:700;font-size:15px;color:var(--t);margin-bottom:4px"></div>
-          <div id="t-usub" style="font-size:12px;color:var(--tD)"></div>
-        </div>
-      </div>
-      <p style="text-align:center"><button id="t-sample" onclick="useSample()" style="font-size:13px;color:var(--v);background:none;border:none;cursor:pointer;font-family:inherit"></button></p>
-
       <!-- Steps -->
-      <div style="display:flex;align-items:flex-start;gap:0;margin-top:22px;padding-top:18px;border-top:1px solid var(--b)">
+      <div style="display:flex;align-items:flex-start;gap:0;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--b)">
 
         <!-- Step 1 -->
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px">
@@ -605,32 +595,13 @@ html,body{overflow-x:hidden;max-width:100vw}
         </div>
 
       </div>
-      <!-- Stats bar -->
-      <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.15);border-radius:10px;padding:10px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:18px">
-        <div style="text-align:center;padding:2px 0">
-          <div style="font-size:13px;margin-bottom:2px">📄</div>
-          <div id="stat-cvs" style="font-size:14px;font-weight:900;color:#fff;line-height:1">0</div>
-          <div id="stat-cvs-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
+      <input id="file-in" type="file" accept=".pdf,.docx,.txt" style="display:none">
+      <div class="uz" onclick="document.getElementById('file-in').click()" style="border:2px dashed var(--b2);border-radius:14px;padding:32px 20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;text-align:center">
+        <div style="width:52px;height:52px;border-radius:14px;background:var(--vDim);border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:center;font-size:24px">📄</div>
+        <div>
+          <div id="t-ulbl" style="font-weight:700;font-size:15px;color:var(--t);margin-bottom:4px"></div>
+          <div id="t-usub" style="font-size:12px;color:var(--tD)"></div>
         </div>
-        <div style="text-align:center;padding:2px 0">
-          <div style="font-size:13px;margin-bottom:2px">🔍</div>
-          <div id="stat-jobs" style="font-size:14px;font-weight:900;color:#fff;line-height:1">0</div>
-          <div id="stat-jobs-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
-        </div>
-        <div style="text-align:center;padding:2px 0">
-          <div style="font-size:13px;margin-bottom:2px">🌍</div>
-          <div id="stat-vis" style="font-size:14px;font-weight:900;color:#fff;line-height:1">0</div>
-          <div id="stat-vis-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
-        </div>
-        <div style="text-align:center;padding:2px 0">
-          <div style="font-size:13px;margin-bottom:2px">🇴🇲</div>
-          <div style="font-size:14px;font-weight:900;color:#fff;line-height:1">6</div>
-          <div id="stat-gcc-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:7px">
-        <div style="width:5px;height:5px;border-radius:50%;background:#10B981;animation:pulse 2s ease infinite"></div>
-        <span id="stat-live-lbl" style="font-size:9.5px;color:#475569"></span>
       </div>
 
       <div id="upload-err" style="display:none;margin-top:14px;font-size:13px;color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 16px;text-align:center"></div>
@@ -643,7 +614,6 @@ html,body{overflow-x:hidden;max-width:100vw}
         <div style="width:8px;height:8px;border-radius:50%;background:#10B981;animation:pulse 2s ease infinite"></div>
         <h2 id="t-dailyjobs" style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--t)">Daily Jobs</h2>
       </div>
-      <div id="t-updated" style="font-size:11px;color:var(--tD);background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.15);border-radius:999px;padding:3px 12px">Updated daily · curated by Seerah AI</div>
     </div>
 
     <!-- Filter pills -->
@@ -665,6 +635,35 @@ html,body{overflow-x:hidden;max-width:100vw}
       </div>
     </div>
   </section>
+  <!-- Live stats -->
+  <div style="max-width:520px;margin:0 auto 40px;padding:0 20px">
+    <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.15);border-radius:10px;padding:10px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+      <div style="text-align:center;padding:2px 0">
+        <div style="font-size:13px;margin-bottom:2px">📄</div>
+        <div id="stat-cvs" style="font-size:14px;font-weight:900;color:#fff;line-height:1">0</div>
+        <div id="stat-cvs-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
+      </div>
+      <div style="text-align:center;padding:2px 0">
+        <div style="font-size:13px;margin-bottom:2px">🔍</div>
+        <div id="stat-jobs" style="font-size:14px;font-weight:900;color:#fff;line-height:1">0</div>
+        <div id="stat-jobs-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
+      </div>
+      <div style="text-align:center;padding:2px 0">
+        <div style="font-size:13px;margin-bottom:2px">🌍</div>
+        <div id="stat-vis" style="font-size:14px;font-weight:900;color:#fff;line-height:1">0</div>
+        <div id="stat-vis-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
+      </div>
+      <div style="text-align:center;padding:2px 0">
+        <div style="font-size:13px;margin-bottom:2px">🇴🇲</div>
+        <div style="font-size:14px;font-weight:900;color:#fff;line-height:1">6</div>
+        <div id="stat-gcc-lbl" style="font-size:8.5px;color:#6B7280;margin-top:3px;line-height:1.3"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:7px">
+      <div style="width:5px;height:5px;border-radius:50%;background:#10B981;animation:pulse 2s ease infinite"></div>
+      <span id="stat-live-lbl" style="font-size:9.5px;color:#475569"></span>
+    </div>
+  </div>
 
   <!-- ══ JOB MATCH MODAL ══ -->
 
@@ -942,7 +941,7 @@ function setLang(l){
 }
 function applyText(){
   sx('t-h1a','h1a');sx('t-h1b','h1b');sx('t-sub','sub');
-  sx('t-ulbl','ulbl');sx('t-usub','usub');sx('t-sample','sample');
+  sx('t-ulbl','ulbl');sx('t-usub','usub');
   sx('t-jtitle','jtitle');sx('t-portals','portals');
   sx('t-tfor','tfor');sx('t-before','before');sx('t-origcv','origcv');
   sx('t-after','after');sx('t-rewrcv','rewrcv');sx('t-improved','improved');
@@ -950,7 +949,7 @@ function applyText(){
   sx('t-verify','verify');sx('t-comingsoon','comingsoon');sx('t-interviewprep','interviewprep');
   sx('t-tpllbl','tpllbl');sx('t-covhd','covhd');sx('t-iqhd','iqhd');
   sx('t-ctahd','ctahd');sx('t-ctasub','ctasub');sx('t-more','more');sx('t-apply','apply');
-  sx('t-dailyjobs','dailyjobs');sx('t-updated','updated');sx('t-followinsta','followinsta');
+  sx('t-dailyjobs','dailyjobs');sx('t-followinsta','followinsta');
   sx('t-copyright','copyright');sx('t-modalusub','usub');sx('t-loadingjobs','loadingjobs');
 }
 function sx(id,key){var el=document.getElementById(id);if(el)el.textContent=t(key);}
