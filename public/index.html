@@ -990,14 +990,44 @@ var STOP_WORDS=new Set(['the','and','for','with','this','that','from','into','ab
   'such','more','than','then','within','through','across','between','over','under',
   'they','them','these','those','there','here','some','most','very','just','only',
   'able','work','will','shall','ensure','provide','support','assist','manage',
-  'required','experience','minimum','years','role','position','candidate','apply']);
+  'required','experience','minimum','years','role','position','candidate','apply',
+  'responsibilities','requirements','qualifications','duties','perform','performing',
+  'maintain','maintaining','coordinate','coordinating','communication','communicate',
+  'strong','excellent','knowledge','ability','abilities','team','company','including',
+  'related','field','degree','preferred','skills','background','looking','seeking',
+  'join','join our','opportunity','environment','including','ensure','ensuring',
+  'other','other duties','general','various','including','level','levels','high',
+  'good','effective','effectively','relevant','proven','demonstrated','strongly']);
 
-function calcMatch(cv, desc, profile) {
+function titleWords(s){
+  return new Set((s||'').toLowerCase().split(/\W+/).filter(function(w){return w.length>2 && !STOP_WORDS.has(w);}));
+}
+function calcTitleScore(jobTitle, profile){
+  if(!jobTitle || !profile) return 0;
+  var jw = titleWords(jobTitle);
+  if(!jw.size) return 0;
+  var candidates=[profile.jobTitle,profile.searchTitle].concat(profile.searchQueries||[]).filter(Boolean);
+  if(!candidates.length) return 0;
+  var best=0;
+  candidates.forEach(function(ct){
+    var cw=titleWords(ct);
+    if(!cw.size) return;
+    var hits=0;
+    jw.forEach(function(w){ if(cw.has(w)) hits++; });
+    var s=Math.round(hits/jw.size*100);
+    if(s>best) best=s;
+  });
+  return best;
+}
+function calcMatch(cv, desc, profile, jobTitle) {
   if(!desc) return 25;
   var cvL = cv.toLowerCase();
   var dL  = desc.toLowerCase();
 
-  // Part 1 — skills from extracted profile (weighted 50%)
+  // Part 1 — title similarity (candidate's own title/search terms vs this job's title)
+  var titleScore = calcTitleScore(jobTitle, profile);
+
+  // Part 2 — skills from extracted profile
   var skills = (profile && profile.topSkills) || [];
   var skillScore = 0;
   if(skills.length) {
@@ -1007,24 +1037,33 @@ function calcMatch(cv, desc, profile) {
     skillScore = Math.round(skillHits / skills.length * 100);
   }
 
-  // Part 2 — meaningful keyword overlap (weighted 50%)
-  // Filter: length > 4, not a stop word
+  // Part 3 — meaningful keyword overlap, deduplicated on both sides so a verbose
+  // job posting with repeated boilerplate words doesn't dilute the ratio
   var cvW = new Set(cvL.split(/\W+/).filter(function(w){
     return w.length > 4 && !STOP_WORDS.has(w);
   }));
-  var dW = dL.split(/\W+/).filter(function(w){
+  var dW = new Set(dL.split(/\W+/).filter(function(w){
     return w.length > 4 && !STOP_WORDS.has(w);
-  });
+  }));
   var kwScore = 0;
-  if(dW.length) {
-    var hits = dW.filter(function(w){ return cvW.has(w); }).length;
-    kwScore = Math.round(hits / dW.length * 100);
+  if(dW.size) {
+    var hits = 0;
+    dW.forEach(function(w){ if(cvW.has(w)) hits++; });
+    kwScore = Math.round(hits / dW.size * 100);
   }
 
-  // Weighted combination
-  var score = skills.length
-    ? Math.round(skillScore * 0.5 + kwScore * 0.5)
-    : kwScore;
+  // Weighted combination — title match carries real weight since an exact/near
+  // title match is one of the strongest real-world fit signals
+  var score;
+  if(jobTitle && skills.length){
+    score = Math.round(titleScore*0.35 + skillScore*0.30 + kwScore*0.35);
+  }else if(jobTitle){
+    score = Math.round(titleScore*0.45 + kwScore*0.55);
+  }else if(skills.length){
+    score = Math.round(skillScore*0.5 + kwScore*0.5);
+  }else{
+    score = kwScore;
+  }
 
   return Math.min(Math.max(score, 10), 92);
 }
@@ -1150,7 +1189,7 @@ async function searchPublishedJobs(profile){
     if(!jobs.length) return [];
     return jobs.map(function(j){
       var desc=[j.title_en,j.title_ar].concat(j.requirements||[]).join(' ');
-      var pct=calcMatch(cvText,desc,profile);
+      var pct=calcMatch(cvText,desc,profile,j.title_en||j.title_ar);
       return {id:'pb-'+(j.id||j.title_en),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
         en:j.title_en||'',ar:j.title_ar||'',company:j.company||'',loc:j.location||'Oman',
         ten:j.type||'Full-time',tar:j.type||'Full-time',url:'',desc:desc,days_ago:null,
@@ -1207,7 +1246,7 @@ async function runAutoSearch(){
     var apiJobs=(d.jobs||[])
     .filter(function(j){ return titleSeniorityOk(j.title, cvProfile?cvProfile.seniorityLevel:'mid', cvProfile?cvProfile.searchTitle:''); })
     .map(function(j,i){
-      var pct=calcMatch(cvText,j.desc||'',cvProfile);
+      var pct=calcMatch(cvText,j.desc||'',cvProfile,j.title);
       return {
         id:j.id||('r'+i),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
         en:j.title||'',ar:j.title||'',
@@ -1254,7 +1293,7 @@ function onCountryChange(){
   }).then(function(r){return r.json();}).then(function(d){
     if(!d.jobs||!d.jobs.length)throw new Error(t('noresults'));
     JOBS=d.jobs.map(function(j,i){
-      var pct=calcMatch(cvText,j.desc||'');
+      var pct=calcMatch(cvText,j.desc||'',cvProfile,j.title);
       return {id:j.id||('r'+i),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
         en:j.title||'',ar:j.title||'',company:j.company||'',loc:j.location||country,
         ten:j.type||'Full-time',tar:'دوام كامل',url:j.apply_link||'',
@@ -1892,7 +1931,7 @@ async function handleModalCV(file) {
 
     // Calculate match score
     var jobDesc = [_modalJob.title_en, _modalJob.title_ar, (_modalJob.requirements||[]).join(' ')].join(' ');
-    var score = calcMatch(cvText, jobDesc, profile);
+    var score = calcMatch(cvText, jobDesc, profile, _modalJob.title_en||_modalJob.title_ar);
 
     // Show score ring
     var col = score>=65?'#10B981':score>=40?'#F59E0B':'#EF4444';
@@ -2155,7 +2194,7 @@ async function searchPublishedJobs(profile){
     if(!jobs.length) return [];
     return jobs.map(function(j){
       var desc=[j.title_en,j.title_ar].concat(j.requirements||[]).join(' ');
-      var pct=calcMatch(cvText,desc,profile);
+      var pct=calcMatch(cvText,desc,profile,j.title_en||j.title_ar);
       return {id:'pb-'+(j.id||j.title_en),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
         en:j.title_en||'',ar:j.title_ar||'',company:j.company||'',loc:j.location||'Oman',
         ten:j.type||'Full-time',tar:j.type||'Full-time',url:'',desc:desc,days_ago:null,
