@@ -743,7 +743,26 @@ html,body{overflow-x:hidden;max-width:100vw}
         <div id="r-title" style="font-weight:700;font-size:16px;color:var(--t)"></div>
         <div id="r-meta" style="font-size:13px;color:var(--tM);margin-top:2px"></div>
       </div>
-      <div id="r-fitbar" style="min-width:190px"></div>
+    </div>
+    <!-- Compatibility (ring style, mirrors Quality section below) -->
+    <div id="compat-bar" style="background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="ring-cb" style="width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center"><span id="score-cb" style="font-size:13px;font-weight:900">0</span></div>
+        </div>
+        <div><div id="t-cbefore" style="font-size:13px;font-weight:700;color:var(--t)"></div><div id="t-corigcv" style="font-size:11px;color:var(--tD);margin-top:1px"></div></div>
+      </div>
+      <div style="flex:1;display:flex;align-items:center;min-width:60px">
+        <div style="flex:1;height:2px;background:var(--b)"></div>
+        <span id="t-compatlbl" style="font-size:9.5px;color:var(--tD);font-weight:700;margin:0 8px;letter-spacing:.5px;white-space:nowrap"></span>
+        <div style="flex:1;height:2px;background:var(--b)"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="ring-ca-c" style="width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center"><span id="score-ca-c" style="font-size:13px;font-weight:900">0</span></div>
+        </div>
+        <div><div id="t-cafterpct" style="font-size:13px;font-weight:700"></div><div id="t-cafterlbl" style="font-size:11px;margin-top:1px"></div></div>
+      </div>
     </div>
     <!-- Scores + downloads -->
     <div id="scores-bar" style="background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
@@ -1410,7 +1429,7 @@ function renderResult(data){
   document.getElementById('r-meta').textContent=job.company+' · '+job.loc;
   if(_kwStateJobId!==job.id){_addedKw=[];_allMissingKw=(data.missing_keywords||[]).slice();_origPct=job.pct;_kwStateJobId=job.id;}
   _realAfterPct=data.improved_match_score||job.pct;
-  renderFitBar();
+  renderCompatRings();
   // Score rings
   setRing('ring-b','score-b',data.match_score||0,false);
   setRing('ring-a','score-a',data.improved_match_score||0,true);
@@ -1460,21 +1479,21 @@ function currentPct(){
   var share=gap/Math.max(1,_allMissingKw.length);
   return Math.min(95,Math.round(_realAfterPct+share*_addedKw.length));
 }
-function renderFitBar(){
+function renderCompatRings(){
   var before=_origPct, after=currentPct();
   var acL=fitColorFor(after);
-  var grad='linear-gradient(90deg,#6D28D9,'+acL+')';
-  var changed=after!==before;
-  var pendingTag=_addedKw.length?' <span style="color:var(--tD);font-weight:500">('+(lang==='ar'?'تقديري':'estimated')+')</span>':'';
-  var valueHTML=changed?
-    '<span style="text-decoration:line-through;color:var(--tD);font-weight:500">'+before+'%</span> → <span style="color:'+acL+'">'+after+'%</span> · '+fitLabelFor(after)+pendingTag:
-    '<span style="color:'+acL+'">'+after+'%</span> · '+fitLabelFor(after)+pendingTag;
-  document.getElementById('r-fitbar').innerHTML=
-    '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--tD);font-weight:500">'+(lang==='ar'?'التوافق':'Compatibility')+'</span><span style="font-size:11.5px;font-weight:700">'+valueHTML+'</span></div>'+
-    '<div style="position:relative;height:4px;background:var(--b);border-radius:999px">'+
-      '<div style="height:100%;width:'+after+'%;background:'+grad+';border-radius:999px;transition:width .4s ease"></div>'+
-      (changed?'<div style="position:absolute;top:-2px;left:'+before+'%;width:2px;height:8px;background:#fff;opacity:.5" title="'+(lang==='ar'?'قبل':'Before')+': '+before+'%"></div>':'')+
-    '</div>';
+  var pendingTag=_addedKw.length?(' ('+(lang==='ar'?'تقديري':'est.')+')'):'';
+  setRing('ring-cb','score-cb',before,false);
+  setRing('ring-ca-c','score-ca-c',after,after>before);
+  document.getElementById('t-cbefore').textContent=t('before');
+  document.getElementById('t-corigcv').textContent=t('origcv');
+  document.getElementById('t-compatlbl').textContent=lang==='ar'?'التوافق':'COMPATIBILITY';
+  var afterEl=document.getElementById('t-cafterpct');
+  afterEl.textContent=after+'%'+pendingTag;
+  afterEl.style.color=acL;
+  var lblEl=document.getElementById('t-cafterlbl');
+  lblEl.textContent=fitLabelFor(after);
+  lblEl.style.color=acL;
 }
 function renderKwList(){
   var kwList=document.getElementById('kw-list');
@@ -1495,7 +1514,7 @@ function toggleKw(k){
   var idx=_addedKw.indexOf(k);
   if(idx===-1) _addedKw.push(k); else _addedKw.splice(idx,1);
   renderKwList();
-  renderFitBar();
+  renderCompatRings();
   if(lastResult) buildCVDoc(currentTpl);
   var btn=document.getElementById('kw-refresh-btn');
   if(btn){
