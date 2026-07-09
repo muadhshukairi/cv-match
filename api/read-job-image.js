@@ -73,10 +73,30 @@ If no jobs found, return: []`;
       }),
     });
 
+    if (!response.ok) {
+      const errText = await response.text();
+      res.status(502).json({ error: 'AI request failed (' + response.status + ')', detail: errText.slice(0, 500) });
+      return;
+    }
+
     const data = await response.json();
-    const raw = (data.content || []).find(c => c.type === 'text')?.text || '[]';
+    const textBlock = (data.content || []).find(c => c.type === 'text');
+    if (!textBlock) {
+      res.status(502).json({ error: 'No content returned from AI', detail: JSON.stringify(data).slice(0, 500) });
+      return;
+    }
+
+    const raw = textBlock.text || '[]';
     const clean = raw.replace(/```(?:json)?|```/gi, '').trim();
-    const jobs = JSON.parse(clean);
+
+    let jobs;
+    try {
+      jobs = JSON.parse(clean);
+    } catch (parseErr) {
+      res.status(502).json({ error: 'Could not parse AI response as JSON', detail: clean.slice(0, 500) });
+      return;
+    }
+
     res.status(200).json({ jobs });
 
   } catch(e) {
