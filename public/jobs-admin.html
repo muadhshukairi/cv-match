@@ -314,18 +314,24 @@ async function processFile(file) {
     }
 
     setStatus('✓ Found ' + data.jobs.length + ' job(s) in ' + file.name + ' — review and publish below');
-    // Crop each job to its bounding box
+    // The displayed thumbnail is always the full original flyer — compute it
+    // once here rather than redundantly re-processing it for every job found
+    // in the same post.
+    var sharedThumb = await autotrim(currentImageUrl);
     var cropPromises = data.jobs.map(async function(job) {
-      // Crop to Claude's bbox, then auto-trim white borders
-      var thumb, sourceForQR;
+      // Thumbnail shown/published for this job = always the full original
+      // flyer, auto-trimmed only (never cropped to this job's bbox). If one
+      // ad post has multiple job openings, every job from it shows the same
+      // full image — that's the actual product, not a fragment of it.
+      var thumb = sharedThumb;
+
+      // QR decoding still benefits from a tight crop when this is a multi-job
+      // post (higher fidelity, avoids picking up a different job's QR code),
+      // but that crop is only used for decoding — never for display.
+      var sourceForQR;
       if (job.bbox && job.bbox.w && job.bbox.h && (job.bbox.w < 92 || job.bbox.h < 92)) {
-        // Multi-post screenshot: crop to individual job bbox first
-        var bboxImg = await cropToBbox(currentImageUrl, job.bbox);
-        thumb = await autotrim(bboxImg);
-        sourceForQR = bboxImg;
+        sourceForQR = await cropToBbox(currentImageUrl, job.bbox);
       } else {
-        // Single post: just auto-trim the full image
-        thumb = await autotrim(currentImageUrl);
         sourceForQR = currentImageUrl;
       }
       // Real QR decode — try the tight crop first (higher fidelity, multiple
