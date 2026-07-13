@@ -2269,9 +2269,11 @@ async function loadJobBoard(){
 }
 
 /* ══ Auto-slide the job board carousel ══════════════════════════════════════
-   Advances 3 cards every second; pauses while the user hovers/touches the
+   Advances 3 cards every 2.5s; pauses while the user hovers/touches the
    track (see onmouseenter/onmouseleave/ontouch* on #jb-track) so it never
    fights a manual scroll, and loops back to the start at the end.
+   In RTL (Arabic), content flows right-to-left, so the slide direction and
+   the "reached the end" check are both mirrored — see isRTL below.
 ══════════════════════════════════════════════════════════════════════════════ */
 var _jbAutoTimer=null, _jbAutoPaused=false;
 var JB_CARD_STEP=200; // approx card width (190px) + gap (10px)
@@ -2281,18 +2283,23 @@ function startJBAuto(){
     if(_jbAutoPaused) return;
     var track=document.getElementById('jb-track');
     if(!track) return;
+    var root=document.getElementById('root');
+    var isRTL=root && root.dir==='rtl';
     var maxScroll=track.scrollWidth-track.clientWidth;
     if(maxScroll<=0) return;
-    if(track.scrollLeft>=maxScroll-4){
+    var step=JB_CARD_STEP*3;
+    var pos=Math.abs(track.scrollLeft);
+    if(pos>=maxScroll-4){
       track.scrollTo({left:0,behavior:'smooth'});
     }else{
-      track.scrollBy({left:JB_CARD_STEP*3,behavior:'smooth'});
+      track.scrollBy({left:isRTL?-step:step,behavior:'smooth'});
     }
-  },1000);
+  },2500);
 }
 function stopJBAuto(){ if(_jbAutoTimer){clearInterval(_jbAutoTimer);_jbAutoTimer=null;} }
 function pauseJBAuto(){ _jbAutoPaused=true; }
 function resumeJBAuto(){ _jbAutoPaused=false; }
+
 
 
 
