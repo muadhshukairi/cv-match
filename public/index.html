@@ -1384,6 +1384,22 @@ function useSample(){
   goJobs();runAutoSearch();
 }
 
+/* ══ Normalize a published job's contact field into a clickable link ═══════
+   `contact` on board-published jobs can be a URL, an email, or a phone
+   number depending on what was in the original Instagram post — this makes
+   "View" work correctly for all three instead of only real URLs.
+══════════════════════════════════════════════════════════════════════════ */
+function contactToUrl(contact){
+  var c=(contact||'').trim();
+  if(!c) return '';
+  if(/^https?:\/\//i.test(c)) return c;
+  if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) return 'mailto:'+c;
+  if(/^[+\d][\d\s()-]{5,}$/.test(c)) return 'tel:'+c.replace(/[^\d+]/g,'');
+  // Fallback: looks like a bare domain (e.g. "company.com/careers")
+  if(/^[\w-]+\.[a-z]{2,}(\/\S*)?$/i.test(c)) return 'https://'+c;
+  return '';
+}
+
 /* ══ Search published jobs for CV matches ══════════════════════════════════ */
 async function searchPublishedJobs(profile){
   try{
@@ -1396,12 +1412,11 @@ async function searchPublishedJobs(profile){
       var pct=calcMatch(cvText,desc,profile,j.title_en||j.title_ar);
       return {id:'pb-'+(j.id||j.title_en),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
         en:j.title_en||'',ar:j.title_ar||'',company:j.company||'',loc:j.location||'Oman',
-        ten:j.type||'Full-time',tar:j.type||'Full-time',url:'',desc:desc,days_ago:null,
+        ten:j.type||'Full-time',tar:j.type||'Full-time',url:contactToUrl(j.contact),desc:desc,days_ago:null,
         source:'Seerah AI',omani_only:j.omani_only||false};
     }).filter(function(j){return j.pct>=30;}).sort(function(a,b){return b.pct-a.pct;}).slice(0,5);
   }catch(e){return [];}
 }
-
 /* ══ AUTO SEARCH — AI reads CV then searches ════════════════════════════════
    Step 1: /api/extract-cv  → Claude extracts structured profile
    Step 2: /api/find-jobs   → JSearch returns live matching jobs
@@ -1597,7 +1612,7 @@ function renderCards(jobs){
         '</div>'+
       '</div>'+
       '<div class="jcard-actions" style="padding:16px 16px 16px 0;display:flex;flex-direction:column;gap:8px;justify-content:center;align-items:flex-end">'+
-        '<a href="'+esc(j.url||'#')+'" target="_blank" rel="noopener" style="font-size:12px;font-weight:500;color:var(--tM);border:1px solid var(--b);border-radius:8px;padding:6px 12px;text-decoration:none;font-family:inherit;white-space:nowrap">'+(lang==='ar'?'عرض ↗':'View ↗')+'</a>'+
+        (j.url?'<a href="'+esc(j.url)+'" target="_blank" rel="noopener" style="font-size:12px;font-weight:500;color:var(--tM);border:1px solid var(--b);border-radius:8px;padding:6px 12px;text-decoration:none;font-family:inherit;white-space:nowrap">'+(lang==='ar'?'عرض ↗':'View ↗')+'</a>':'')+
         '<button id="tb-'+j.id+'" class="bp" onclick="doTailor(\''+j.id+'\')"'+
           ' style="font-size:12.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,#6D28D9,#8B5CF6);border:none;border-radius:8px;padding:7px 14px;display:flex;align-items:center;gap:6px;white-space:nowrap;font-family:inherit">'+
           (lang==='ar'?'✦ تحسين سيرتي':'✦ Improve CV')+
@@ -2639,27 +2654,9 @@ function useJobForCV(job){
     errEl.style.display='';
     setTimeout(function(){errEl.style.display='none';},4000);
   } else {
-    currentJob={id:'jb',en:job.title_en,ar:job.title_ar,company:job.company,loc:job.location,ten:job.type,tar:job.type,url:'',desc:(job.requirements||[]).join('. '),pct:70,match:'high',days_ago:null};
+    currentJob={id:'jb',en:job.title_en,ar:job.title_ar,company:job.company,loc:job.location,ten:job.type,tar:job.type,url:contactToUrl(job.contact),desc:(job.requirements||[]).join('. '),pct:70,match:'high',days_ago:null};
     doTailor('jb');
   }
-}
-
-/* ══ Search published jobs for CV matches ═══════════════════════════════════ */
-async function searchPublishedJobs(profile){
-  try{
-    var r=await fetch('/api/get-jobs');
-    var d=await r.json();
-    var jobs=d.jobs||[];
-    if(!jobs.length) return [];
-    return jobs.map(function(j){
-      var desc=[j.title_en,j.title_ar].concat(j.requirements||[]).join(' ');
-      var pct=calcMatch(cvText,desc,profile,j.title_en||j.title_ar);
-      return {id:'pb-'+(j.id||j.title_en),match:pct>=65?'high':pct>=40?'medium':'low',pct:pct,
-        en:j.title_en||'',ar:j.title_ar||'',company:j.company||'',loc:j.location||'Oman',
-        ten:j.type||'Full-time',tar:j.type||'Full-time',url:'',desc:desc,days_ago:null,
-        source:'Seerah AI',omani_only:j.omani_only||false};
-    }).filter(function(j){return j.pct>=30;}).sort(function(a,b){return b.pct-a.pct;}).slice(0,5);
-  }catch(e){return [];}
 }
 
 /* ══ Interview Prep Page ═════════════════════════════════════════════════════ */
