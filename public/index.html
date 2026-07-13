@@ -33,6 +33,28 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
 #cv-ready-banner::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);background-size:200% 100%;animation:shimmer 3s ease infinite;pointer-events:none}
 @keyframes barIn{from{width:0}}
 @keyframes screenIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scanSweep{0%{top:0%;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:96%;opacity:0}}
+@keyframes tickPulse{0%,100%{transform:scale(.7);opacity:.6}50%{transform:scale(1);opacity:1}}
+#analyze-loader{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;background:rgba(8,6,18,.92);backdrop-filter:blur(6px);padding:20px}
+#analyze-loader .al-card{width:400px;max-width:100%;background:var(--card);border:1px solid var(--b2);border-radius:20px;padding:36px 32px 30px;box-shadow:0 30px 70px -20px rgba(0,0,0,.6);animation:screenIn .35s ease}
+.al-scandoc{position:relative;width:56px;height:70px;margin:0 auto 20px;background:var(--vDim);border:1.5px solid rgba(139,92,246,.3);border-radius:8px;overflow:hidden}
+.al-scandoc::before,.al-scandoc::after{content:'';position:absolute;left:10px;right:10px;height:3px;background:rgba(139,92,246,.35);border-radius:2px}
+.al-scandoc::before{top:14px}.al-scandoc::after{top:23px;width:60%}
+.al-scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--v),transparent);box-shadow:0 0 10px 1px rgba(139,92,246,.7);animation:scanSweep 1.8s ease-in-out infinite}
+#al-title{font-family:'Fraunces',serif;font-size:20px;font-weight:700;text-align:center;color:var(--t);margin:0 0 4px;letter-spacing:-.3px}
+#root[dir=rtl] #al-title{font-family:'Cairo',sans-serif}
+#al-sub{text-align:center;font-size:12.5px;color:var(--tM);margin:0 0 22px}
+.al-track{height:5px;background:var(--b);border-radius:99px;overflow:hidden;margin-bottom:22px}
+.al-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,var(--vd),var(--v));transition:width .5s cubic-bezier(.4,0,.2,1)}
+.al-steps{list-style:none;margin:0;padding:0}
+.al-steps li{display:flex;align-items:center;gap:11px;padding:8px 0;font-size:13.5px;color:var(--tD);opacity:.5;transform:translateY(2px);transition:opacity .35s ease,color .35s ease,transform .35s ease}
+.al-steps li.active{color:var(--t);opacity:1;transform:translateY(0)}
+.al-steps li.done{color:var(--tM);opacity:1;transform:translateY(0)}
+.al-tick{width:18px;height:18px;flex:0 0 18px;border-radius:50%;border:1.5px solid var(--b2);display:flex;align-items:center;justify-content:center;position:relative}
+.al-steps li.active .al-tick{border-color:var(--v)}
+.al-steps li.active .al-tick::after{content:'';width:7px;height:7px;border-radius:50%;background:var(--v);animation:tickPulse .9s ease-in-out infinite}
+.al-steps li.done .al-tick{background:var(--g);border-color:var(--g)}
+.al-steps li.done .al-tick svg{width:10px;height:10px}
 .screen{animation:screenIn .3s ease both}
 .a1{animation:fadeUp .5s .05s ease both;opacity:0}
 .a2{animation:fadeUp .5s .15s ease both;opacity:0}
@@ -550,6 +572,17 @@ html,body{overflow-x:hidden;max-width:100vw}
   </div>
 </header>
 
+<!-- ═══ ANALYZE LOADER (full-screen, shown while extract-cv + find-jobs run) ═══ -->
+<div id="analyze-loader">
+  <div class="al-card">
+    <div class="al-scandoc"><div class="al-scanline"></div></div>
+    <h3 id="al-title"></h3>
+    <p id="al-sub"></p>
+    <div class="al-track"><div class="al-fill" id="al-fill"></div></div>
+    <ul class="al-steps" id="al-steps"></ul>
+  </div>
+</div>
+
 <!-- ═══ SCREEN 1: UPLOAD ═══ -->
 <main id="s-upload" class="screen">
   <div style="position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:min(600px,100vw);height:500px;background:radial-gradient(ellipse,rgba(109,40,217,.28) 0%,transparent 68%);pointer-events:none;z-index:0"></div>
@@ -902,6 +935,9 @@ var I={
     sum:'Professional Summary',skills:'Skills',exp:'Experience',edu:'Education',
     reading:'Reading your CV…',analysing:'Analysing your CV with AI…',
     searching:'Searching for matching jobs in ',noresults:'No recent matching jobs found. Try a different country.',
+    al_title:'Analyzing your CV',al_sub:'This usually takes a few seconds',
+    al_s1:'Reading your experience',al_s2:'Detecting skills',al_s3:'Searching live jobs',
+    al_s4:'Comparing against openings',al_s5:'Ranking by match score',
     dailyjobs:'Daily Jobs',updated:'Updated daily · curated by Seerah AI',
     loadingjobs:'Loading jobs…',loaderr:'Could not load jobs.',
     nojobs:'No jobs yet. Check back soon.',followinsta:'Follow us on Instagram',
@@ -947,6 +983,9 @@ var I={
     sum:'الملخص المهني',skills:'المهارات',exp:'الخبرات العملية',edu:'التعليم',
     reading:'جارٍ قراءة سيرتك الذاتية…',analysing:'يحلّل الذكاء الاصطناعي سيرتك…',
     searching:'يبحث عن وظائف في ',noresults:'لا توجد وظائف حديثة مطابقة. جرّب دولة أخرى.',
+    al_title:'جارٍ تحليل سيرتك الذاتية',al_sub:'يستغرق هذا عادةً ثوانٍ معدودة',
+    al_s1:'قراءة خبرتك العملية',al_s2:'اكتشاف المهارات',al_s3:'البحث عن وظائف شاغرة',
+    al_s4:'المقارنة مع الوظائف المتاحة',al_s5:'الترتيب حسب نسبة التوافق',
     dailyjobs:'الوظائف اليومية',updated:'يتم التحديث يوميًا · بواسطة سيرة AI',
     loadingjobs:'جارٍ تحميل الوظائف…',loaderr:'تعذّر تحميل الوظائف.',
     nojobs:'لا توجد وظائف بعد. تفقّد الصفحة لاحقاً.',followinsta:'تابعنا على إنستقرام',
@@ -1069,6 +1108,49 @@ function setJobSub(msg,loading){
     el.textContent=JOBS.length+' '+(lang==='ar'?'وظيفة حديثة':'live jobs')+
       ' · '+(lang==='ar'?'مرتبة حسب التوافق':'sorted by match');
   }
+}
+
+/* ══ Full-screen analyze loader ═══════════════════════════════════════════
+   Steps map to the real pipeline in runAutoSearch(): local read → extract-cv
+   → find-jobs → merge/match → sort. Advance step-by-step as each stage
+   actually completes rather than on a fixed timer.
+══════════════════════════════════════════════════════════════════════════ */
+var AL_STEPS=['al_s1','al_s2','al_s3','al_s4','al_s5'];
+var alCurrent=-1;
+var checkSVG='<svg viewBox="0 0 12 12" fill="none"><path d="M2 6.2L4.8 9L10 3" stroke="#080612" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function showAnalyzeLoader(){
+  document.getElementById('al-title').textContent=t('al_title');
+  document.getElementById('al-sub').textContent=t('al_sub');
+  var ul=document.getElementById('al-steps');
+  ul.innerHTML=AL_STEPS.map(function(k){
+    return '<li><span class="al-tick"></span><span>'+esc(t(k))+'</span></li>';
+  }).join('');
+  document.getElementById('al-fill').style.width='0%';
+  alCurrent=-1;
+  document.getElementById('analyze-loader').style.display='flex';
+}
+function alAdvance(stepIndex){
+  var items=document.getElementById('al-steps').children;
+  while(alCurrent<stepIndex&&alCurrent<items.length-1){
+    if(alCurrent>=0){
+      items[alCurrent].classList.remove('active');
+      items[alCurrent].classList.add('done');
+      items[alCurrent].querySelector('.al-tick').innerHTML=checkSVG;
+    }
+    alCurrent++;
+    items[alCurrent].classList.add('active');
+    document.getElementById('al-fill').style.width=(((alCurrent+1)/items.length)*100)+'%';
+  }
+}
+function hideAnalyzeLoader(){
+  var items=document.getElementById('al-steps').children;
+  for(var i=0;i<items.length;i++){
+    items[i].classList.remove('active');items[i].classList.add('done');
+    items[i].querySelector('.al-tick').innerHTML=checkSVG;
+  }
+  document.getElementById('al-fill').style.width='100%';
+  setTimeout(function(){document.getElementById('analyze-loader').style.display='none';},350);
 }
 
 /* ══ Profile tags ═══════════════════════════════════════════════════════════ */
@@ -1318,9 +1400,13 @@ async function runAutoSearch(){
   document.getElementById('jobs-err').style.display='none';
   document.getElementById('profile-tags').innerHTML='';
 
+  showAnalyzeLoader();
   try{
-    // Step 1 — AI extracts structured profile
-    setJobSub(t('analysing'),true);
+    // Step 1 — local read already happened on upload; show it briefly then move on
+    alAdvance(0); // Reading your experience
+
+    // Step 2 — AI extracts structured profile
+    alAdvance(1); // Detecting skills
     var r1=await fetch('/api/extract-cv',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({cvText:cvText}),
@@ -1337,9 +1423,9 @@ async function runAutoSearch(){
     if(p.location) cvProfile.location = p.location;
     showProfileTags(p);
 
-    // Step 2 — search jobs using extracted profile
+    // Step 3 — search jobs using extracted profile
     var country=document.getElementById('country-sel').value||'Oman';
-    setJobSub(t('searching')+country+'…',true);
+    alAdvance(2); // Searching live jobs
     var r2=await fetch('/api/find-jobs',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({jobTitle:p.jobTitle,searchTitle:p.searchTitle||p.jobTitle,searchQueries:p.searchQueries||[],skills:p.topSkills||[],country:country,educationField:p.educationField||''}),
@@ -1350,6 +1436,8 @@ async function runAutoSearch(){
     // Also search published jobs from the board
     var publishedJobs=await searchPublishedJobs(cvProfile);
 
+    // Step 4 — comparing against openings
+    alAdvance(3);
     var apiJobs=(d.jobs||[])
     .filter(function(j){ return titleSeniorityOk(j.title, cvProfile?cvProfile.seniorityLevel:'mid', cvProfile?cvProfile.searchTitle:''); })
     .map(function(j,i){
@@ -1364,6 +1452,8 @@ async function runAutoSearch(){
       };
     });
 
+    // Step 5 — ranking by match score
+    alAdvance(4);
     // Merge: published jobs first (deduplicated), then API results
     var seen=new Set();
     JOBS=publishedJobs.concat(apiJobs).filter(function(j){
@@ -1374,11 +1464,13 @@ async function runAutoSearch(){
 
     if(!JOBS.length) throw new Error(lang==='ar'?'لا توجد نتائج. جرّب دولة مختلفة.':'No jobs found. Try a different country.');
 
+    hideAnalyzeLoader();
     setJobSub('',false);
     fetch('/api/track?event=searches').catch(function(){});
     renderCards(JOBS);
 
   }catch(err){
+    hideAnalyzeLoader();
     setJobSub('',false);
     var errEl=document.getElementById('jobs-err');
     errEl.textContent=err.message;
