@@ -120,8 +120,6 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
   
   /* Jobs board */
   #jobs-board>div:first-child{padding:0 14px!important}
-  #jb-filters{padding:0 14px!important;gap:6px!important}
-  #jb-filters button{font-size:10.5px!important;padding:4px 10px!important}
   #jb-track{padding:4px 0 12px!important}
   #jobs-board h2{font-size:19px!important}
   
@@ -134,7 +132,6 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
   #upload-grid,.upload-grid{grid-template-columns:1fr!important;padding:12px!important;gap:16px!important}
   .a1,.a2,.a3,.a4,.a5{animation:none!important;opacity:1!important;transform:none!important}
   #s-upload>div>div:first-child h1{font-size:20px!important}
-  #jb-filters button{font-size:9.5px!important;padding:3px 8px!important}
   #dl-row button{font-size:10px!important;padding:6px 8px!important}
 }
 .iq-item{border:1px solid var(--b);border-radius:10px;overflow:hidden;margin-bottom:8px}
@@ -451,8 +448,6 @@ html,body{overflow-x:hidden;max-width:100vw}
 /* ── Daily Jobs board ────────────────────────────────── */
 @media(max-width:767px){
   #jobs-board>div:first-child{padding:0 12px!important}
-  #jb-filters{padding:0 12px!important;gap:5px!important}
-  #jb-filters button{font-size:10px!important;padding:4px 9px!important}
   #jb-track{padding:4px 0 16px!important}
   #jb-track .jb-cards-inner,#jb-cards{padding:0 28px!important}
 }
@@ -661,7 +656,7 @@ html,body{overflow-x:hidden;max-width:100vw}
     </div>
 
     <!-- Filter pills -->
-    <div id="jb-filters" style="max-width:840px;margin:0 auto;padding:0 20px;display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap"></div>
+    <!-- Filter pills removed per request — board now shows all live jobs, newest first -->
 
     <!-- Horizontal carousel -->
     <div style="max-width:840px;margin:0 auto;padding:0 20px;position:relative">
@@ -672,7 +667,7 @@ html,body{overflow-x:hidden;max-width:100vw}
       <button onclick="scrollJB(-1)" style="position:absolute;left:20px;top:50%;transform:translateY(-50%);z-index:20;width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--b);color:var(--t);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s" onmouseover="this.style.background='var(--v)'" onmouseout="this.style.background='var(--card)'">‹</button>
       <button onclick="scrollJB(1)" style="position:absolute;right:20px;top:50%;transform:translateY(-50%);z-index:20;width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--b);color:var(--t);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s" onmouseover="this.style.background='var(--v)'" onmouseout="this.style.background='var(--card)'">›</button>
       <!-- Scrollable track -->
-      <div id="jb-track" style="overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;padding:8px 0 16px;width:100%;max-width:100vw" class="no-scroll">
+      <div id="jb-track" onmouseenter="pauseJBAuto()" onmouseleave="resumeJBAuto()" ontouchstart="pauseJBAuto()" ontouchend="resumeJBAuto()" style="overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;padding:8px 0 16px;width:100%;max-width:100vw" class="no-scroll">
         <div id="jb-cards" style="display:flex;gap:14px;min-width:max-content;padding:0 40px">
           <div id="t-loadingjobs" style="color:var(--tD);font-size:14px;padding:40px">Loading jobs…</div>
         </div>
@@ -2192,9 +2187,9 @@ function initStats() {
 }
 
 /* ══ Public Jobs Board ══════════════════════════════════════════════════════ */
-var JB_JOBS=[], JB_FILTER='all';
+var JB_JOBS=[];
 
-function jobDateLabel(job){
+function resolveJobDate(job){
   var d = null;
   // Primary source: many job IDs embed the real publish timestamp (e.g. "J1783504111549")
   // which has proven reliable — prefer it over the `date` field, which can be corrupted
@@ -2211,35 +2206,93 @@ function jobDateLabel(job){
   }
   if(!d){
     var raw = job.date_posted||job.posted_date||job.date||job.created_at||job.timestamp||job.publish_date||job.published_at||'';
-    if(!raw) return '';
+    if(!raw) return null;
     var parsed = new Date(raw);
-    if(isNaN(parsed.getTime())) return (typeof raw==='string'?raw:'');
+    if(isNaN(parsed.getTime())) return null;
     d = parsed;
   }
+  return d;
+}
+/* Age in whole calendar days since posting. Returns null if the date can't be
+   determined at all (kept, rather than deleted, since we can't be sure it's stale). */
+function jobAgeDays(job){
+  var d=resolveJobDate(job);
+  if(!d) return null;
   var now=new Date();
-  // Compare actual calendar dates (midnight to midnight), not raw elapsed hours —
-  // otherwise something posted at 9pm yesterday and viewed at 10am today would
-  // show "Today" since less than 24 real hours have passed.
   var d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   var n0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   var diffDays = Math.round((n0 - d0)/86400000);
   if(diffDays<0) diffDays=0;
+  return diffDays;
+}
+function jobDateLabel(job){
+  var d=resolveJobDate(job);
+  if(!d){
+    var raw = job.date_posted||job.posted_date||job.date||job.created_at||job.timestamp||job.publish_date||job.published_at||'';
+    return (raw && typeof raw==='string') ? raw : '';
+  }
+  var diffDays=jobAgeDays(job);
   if(diffDays===0) return lang==='ar'?'اليوم':'Today';
   if(diffDays===1) return lang==='ar'?'أمس':'Yesterday';
   if(diffDays<7) return lang==='ar'?('منذ '+diffDays+' أيام'):(diffDays+' days ago');
   return d.toLocaleDateString(lang==='ar'?'ar-OM':'en-GB',{day:'numeric',month:'short'});
 }
+/* A job is "expired" only if it has an explicit deadline field that has passed —
+   separate from staleness-by-age, which is handled by the 30-day auto-hide below. */
+function jobIsExpired(job){
+  if(!job.deadline) return false;
+  var dl=new Date(job.deadline);
+  if(isNaN(dl.getTime())) return false;
+  return dl.getTime() < Date.now();
+}
 async function loadJobBoard(){
   try{
     var r=await fetch('/api/get-jobs');
     var d=await r.json();
-    JB_JOBS=(d.jobs||[]).slice().reverse();
+    var all=(d.jobs||[]).slice().reverse();
+    // Auto-hide jobs that are stale: either older than 30 days, or past their
+    // stated application deadline. Note: this only removes them from what
+    // visitors see here — it does not delete the underlying row from Google
+    // Sheets, so the sheet itself will keep growing unless a scheduled Apps
+    // Script cleanup is added separately.
+    JB_JOBS=all.filter(function(j){
+      var age=jobAgeDays(j);
+      var tooOld=(age!==null && age>30);
+      return !tooOld && !jobIsExpired(j);
+    });
     renderJobBoard();
+    startJBAuto();
   }catch(e){
     var el=document.getElementById('jb-cards');
     if(el)el.innerHTML='<p style="color:var(--tD);text-align:center;padding:32px">'+esc(t('loaderr'))+'</p>';
   }
 }
+
+/* ══ Auto-slide the job board carousel ══════════════════════════════════════
+   Advances 3 cards every second; pauses while the user hovers/touches the
+   track (see onmouseenter/onmouseleave/ontouch* on #jb-track) so it never
+   fights a manual scroll, and loops back to the start at the end.
+══════════════════════════════════════════════════════════════════════════════ */
+var _jbAutoTimer=null, _jbAutoPaused=false;
+var JB_CARD_STEP=200; // approx card width (190px) + gap (10px)
+function startJBAuto(){
+  stopJBAuto();
+  _jbAutoTimer=setInterval(function(){
+    if(_jbAutoPaused) return;
+    var track=document.getElementById('jb-track');
+    if(!track) return;
+    var maxScroll=track.scrollWidth-track.clientWidth;
+    if(maxScroll<=0) return;
+    if(track.scrollLeft>=maxScroll-4){
+      track.scrollTo({left:0,behavior:'smooth'});
+    }else{
+      track.scrollBy({left:JB_CARD_STEP*3,behavior:'smooth'});
+    }
+  },1000);
+}
+function stopJBAuto(){ if(_jbAutoTimer){clearInterval(_jbAutoTimer);_jbAutoTimer=null;} }
+function pauseJBAuto(){ _jbAutoPaused=true; }
+function resumeJBAuto(){ _jbAutoPaused=false; }
 
 
 
@@ -2427,25 +2480,7 @@ async function improveFromModal() {
 
 /* == Render Jobs Board ═══════════════════════════════════════════════════════ */
 function renderJobBoard(){
-  var categories=['All','Engineering','Sales & Marketing','Technology','Finance','Omani Only'];
-  var catKeyMap={'All':'catAll','Engineering':'catEngineering','Sales & Marketing':'catSales','Technology':'catTechnology','Finance':'catFinance','Omani Only':'catOmani'};
-  var fp=document.getElementById('jb-filters');
-  if(fp){
-    fp.innerHTML='';
-    categories.forEach(function(f){
-      var active=(JB_FILTER==='all'&&f==='All')||(JB_FILTER===f.toLowerCase());
-      var btn=document.createElement('button');
-      btn.textContent=t(catKeyMap[f]);
-      btn.style.cssText='font-size:11.5px;font-weight:600;padding:5px 14px;border-radius:999px;cursor:pointer;font-family:inherit;border:1px solid '+(active?'var(--v)':'var(--b)')+';background:'+(active?'var(--vDim)':'transparent')+';color:'+(active?'var(--v)':'var(--tD)');
-      var cat=f.toLowerCase();
-      btn.addEventListener('click',function(){filterJB(cat);});
-      fp.appendChild(btn);
-    });
-  }
-  var filtered=JB_FILTER==='all'?JB_JOBS:JB_JOBS.filter(function(j){
-    if(JB_FILTER==='omani only') return j.omani_only;
-    return (j.title_en+' '+j.type+' '+(j.requirements||[]).join(' ')).toLowerCase().includes(JB_FILTER);
-  });
+  var filtered=JB_JOBS;
   var el=document.getElementById('jb-cards');
   if(!el) return;
   el.style.cssText='display:flex;gap:10px;min-width:max-content;padding:0 32px';
@@ -2519,7 +2554,6 @@ function scrollJB(dir){
   var track=document.getElementById('jb-track');
   if(track) track.scrollBy({left:dir*300,behavior:'smooth'});
 }
-function filterJB(f){JB_FILTER=f;renderJobBoard();}
 
 /* ══ Use published job for CV improvement ═══════════════════════════════════ */
 // Direct CV upload from job card → skip search → straight to improvement
