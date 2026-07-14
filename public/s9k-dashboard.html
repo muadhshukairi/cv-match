@@ -113,14 +113,20 @@
   </div>
 
   <!-- WhatsApp share engagement -->
-  <div class="card" style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
-    <div>
-      <h2 style="font-size:14px;font-weight:700;margin-bottom:6px">💬 WhatsApp Shares</h2>
-      <p style="font-size:12px;color:#475569">Clicks on the "Share to WhatsApp" button in the results banner — each one puts a real match % in front of that person's own contacts.</p>
-    </div>
-    <div>
-      <div class="big-num" style="color:#25D366;font-size:40px" id="count-wa-shares">—</div>
-      <div style="font-size:11px;color:#475569;margin-top:4px" id="wa-share-rate"></div>
+  <div class="card" style="margin-bottom:20px">
+    <h2 style="font-size:14px;font-weight:700;margin-bottom:6px">💬 WhatsApp Shares</h2>
+    <p style="font-size:12px;color:#475569;margin-bottom:18px">Two different share moments — sharing your own match result vs. forwarding a specific job listing to someone else.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="stat-card">
+        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">📊 My Match Result</div>
+        <div class="big-num" style="color:#25D366" id="count-wa-shares">—</div>
+        <div style="font-size:12px;color:#475569;margin-top:8px" id="wa-share-rate"></div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">📌 Specific Job Listing</div>
+        <div class="big-num" style="color:#25D366" id="count-job-wa-shares">—</div>
+        <div style="font-size:12px;color:#475569;margin-top:8px" id="job-wa-share-rate"></div>
+      </div>
     </div>
   </div>
 
@@ -192,6 +198,12 @@ async function loadStats() {
     document.getElementById('count-wa-shares').textContent = waShares.toLocaleString();
     document.getElementById('wa-share-rate').textContent = (d.cvs>0)
       ? Math.round(waShares/d.cvs*100) + '% of uploaders shared their result'
+      : '';
+
+    var jobWaShares = d.job_whatsapp_share || 0;
+    document.getElementById('count-job-wa-shares').textContent = jobWaShares.toLocaleString();
+    document.getElementById('job-wa-share-rate').textContent = (d.visits>0)
+      ? Math.round(jobWaShares/d.visits*100) + '% of total visits (click volume, not unique visitors)'
       : '';
 
     // Countries table
