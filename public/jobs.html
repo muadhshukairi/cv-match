@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ar" dir="rtl" id="root">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>سيرة | All Jobs — Seerah AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080612;--card:#0F0B1F;--cardH:#160F2E;
+  --b:#1E1535;--b2:#2D1F4E;
+  --v:#8B5CF6;--vd:#6D28D9;--vDim:rgba(139,92,246,.12);
+  --g:#10B981;--gold:#F59E0B;--red:#EF4444;
+  --t:#F1F5F9;--tM:#94A3B8;--tD:#475569;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif;min-height:100vh}
+body[dir="rtl"]{font-family:'Cairo',sans-serif}
+a{color:inherit}
+
+.wrap{max-width:1040px;margin:0 auto;padding:24px 20px 60px}
+
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6D28D9,#8B5CF6);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff}
+.brand-name{font-family:'Fraunces',serif;font-weight:800;font-size:17px}
+.header-right{display:flex;align-items:center;gap:10px}
+.lang-toggle{display:flex;border:1px solid var(--b2);border-radius:8px;overflow:hidden}
+.lang-toggle button{font-size:12px;font-weight:700;padding:6px 13px;border:none;cursor:pointer;font-family:inherit;background:transparent;color:var(--tD)}
+.lang-toggle button.active{background:var(--v);color:#fff}
+.back-link{font-size:13px;color:var(--tM);text-decoration:none;display:flex;align-items:center;gap:4px;white-space:nowrap}
+
+.page-title{font-family:'Fraunces',serif;font-weight:800;font-size:28px;margin-bottom:4px}
+body[dir="rtl"] .page-title{font-family:'Cairo',sans-serif}
+.page-sub{font-size:12.5px;color:var(--tM);margin-bottom:24px}
+
+.controls{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.search-box{flex:1;min-width:220px;background:var(--card);border:1px solid var(--b);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:8px}
+.search-box input{background:none;border:none;outline:none;color:var(--t);font-size:13.5px;font-family:inherit;width:100%}
+.search-box input::placeholder{color:var(--tD)}
+.sort-select{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:10px 14px;color:var(--t);font-size:13px;font-family:inherit;cursor:pointer}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.chip{background:var(--card);border:1px solid var(--b);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--tM);cursor:pointer;white-space:nowrap;font-family:inherit}
+.chip.active{background:var(--v);border-color:transparent;color:#fff}
+.result-count{font-size:12px;color:var(--tD);margin-bottom:16px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
+.tile{position:relative;aspect-ratio:0.82;border-radius:12px;overflow:hidden;background:var(--card);border:1px solid var(--b)}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0}
+.tile-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(0,0,0,.92) 100%);display:flex;flex-direction:column;justify-content:flex-end;padding:10px;cursor:pointer;text-decoration:none}
+.tile-title{font-size:11.5px;font-weight:800;color:#fff;line-height:1.25;margin-bottom:2px}
+.tile-company{font-size:9.5px;color:#c4b5fd;margin-bottom:8px;line-height:1.3}
+.tile-badge{position:absolute;top:7px;inset-inline-end:7px;background:rgba(16,185,129,.9);color:#fff;font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:999px;backdrop-filter:blur(4px);z-index:2}
+.tile-omani{position:absolute;top:7px;inset-inline-start:7px;background:rgba(5,150,105,.9);color:#fff;font-size:8px;font-weight:700;padding:2px 6px;border-radius:999px;backdrop-filter:blur(4px);z-index:2}
+.tile-actions{display:flex;gap:5px}
+.tile-match-btn{flex:1;background:linear-gradient(135deg,#059669,#10B981);color:#fff;border:none;border-radius:6px;padding:6px 4px;font-size:9.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;text-align:center;display:block}
+.tile-wa-btn{flex:0 0 26px;display:flex;align-items:center;justify-content:center;background:#25D366;border-radius:6px;text-decoration:none}
+.tile-wa-btn svg{width:12px;height:12px}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--tD);font-size:13.5px}
+.loading-state{text-align:center;padding:60px 20px;color:var(--tD);font-size:13.5px}
+</style>
+</head>
+<body dir="rtl">
+<div class="wrap">
+
+  <div class="header">
+    <a href="index.html" class="brand">
+      <div class="brand-icon">س</div>
+      <div class="brand-name">Seerah AI</div>
+    </a>
+    <div class="header-right">
+      <div class="lang-toggle">
+        <button id="btn-ar" onclick="setLang('ar')">ع</button>
+        <button id="btn-en" onclick="setLang('en')">EN</button>
+      </div>
+      <a href="index.html" class="back-link" id="back-link"></a>
+    </div>
+  </div>
+
+  <div class="page-title" id="page-title"></div>
+  <div class="page-sub" id="page-sub"></div>
+
+  <div class="controls">
+    <div class="search-box">
+      <span>🔍</span>
+      <input id="search-input" oninput="applyFilters()">
+    </div>
+    <select class="sort-select" id="sort-select" onchange="applyFilters()"></select>
+  </div>
+
+  <div class="chips" id="date-chips"></div>
+  <div class="result-count" id="result-count"></div>
+
+  <div id="job-grid"></div>
+</div>
+
+<script>
+var STR = {
+  en: {
+    backLink:'← Back to Seerah', pageTitle:'All Jobs', searchPh:'Search by title or company...',
+    sortNewest:'Newest first', sortOldest:'Oldest first',
+    chipAll:'All', chipToday:'Today', chipWeek:'This week', chipMonth:'This month',
+    loading:'Loading jobs…', empty:'No jobs found.', resultCount:'{n} jobs found', totalCount:'{n} total jobs published',
+    matchBtn:'Upload CV to Match', omaniOnly:'Omani Only',
+    waJob:function(title,company){return 'Check out this job 👀\n'+title+' at '+company;},
+    waCta:'\n\n✦ Apply smarter — let Seerah AI tailor your CV for free and boost your match with this role:\nseerah-ai.com',
+  },
+  ar: {
+    backLink:'→ العودة إلى سيرة', pageTitle:'كل الوظائف', searchPh:'ابحث بالمسمى الوظيفي أو الشركة...',
+    sortNewest:'الأحدث أولاً', sortOldest:'الأقدم أولاً',
+    chipAll:'الكل', chipToday:'اليوم', chipWeek:'هذا الأسبوع', chipMonth:'هذا الشهر',
+    loading:'جارٍ تحميل الوظائف…', empty:'لا توجد وظائف.', resultCount:'{n} وظيفة موجودة', totalCount:'{n} إجمالي الوظائف المنشورة',
+    matchBtn:'ارفع سيرتك للمطابقة', omaniOnly:'عُمانيين فقط',
+    waJob:function(title,company){return 'شاهد هذه الوظيفة 👀\n'+title+' - '+company;},
+    waCta:'\n\n✦ قدّم بذكاء — دع سيرة AI تحسّن سيرتك الذاتية مجاناً وترفع نسبة توافقك مع هذه الوظيفة:\nseerah-ai.com',
+  }
+};
+
+var lang = 'ar';
+var ALL_JOBS = [];
+var activeChip = 'all';
+
+function esc(s){ var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+function daysAgo(job){
+  var raw = job.date;
+  if(!raw) return null;
+  var d = new Date(raw);
+  if(isNaN(d)) return null;
+  var now = new Date();
+  return Math.floor((now-d)/(1000*60*60*24));
+}
+function isExpired(job){
+  if(!job.deadline) return false;
+  var d = new Date(job.deadline);
+  if(isNaN(d)) return false;
+  return d < new Date();
+}
+function daysAgoLabel(job){
+  var da = daysAgo(job);
+  if(da===null) return '';
+  if(da<=0) return lang==='ar' ? 'اليوم' : 'Today';
+  if(da===1) return lang==='ar' ? 'أمس' : 'Yesterday';
+  return lang==='ar' ? (da+' يوم') : (da+'d ago');
+}
+
+function setLang(l){
+  lang = l;
+  var s = STR[l];
+  document.getElementById('root').lang = l;
+  document.getElementById('root').dir = l==='ar' ? 'rtl' : 'ltr';
+  document.body.dir = l==='ar' ? 'rtl' : 'ltr';
+  document.body.style.fontFamily = l==='ar' ? "'Cairo',sans-serif" : "'Inter',sans-serif";
+  document.getElementById('btn-ar').classList.toggle('active', l==='ar');
+  document.getElementById('btn-en').classList.toggle('active', l==='en');
+
+  document.getElementById('back-link').textContent = s.backLink;
+  document.getElementById('page-title').textContent = s.pageTitle;
+  document.getElementById('search-input').placeholder = s.searchPh;
+  document.getElementById('sort-select').innerHTML =
+    '<option value="newest">'+s.sortNewest+'</option><option value="oldest">'+s.sortOldest+'</option>';
+  renderChips();
+  applyFilters();
+}
+
+function renderChips(){
+  var s = STR[lang];
+  var chips=[
+    {key:'all',label:s.chipAll},
+    {key:'today',label:s.chipToday},
+    {key:'week',label:s.chipWeek},
+    {key:'month',label:s.chipMonth},
+  ];
+  document.getElementById('date-chips').innerHTML = chips.map(function(c){
+    return '<button class="chip'+(activeChip===c.key?' active':'')+'" onclick="selectChip(\''+c.key+'\')">'+c.label+'</button>';
+  }).join('');
+}
+function selectChip(key){
+  activeChip=key;
+  renderChips();
+  applyFilters();
+}
+
+var waSvg='<svg viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2.003c-5.514 0-9.997 4.483-9.997 9.997 0 1.762.464 3.484 1.346 5.001L2 22l5.117-1.341a9.958 9.958 0 004.887 1.246h.004c5.514 0 9.997-4.483 9.997-9.997 0-2.67-1.04-5.18-2.929-7.069a9.935 9.935 0 00-7.072-2.929zm0 18.176a8.16 8.16 0 01-4.16-1.137l-.298-.177-3.037.796.811-2.96-.194-.304a8.15 8.15 0 01-1.253-4.39c0-4.512 3.671-8.183 8.183-8.183a8.13 8.13 0 015.789 2.398 8.13 8.13 0 012.397 5.789c0 4.512-3.674 8.185-8.185 8.185z"/></svg>';
+
+function buildWaLink(job){
+  var s = STR[lang];
+  var title = lang==='ar' ? (job.title_ar||job.title_en) : (job.title_en||job.title_ar);
+  var img = job.image_thumb || '';
+  var msg = s.waJob(title, job.company||'') + (img ? '\n'+img : '') + s.waCta;
+  return 'https://wa.me/?text='+encodeURIComponent(msg);
+}
+
+function applyFilters(){
+  var s = STR[lang];
+  var q = (document.getElementById('search-input').value||'').toLowerCase();
+  var sort = document.getElementById('sort-select').value;
+
+  var filtered = ALL_JOBS.filter(function(j){
+    var titleEn=(j.title_en||'').toLowerCase(), titleAr=(j.title_ar||''), company=(j.company||'').toLowerCase();
+    var matchesSearch = !q || titleEn.includes(q) || titleAr.includes(q) || company.includes(q);
+    if(!matchesSearch) return false;
+    if(activeChip==='all') return true;
+    var da = daysAgo(j);
+    if(da===null) return false;
+    if(activeChip==='today') return da<=0;
+    if(activeChip==='week') return da<=7;
+    if(activeChip==='month') return da<=30;
+    return true;
+  });
+
+  filtered.sort(function(a,b){
+    var da=new Date(a.date||0), db=new Date(b.date||0);
+    return sort==='oldest' ? da-db : db-da;
+  });
+
+  document.getElementById('result-count').textContent = s.resultCount.replace('{n}', filtered.length);
+  document.getElementById('page-sub').textContent = s.totalCount.replace('{n}', ALL_JOBS.length);
+
+  var grid = document.getElementById('job-grid');
+  if(!filtered.length){
+    grid.className='';
+    grid.innerHTML = '<div class="empty-state">'+s.empty+'</div>';
+    return;
+  }
+
+  grid.className='grid';
+  grid.innerHTML = filtered.map(function(j){
+    var title = lang==='ar' ? (j.title_ar||j.title_en) : (j.title_en||j.title_ar);
+    var img = j.image_thumb || '';
+    var badge = daysAgoLabel(j);
+    var matchUrl = 'index.html?openJob='+encodeURIComponent(j.id);
+    var waUrl = buildWaLink(j);
+    return '<div class="tile">'+
+      (img?'<img src="'+img+'" loading="lazy">':'')+
+      (badge?'<div class="tile-badge">'+esc(badge)+'</div>':'')+
+      (j.omani_only?'<div class="tile-omani">'+s.omaniOnly+'</div>':'')+
+      '<a class="tile-overlay" href="'+matchUrl+'">'+
+        '<div class="tile-title">'+esc(title)+'</div>'+
+        '<div class="tile-company">'+esc(j.company||'')+'</div>'+
+        '<div class="tile-actions">'+
+          '<a class="tile-match-btn" href="'+matchUrl+'" onclick="event.stopPropagation()">'+s.matchBtn+'</a>'+
+          '<a class="tile-wa-btn" href="'+waUrl+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+waSvg+'</a>'+
+        '</div>'+
+      '</a>'+
+    '</div>';
+  }).join('');
+}
+
+async function loadJobs(){
+  document.getElementById('job-grid').innerHTML = '<div class="loading-state">'+STR[lang].loading+'</div>';
+  try{
+    var r = await fetch('/api/get-jobs');
+    var d = await r.json();
+    var all = (d.jobs||[]).slice().reverse();
+    // Same staleness rules as the main site — hide jobs older than 30 days
+    // or past their deadline, without deleting the underlying sheet rows.
+    ALL_JOBS = all.filter(function(j){
+      var da = daysAgo(j);
+      var tooOld = (da!==null && da>30);
+      return !tooOld && !isExpired(j);
+    });
+    setLang(lang);
+  }catch(e){
+    document.getElementById('job-grid').innerHTML = '<div class="empty-state">'+STR[lang].empty+'</div>';
+  }
+}
+
+loadJobs();
+</script>
+</body>
+</html>
