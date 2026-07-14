@@ -18,6 +18,12 @@ module.exports = async function handler(req, res) {
       upload_card_seen: d.upload_card_seen || 0,
       upload_clicked:   d.upload_clicked   || 0,
       file_selected:    d.file_selected    || 0,
+      // Daily jobs board engagement — already firing in index.html
+      // (jobboard_image_click, jobboard_cta_clicked), just not surfaced here yet.
+      jobboard_image_click:  d.jobboard_image_click  || 0,
+      jobboard_cta_clicked:  d.jobboard_cta_clicked  || 0,
+      jobboard_image_click: d.jobboard_image_click || 0,
+      jobboard_cta_clicked: d.jobboard_cta_clicked || 0,
       countries: d.countries || {},
       upstash_connected: true,
     });
