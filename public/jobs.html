@@ -61,6 +61,23 @@ body[dir="rtl"] .page-title{font-family:'Cairo',sans-serif}
 
 .empty-state{text-align:center;padding:60px 20px;color:var(--tD);font-size:13.5px}
 .loading-state{text-align:center;padding:60px 20px;color:var(--tD);font-size:13.5px}
+
+@media(max-width:640px){
+  .wrap{padding:16px 12px 40px}
+  .grid{grid-template-columns:repeat(3,1fr);gap:7px}
+  .tile-title{font-size:9.5px}
+  .tile-company{font-size:8px;margin-bottom:6px}
+  .tile-info{padding:6px 7px 8px}
+  .tile-actions{gap:4px}
+  .tile-match-btn{font-size:7.5px;padding:5px 3px}
+  .tile-wa-btn{flex:0 0 22px}
+  .tile-wa-btn svg{width:10px;height:10px}
+  .page-title{font-size:22px}
+  .controls{gap:8px}
+}
+@media(max-width:400px){
+  .grid{grid-template-columns:repeat(2,1fr);gap:8px}
+}
 </style>
 </head>
 <body dir="rtl">
