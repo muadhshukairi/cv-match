@@ -1239,7 +1239,13 @@ var STOP_WORDS=new Set(['the','and','for','with','this','that','from','into','ab
   'good','effective','effectively','relevant','proven','demonstrated','strongly']);
 
 function titleWords(s){
-  return new Set((s||'').toLowerCase().split(/\W+/).filter(function(w){return w.length>2 && !STOP_WORDS.has(w);}));
+  return new Set((s||'').toLowerCase().split(/\W+/).filter(function(w){return w.length>2 && !STOP_WORDS.has(w);}).map(function(w){
+    // Basic plural normalization ("projects"→"project", "engineers"→"engineer")
+    // so a published job titled "Projects Engineer" still matches a candidate
+    // searching "Project Engineer" — don't touch words ending "ss" (e.g. "business").
+    if(w.length>3 && w.endsWith('s') && !w.endsWith('ss')) return w.slice(0,-1);
+    return w;
+  }));
 }
 function calcTitleScore(jobTitle, profile){
   if(!jobTitle || !profile) return 0;
