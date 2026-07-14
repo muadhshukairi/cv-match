@@ -12,6 +12,12 @@ module.exports = async function handler(req, res) {
       searches:  d.searches  || 0,
       improved:  d.improved  || 0,
       visits:    d.visits    || 0,
+      // New funnel-detail counters — these read as 0 until the Apps Script
+      // webhook is updated to count these three event names from the log
+      // sheet (see the addition needed in trackEvent/doGet's count branch).
+      upload_card_seen: d.upload_card_seen || 0,
+      upload_clicked:   d.upload_clicked   || 0,
+      file_selected:    d.file_selected    || 0,
       countries: d.countries || {},
       upstash_connected: true,
     });
