@@ -94,6 +94,24 @@
     <div id="countries-table"><div style="color:#475569;font-size:13px">Loading…</div></div>
   </div>
 
+  <!-- Daily Job Board engagement -->
+  <div class="card" style="margin-bottom:20px">
+    <h2 style="font-size:14px;font-weight:700;margin-bottom:6px">📋 Daily Job Board Engagement</h2>
+    <p style="font-size:12px;color:#475569;margin-bottom:18px">Activity on job board cards — a separate journey from the main upload funnel above, since visitors can act on a job card without ever using the main uploader.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="stat-card">
+        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">🖼️ Job Screenshot Clicks</div>
+        <div class="big-num" style="color:#38BDF8" id="count-jb-image">—</div>
+        <div style="font-size:12px;color:#475569;margin-top:8px" id="jb-image-rate"></div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">✦ "ارفع سيرتك للمطابقة" Clicks</div>
+        <div class="big-num v" id="count-jb-cta">—</div>
+        <div style="font-size:12px;color:#475569;margin-top:8px" id="jb-cta-rate"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Vercel -->
   <div class="card">
     <h2 style="font-size:14px;font-weight:700;margin-bottom:12px">Traffic Analytics</h2>
@@ -146,6 +164,17 @@ async function loadStats() {
     document.getElementById('count-improved').textContent = (d.improved  || 0).toLocaleString();
     document.getElementById('count-visits').textContent   = (d.visits    || 0).toLocaleString();
     document.getElementById('last-updated').textContent   = 'Updated: ' + new Date().toLocaleTimeString();
+
+    var jbImage = d.jobboard_image_click || 0;
+    var jbCta   = d.jobboard_cta_clicked || 0;
+    document.getElementById('count-jb-image').textContent = jbImage.toLocaleString();
+    document.getElementById('count-jb-cta').textContent   = jbCta.toLocaleString();
+    document.getElementById('jb-image-rate').textContent = (d.visits>0)
+      ? Math.round(jbImage/d.visits*100) + '% of total visits (click volume, not unique visitors)'
+      : '';
+    document.getElementById('jb-cta-rate').textContent = (d.visits>0)
+      ? Math.round(jbCta/d.visits*100) + '% of total visits (click volume, not unique visitors)'
+      : '';
 
     // Countries table
     var countries = d.countries || {};
