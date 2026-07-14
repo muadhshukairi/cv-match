@@ -2634,25 +2634,36 @@ function renderJobBoard(){
       var ctaLine=lang==='ar'
         ?'\n\n✦ قدّم بذكاء — دع سيرة AI تحسّن سيرتك الذاتية مجاناً وترفع نسبة توافقك مع هذه الوظيفة:\nseerah-ai.com'
         :'\n\n✦ Apply smarter — let Seerah AI tailor your CV for free and boost your match with this role:\nseerah-ai.com';
-      var waMsg;
-      if(img){
-        // Put the real job screenshot in the message — WhatsApp shows an
-        // inline image preview for direct image URLs, so the recipient sees
-        // the actual posting (salary, requirements, contact info and all),
-        // not just a text summary of it.
-        waMsg=(lang==='ar'
-          ?'شاهد هذه الوظيفة 👀\n'+jTitle+' - '+(j.company||'')+'\n'+img
-          :'Check out this job 👀\n'+jTitle+' at '+(j.company||'')+'\n'+img
-        )+ctaLine;
-      }else{
-        waMsg=(lang==='ar'
-          ?'شاهد هذه الوظيفة: '+jTitle+' في '+(j.company||'')+' 👀'
-          :'Check out this job: '+jTitle+' at '+(j.company||'')+' 👀'
-        )+ctaLine;
-      }
-      waJobBtn.href='https://wa.me/?text='+encodeURIComponent(waMsg);
-      waJobBtn.addEventListener('click',function(){
+      var jobLine=lang==='ar'
+        ?'شاهد هذه الوظيفة 👀\n'+jTitle+' - '+(j.company||'')
+        :'Check out this job 👀\n'+jTitle+' at '+(j.company||'');
+
+      // Text-link fallback (works everywhere, including desktop) — includes
+      // the raw image URL since there's no real file attachment in this path.
+      var fallbackMsg=jobLine+(img?'\n'+img:'')+ctaLine;
+      waJobBtn.href='https://wa.me/?text='+encodeURIComponent(fallbackMsg);
+
+      waJobBtn.addEventListener('click',function(e){
         fetch('/api/track?event=job_whatsapp_share&detail='+encodeURIComponent(jTitle||'')).catch(function(){});
+
+        // Try attaching the real image as a file — the only way to get a
+        // guaranteed image preview in the chat, rather than relying on
+        // WhatsApp to render a link. Only works on mobile with Web Share
+        // API file support; everything else falls through to the normal
+        // link behavior below (href already points at the fallback).
+        if(img && navigator.share && navigator.canShare){
+          e.preventDefault();
+          fetch(img).then(function(r){return r.blob();}).then(function(blob){
+            var file=new File([blob],'job.jpg',{type:blob.type||'image/jpeg'});
+            if(navigator.canShare({files:[file]})){
+              return navigator.share({files:[file],text:jobLine+ctaLine});
+            }
+            throw new Error('file share unsupported');
+          }).catch(function(err){
+            if(err && err.name==='AbortError') return; // user cancelled the share sheet — do nothing
+            window.open(waJobBtn.href,'_blank','noopener'); // any real failure — fall back to the link version
+          });
+        }
       });
     })(job,jobImg);
     var btnRow=document.createElement('div');
