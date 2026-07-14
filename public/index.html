@@ -616,7 +616,8 @@ html,body{overflow-x:hidden;max-width:100vw}
         <span id="t-h1a"></span><br>
         <span id="t-h1b" style="background:linear-gradient(135deg,#8B5CF6,#10B981);-webkit-background-clip:text;-webkit-text-fill-color:transparent"></span>
       </h1>
-      <p class="a2" id="t-sub" style="font-size:15px;color:var(--tM);line-height:1.7;margin-bottom:28px;max-width:400px"></p>
+      <p class="a2" id="t-sub" style="font-size:15px;color:var(--tM);line-height:1.7;margin-bottom:12px;max-width:400px"></p>
+      <div class="a2" id="trust-line" style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--g);font-weight:600;margin-bottom:28px"></div>
     </div>
     <div class="a3" style="background:var(--card);border:1px solid var(--b2);border-radius:20px;padding:32px;position:relative;overflow:visible">
       <!-- 100% Free badge -->
@@ -635,12 +636,15 @@ html,body{overflow-x:hidden;max-width:100vw}
         <ul id="value-checklist" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px"></ul>
       </div>
       <input id="file-in" type="file" accept=".pdf,.docx,.txt" style="display:none">
-      <div class="uz" onclick="document.getElementById('file-in').click()" style="border:2px dashed var(--b2);border-radius:14px;padding:32px 20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;text-align:center">
+      <div class="uz" id="upload-dropzone" onclick="document.getElementById('file-in').click();fetch('/api/track?event=upload_clicked').catch(function(){})" style="border:2px dashed var(--b2);border-radius:14px;padding:32px 20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;text-align:center">
         <div style="width:52px;height:52px;border-radius:14px;background:var(--vDim);border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:center;font-size:24px">📄</div>
         <div>
           <div id="t-ulbl" style="font-weight:700;font-size:15px;color:var(--t);margin-bottom:4px"></div>
           <div id="t-usub" style="font-size:12px;color:var(--tD)"></div>
         </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:11.5px;color:var(--tD);margin-bottom:4px">
+        <span>🔒</span><span id="t-privacy"></span>
       </div>
 
       <div id="upload-err" style="display:none;margin-top:14px;font-size:13px;color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 16px;text-align:center"></div>
@@ -919,6 +923,8 @@ var I={
     vceyebrow:"HERE'S WHAT YOU'LL GET",
     vc1:'Your live job matches',vc2:'Your compatibility score',vc3:'AI-rewritten CV',vc4:'Cover letter',vc5:'Interview questions',
     badgeword:'FREE',
+    privacy:'Your CV is analyzed securely and never shared or sold',
+    trustline:'Trusted by {n}+ jobseekers in Oman',
     ulbl:'Click to upload your CV',usub:'PDF, DOCX or TXT',
     sample:'Try with a sample engineering CV →',
     newcv:'← New CV',jtitle:'Jobs matched to your profile',
@@ -970,6 +976,8 @@ var I={
     vceyebrow:'إليك ما ستحصل عليه',
     vc1:'وظائفك الشاغرة المطابقة',vc2:'نسبة التوافق الخاصة بك',vc3:'سيرة ذاتية معاد صياغتها بالذكاء الاصطناعي',vc4:'خطاب تقديم',vc5:'أسئلة مقابلة متوقعة',
     badgeword:'مجاني',
+    privacy:'يتم تحليل سيرتك الذاتية بأمان ولا تتم مشاركتها أو بيعها أبداً',
+    trustline:'موثوق من قِبل أكثر من {n} باحث عن عمل في عُمان',
     ulbl:'اضغط لرفع سيرتك الذاتية',usub:'PDF أو DOCX أو TXT',
     sample:'← جرّب مع سيرة ذاتية هندسية نموذجية',
     newcv:'← سيرة جديدة',jtitle:'وظائف تناسب سيرتك الذاتية',
@@ -1069,7 +1077,34 @@ function applyText(){
   sx('t-ctahd','ctahd');sx('t-ctasub','ctasub');sx('t-more','more');sx('t-apply','apply');
   sx('t-dailyjobs','dailyjobs');sx('t-followinsta','followinsta');
   sx('t-copyright','copyright');sx('t-modalusub','usub');sx('t-loadingjobs','loadingjobs');
+  sx('t-privacy','privacy');
   renderValueChecklist();
+  renderTrustLine();
+}
+/* ══ Trust line — real visitor count, not the seeded stats-bar numbers ══════
+   Fetches /api/stats (same Upstash-backed source as the admin dashboard) and
+   shows a rounded-down floor (e.g. 760 → "700+") so the number never looks
+   suspiciously exact and never needs manual copy updates. If the fetch fails
+   for any reason, the line just stays hidden rather than showing a stale or
+   fabricated number.
+══════════════════════════════════════════════════════════════════════════════ */
+var _trustLineFetched=false, _trustLineCount=null;
+function renderTrustLine(){
+  var el=document.getElementById('trust-line');
+  if(!el) return;
+  if(_trustLineCount===null){
+    if(!_trustLineFetched){
+      _trustLineFetched=true;
+      fetch('/api/stats').then(function(r){return r.json();}).then(function(d){
+        var v=(d&&(d.visitors||d.visits))||0;
+        if(v>=50){ _trustLineCount=Math.floor(v/100)*100; renderTrustLine(); }
+      }).catch(function(){});
+    }
+    el.style.display='none';
+    return;
+  }
+  el.style.display='flex';
+  el.innerHTML='🇴🇲 <span>'+esc(t('trustline').replace('{n}',_trustLineCount.toLocaleString()))+'</span>';
 }
 function renderValueChecklist(){
   sx('t-vceyebrow','vceyebrow');
@@ -1323,6 +1358,7 @@ function dAgo(n){
 /* ══ File upload ════════════════════════════════════════════════════════════ */
 document.getElementById('file-in').addEventListener('change',async function(e){
   var file=e.target.files[0];if(!file)return;
+  fetch('/api/track?event=file_selected').catch(function(){});
   // Check if this was triggered from a job card direct upload
   if(window._directJob){
     var job=window._directJob; window._directJob=null;
@@ -2752,6 +2788,27 @@ function printCV_actual() {
   var jm = document.getElementById('job-modal');
   if (jm) jm.style.display = 'none';
   document.body.style.overflow = '';
+
+  // Funnel tracking: fires once, the first time the upload dropzone actually
+  // scrolls into view — tells us "visited" vs "reached the upload card" vs
+  // "clicked it" (see 'upload_clicked' on the dropzone) vs "picked a file"
+  // (see 'file_selected' on file-in's change handler), instead of only
+  // knowing "visited" vs "uploaded" with no visibility into where the other
+  // ~98% actually drop off.
+  var dz=document.getElementById('upload-dropzone');
+  if(dz && 'IntersectionObserver' in window){
+    var seenOnce=false;
+    var obs=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting && !seenOnce){
+          seenOnce=true;
+          fetch('/api/track?event=upload_card_seen').catch(function(){});
+          obs.disconnect();
+        }
+      });
+    },{threshold:0.5});
+    obs.observe(dz);
+  }
 })();
 </script>
 
