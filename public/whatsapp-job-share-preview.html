@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WhatsApp Job Share — Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:#0b141a;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;padding:24px}
+  .phone{width:340px;background:#0b141a;border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.5);border:1px solid #1f2c33}
+
+  .wa-header{background:#202c33;padding:14px 16px;display:flex;align-items:center;gap:10px;color:#e9edef}
+  .wa-header .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6D28D9,#8B5CF6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff}
+  .wa-header .name{font-size:14px;font-weight:600}
+  .wa-header .sub{font-size:11px;color:#8696a0}
+
+  .wa-body{background:#0b141a;background-image:linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),repeating-linear-gradient(0deg,#111b21,#111b21 2px,#0f1a20 2px,#0f1a20 4px);padding:18px 12px;min-height:420px;display:flex;flex-direction:column;justify-content:flex-end;gap:10px}
+
+  .bubble-wrap{display:flex;justify-content:flex-end}
+  .bubble{background:#005c4b;border-radius:10px 10px 2px 10px;max-width:270px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+
+  .job-poster{width:100%;height:200px;background:linear-gradient(135deg,#1a1040,#0A0618);position:relative;overflow:hidden}
+  .job-poster .badge{position:absolute;top:10px;left:10px;background:#dc2626;color:#fff;font-size:10px;font-weight:900;padding:3px 8px;border-radius:4px;letter-spacing:.5px;transform:rotate(-3deg)}
+  .job-poster .company-mark{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:6px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800}
+  .job-poster .title{position:absolute;left:12px;right:12px;top:44px;color:#fff;font-family:'Fraunces',serif;font-weight:800;font-size:17px;line-height:1.25}
+  .job-poster .rows{position:absolute;left:12px;right:12px;bottom:14px;display:flex;flex-direction:column;gap:5px}
+  .job-poster .row{background:rgba(255,255,255,.08);border-radius:4px;padding:5px 8px;font-size:9px;color:#c4b5fd;display:flex;justify-content:space-between}
+  .job-poster .row b{color:#fff;font-weight:700}
+
+  .msg-text{padding:8px 10px 6px;color:#e9edef;font-size:13.5px;line-height:1.5}
+  .msg-text .link{color:#53bdeb}
+  .msg-meta{padding:0 10px 7px;text-align:right;font-size:10.5px;color:#8696a0;display:flex;justify-content:flex-end;align-items:center;gap:4px}
+  .msg-meta svg{width:14px;height:14px}
+
+  .label{text-align:center;color:#8696a0;font-size:11px;margin-top:16px}
+</style>
+</head>
+<body>
+
+<div>
+  <div class="phone">
+    <div class="wa-header">
+      <div class="avatar">A</div>
+      <div>
+        <div class="name">Ahmed</div>
+        <div class="sub">online</div>
+      </div>
+    </div>
+    <div class="wa-body">
+      <div class="bubble-wrap">
+        <div class="bubble">
+          <div class="job-poster">
+            <div class="badge">WE ARE HIRING!</div>
+            <div class="company-mark">MDO</div>
+            <div class="title">Senior Project<br>Engineer</div>
+            <div class="rows">
+              <div class="row"><span>Location</span><b>Muscat, Oman</b></div>
+              <div class="row"><span>Experience</span><b>7+ years</b></div>
+              <div class="row"><span>Type</span><b>Full-time</b></div>
+            </div>
+          </div>
+          <div class="msg-text">
+            Check out this job 👀<br>
+            Senior Project Engineer at Minerals Development Oman<br>
+            <span class="link">i.ibb.co/seerah-job-8271.jpg</span>
+            <br><br>
+            ✦ Apply smarter — let Seerah AI tailor your CV for free and boost your match with this role:<br>
+            <span class="link">seerah-ai.com</span>
+          </div>
+          <div class="msg-meta">
+            9:41 PM · seen 2m ago
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="label">Simulated preview — actual poster image comes from your real ImgBB-hosted job screenshot</p>
+</div>
+
+</body>
+</html>
