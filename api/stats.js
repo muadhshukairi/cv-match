@@ -23,6 +23,7 @@ module.exports = async function handler(req, res) {
       jobboard_image_click:  d.jobboard_image_click  || 0,
       jobboard_cta_clicked:  d.jobboard_cta_clicked  || 0,
       whatsapp_share_clicked: d.whatsapp_share_clicked || 0,
+      job_whatsapp_share:     d.job_whatsapp_share     || 0,
       countries: d.countries || {},
       upstash_connected: true,
     });
