@@ -1062,6 +1062,7 @@ function setLang(l){
   applyText();
   if(document.getElementById('s-jobs').style.display!=='none') renderCards(JOBS);
   if(lastResult&&document.getElementById('s-result').style.display!=='none') renderResult(lastResult);
+  renderJobBoard(); // Daily Jobs board reads `lang` for title_ar/title_en — must re-render on every switch, not just the profile-match screen
 }
 function applyText(){
   sx('t-h1a','h1a');sx('t-h1b','h1b');sx('t-sub','sub');
