@@ -677,6 +677,11 @@ html,body{overflow-x:hidden;max-width:100vw}
         </div>
       </div>
     </div>
+    <div style="max-width:840px;margin:16px auto 0;padding:0 20px;text-align:center">
+      <a id="t-viewall" href="jobs.html" style="display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--b2);color:var(--tM);padding:10px 22px;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;font-family:inherit;transition:all .2s"
+        onmouseover="this.style.borderColor='var(--v)';this.style.color='#fff';this.style.background='rgba(139,92,246,.1)'"
+        onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--tM)';this.style.background='transparent'"></a>
+    </div>
   </section>
   <!-- Live stats -->
   <div style="max-width:520px;margin:0 auto 40px;padding:0 20px">
@@ -930,6 +935,7 @@ var I={
     badgeword:'FREE',
     privacy:'Your CV is analyzed securely and never shared or sold',
     trustline:'Trusted by {n}+ jobseekers in Oman',
+    viewall:'View All Jobs →',
     ulbl:'Click to upload your CV',usub:'PDF, DOCX or TXT',
     sample:'Try with a sample engineering CV →',
     newcv:'← New CV',jtitle:'Jobs matched to your profile',
@@ -983,6 +989,7 @@ var I={
     badgeword:'مجاني',
     privacy:'يتم تحليل سيرتك الذاتية بأمان ولا تتم مشاركتها أو بيعها أبداً',
     trustline:'موثوق من قِبل أكثر من {n} باحث عن عمل في عُمان',
+    viewall:'عرض كل الوظائف ←',
     ulbl:'اضغط لرفع سيرتك الذاتية',usub:'PDF أو DOCX أو TXT',
     sample:'← جرّب مع سيرة ذاتية هندسية نموذجية',
     newcv:'← سيرة جديدة',jtitle:'وظائف تناسب سيرتك الذاتية',
@@ -1084,6 +1091,7 @@ function applyText(){
   sx('t-dailyjobs','dailyjobs');sx('t-followinsta','followinsta');
   sx('t-copyright','copyright');sx('t-modalusub','usub');sx('t-loadingjobs','loadingjobs');
   sx('t-privacy','privacy');
+  sx('t-viewall','viewall');
   renderValueChecklist();
   renderTrustLine();
 }
@@ -2335,6 +2343,18 @@ async function loadJobBoard(){
     });
     renderJobBoard();
     startJBAuto();
+
+    // Handoff from jobs.html — "Upload CV to Match" there links back here as
+    // ?openJob=<id> since the actual upload/match/tailor pipeline only lives
+    // on this page. Once the board data is loaded, find that job and open
+    // its modal automatically so the handoff feels seamless.
+    var openJobId=new URLSearchParams(location.search).get('openJob');
+    if(openJobId){
+      var targetJob=JB_JOBS.find(function(j){return j.id===openJobId;});
+      if(targetJob) openJobModal(targetJob);
+      // Clean the URL so refreshing doesn't reopen the modal
+      history.replaceState(null,'',location.pathname);
+    }
   }catch(e){
     var el=document.getElementById('jb-cards');
     if(el)el.innerHTML='<p style="color:var(--tD);text-align:center;padding:32px">'+esc(t('loaderr'))+'</p>';
