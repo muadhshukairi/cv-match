@@ -33,6 +33,11 @@ body{background:var(--bg);color:var(--t);font-family:'Inter',sans-serif}
 #cv-ready-banner::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);background-size:200% 100%;animation:shimmer 3s ease infinite;pointer-events:none}
 @keyframes barIn{from{width:0}}
 @keyframes screenIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes uzPulseGlow{
+  0%,100%{ box-shadow:0 0 0 0 rgba(139,92,246,0); transform:scale(1); border-color:var(--b2); }
+  50%{ box-shadow:0 0 0 10px rgba(139,92,246,0.08), 0 0 30px rgba(139,92,246,.25); transform:scale(1.015); border-color:var(--v); }
+}
+#upload-dropzone{ animation:uzPulseGlow 2s ease-in-out infinite; }
 @keyframes scanSweep{0%{top:0%;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:96%;opacity:0}}
 @keyframes tickPulse{0%,100%{transform:scale(.7);opacity:.6}50%{transform:scale(1);opacity:1}}
 #analyze-loader{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;background:rgba(8,6,18,.92);backdrop-filter:blur(6px);padding:20px}
