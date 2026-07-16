@@ -269,6 +269,35 @@ function buildWaLink(job){
   return 'https://wa.me/?text='+encodeURIComponent(msg);
 }
 
+// Same approach as index.html's Daily Jobs board share button — try
+// attaching the real image as a file via the mobile share sheet first
+// (guaranteed preview), falling back to the plain wa.me link (href already
+// set on the <a>) everywhere that doesn't support it or if the fetch fails.
+function shareJobToWhatsApp(e, jobId){
+  fetch('/api/track?event=job_whatsapp_share&detail='+encodeURIComponent(jobId||'')).catch(function(){});
+  var job = ALL_JOBS.find(function(j){ return j.id===jobId; });
+  if(!job) return;
+  var img = job.image_thumb || '';
+  var s = STR[lang];
+  var applyLink = contactToUrl(job.contact) || (lang==='ar' ? 'تواصل عبر الوظيفة المنشورة' : 'See posting for contact details');
+  var textOnly = s.waJob(job, applyLink) + s.waCta;
+  var fallbackHref = e.currentTarget.href;
+
+  if(img && navigator.share && navigator.canShare){
+    e.preventDefault();
+    fetch(img).then(function(r){ return r.blob(); }).then(function(blob){
+      var file = new File([blob], 'job.jpg', {type: blob.type || 'image/jpeg'});
+      if(navigator.canShare({files:[file]})){
+        return navigator.share({files:[file], text: textOnly});
+      }
+      throw new Error('file share unsupported');
+    }).catch(function(err){
+      if(err && err.name==='AbortError') return; // user cancelled — do nothing
+      window.open(fallbackHref, '_blank', 'noopener'); // real failure — fall back to the link version
+    });
+  }
+}
+
 function applyFilters(){
   var s = STR[lang];
   var q = (document.getElementById('search-input').value||'').toLowerCase();
@@ -320,7 +349,7 @@ function applyFilters(){
         '<div class="tile-company">'+esc(j.company||'')+'</div>'+
         '<div class="tile-actions">'+
           '<a class="tile-match-btn" href="'+matchUrl+'" onclick="event.stopPropagation()">'+s.matchBtn+'</a>'+
-          '<a class="tile-wa-btn" href="'+waUrl+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+waSvg+'</a>'+
+          '<a class="tile-wa-btn" href="'+waUrl+'" target="_blank" rel="noopener" onclick="event.stopPropagation();shareJobToWhatsApp(event,\''+j.id+'\')">'+waSvg+'</a>'+
         '</div>'+
       '</div>'+
     '</div>';
