@@ -1459,7 +1459,10 @@ function useSample(){
    "View" work correctly for all three instead of only real URLs.
 ══════════════════════════════════════════════════════════════════════════ */
 function contactToUrl(contact){
-  var c=(contact||'').trim();
+  // The sheet sometimes stores a bare number (e.g. a phone number typed
+  // without quotes) as a JSON number, not a string — String() coercion
+  // here prevents that from throwing and silently killing the render loop.
+  var c=String(contact==null?'':contact).trim();
   if(!c) return '';
   if(/^https?:\/\//i.test(c)) return c;
   if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) return 'mailto:'+c;
