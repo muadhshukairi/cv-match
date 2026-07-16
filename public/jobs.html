@@ -129,8 +129,14 @@ var STR = {
     loading:'Loading jobs…', empty:'No jobs found.', resultCount:'{n} jobs found', totalCount:'{n} total jobs published',
     matchBtn:'Upload CV to Match', omaniOnly:'Omani Only',
     wachannel:'Join our Oman Jobs WhatsApp Channel',
-    waJob:function(title,company){return 'Check out this job 👀\n'+title+' at '+company;},
-    waCta:'\n\n✦ Apply smarter — let Seerah AI tailor your CV for free and boost your match with this role:\nseerah-ai.com',
+    waJob:function(job,applyLink){
+      return 'Job Title: '+(job.title_en||job.title_ar)+
+        '\nCompany: '+(job.company||'—')+
+        '\nLocation: '+(job.location||'—')+
+        (job.deadline?'\nDeadline: '+job.deadline:'')+
+        '\nFor details & to apply: '+applyLink;
+    },
+    waCta:'\n\nTo see how well your CV matches this role:\nhttps://www.seerah-ai.com',
   },
   ar: {
     backLink:'→ العودة إلى سيرة', pageTitle:'كل الوظائف', searchPh:'ابحث بالمسمى الوظيفي أو الشركة...',
@@ -139,8 +145,14 @@ var STR = {
     loading:'جارٍ تحميل الوظائف…', empty:'لا توجد وظائف.', resultCount:'{n} وظيفة موجودة', totalCount:'{n} إجمالي الوظائف المنشورة',
     matchBtn:'ارفع سيرتك للمطابقة', omaniOnly:'عُمانيين فقط',
     wachannel:'انضم لقناة وظائف عمان على الواتساب',
-    waJob:function(title,company){return 'شاهد هذه الوظيفة 👀\n'+title+' - '+company;},
-    waCta:'\n\n✦ قدّم بذكاء — دع سيرة AI تحسّن سيرتك الذاتية مجاناً وترفع نسبة توافقك مع هذه الوظيفة:\nseerah-ai.com',
+    waJob:function(job,applyLink){
+      return 'المسمى الوظيفي: '+(job.title_ar||job.title_en)+
+        '\nالشركة: '+(job.company||'—')+
+        '\nالموقع: '+(job.location||'—')+
+        (job.deadline?'\nآخر موعد: '+job.deadline:'')+
+        '\nللتفاصيل والتقديم: '+applyLink;
+    },
+    waCta:'\n\nلمعرفة نسبة توافق سيرتك مع الوظيفة:\nhttps://www.seerah-ai.com',
   }
 };
 
@@ -149,6 +161,16 @@ var ALL_JOBS = [];
 var activeChip = 'all';
 
 function esc(s){ var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+// Same contact-normalization helper as index.html — contact can be a URL, email, or phone
+function contactToUrl(contact){
+  var c=(contact||'').trim();
+  if(!c) return '';
+  if(/^https?:\/\//i.test(c)) return c;
+  if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) return 'mailto:'+c;
+  if(/^[+\d][\d\s()-]{5,}$/.test(c)) return 'tel:'+c.replace(/[^\d+]/g,'');
+  return '';
+}
 
 // Same date-resolution logic as index.html — job IDs embed a reliable 13-digit
 // publish timestamp (e.g. "J1783504111549"); the sheet's `date` column can get
@@ -240,9 +262,9 @@ var waSvg='<svg viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.1
 
 function buildWaLink(job){
   var s = STR[lang];
-  var title = lang==='ar' ? (job.title_ar||job.title_en) : (job.title_en||job.title_ar);
   var img = job.image_thumb || '';
-  var msg = s.waJob(title, job.company||'') + (img ? '\n'+img : '') + s.waCta;
+  var applyLink = contactToUrl(job.contact) || (lang==='ar' ? 'تواصل عبر الوظيفة المنشورة' : 'See posting for contact details');
+  var msg = (img ? img+'\n\n' : '') + s.waJob(job, applyLink) + s.waCta;
   return 'https://wa.me/?text='+encodeURIComponent(msg);
 }
 

@@ -2669,18 +2669,30 @@ function renderJobBoard(){
     waJobBtn.innerHTML='<svg viewBox="0 0 24 24" fill="#fff" style="width:15px;height:15px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2.003c-5.514 0-9.997 4.483-9.997 9.997 0 1.762.464 3.484 1.346 5.001L2 22l5.117-1.341a9.958 9.958 0 004.887 1.246h.004c5.514 0 9.997-4.483 9.997-9.997 0-2.67-1.04-5.18-2.929-7.069a9.935 9.935 0 00-7.072-2.929zm0 18.176a8.16 8.16 0 01-4.16-1.137l-.298-.177-3.037.796.811-2.96-.194-.304a8.15 8.15 0 01-1.253-4.39c0-4.512 3.671-8.183 8.183-8.183a8.13 8.13 0 015.789 2.398 8.13 8.13 0 012.397 5.789c0 4.512-3.674 8.185-8.185 8.185z"/></svg>';
     (function(j,img){
       var jTitle=lang==='ar'?(j.title_ar||j.title_en):(j.title_en||j.title_ar);
-      // Closing CTA — turns a plain job forward into a pull back to Seerah,
-      // so the recipient becomes a potential user too, not just informed.
-      var ctaLine=lang==='ar'
-        ?'\n\n✦ قدّم بذكاء — دع سيرة AI تحسّن سيرتك الذاتية مجاناً وترفع نسبة توافقك مع هذه الوظيفة:\nseerah-ai.com'
-        :'\n\n✦ Apply smarter — let Seerah AI tailor your CV for free and boost your match with this role:\nseerah-ai.com';
-      var jobLine=lang==='ar'
-        ?'شاهد هذه الوظيفة 👀\n'+jTitle+' - '+(j.company||'')
-        :'Check out this job 👀\n'+jTitle+' at '+(j.company||'');
+      var applyLink=contactToUrl(j.contact)||(lang==='ar'?'تواصل عبر الوظيفة المنشورة':'See posting for contact details');
 
-      // Text-link fallback (works everywhere, including desktop) — includes
-      // the raw image URL since there's no real file attachment in this path.
-      var fallbackMsg=jobLine+(img?'\n'+img:'')+ctaLine;
+      // Structured, labeled-field message — built only from fields the job
+      // actually has (no "experience" field exists in the data yet, so that
+      // line is intentionally omitted rather than showing a placeholder).
+      var jobLine=lang==='ar'
+        ?'المسمى الوظيفي: '+jTitle+
+          '\nالشركة: '+(j.company||'—')+
+          '\nالموقع: '+(j.location||'—')+
+          (j.deadline?'\nآخر موعد: '+j.deadline:'')+
+          '\nللتفاصيل والتقديم: '+applyLink
+        :'Job Title: '+jTitle+
+          '\nCompany: '+(j.company||'—')+
+          '\nLocation: '+(j.location||'—')+
+          (j.deadline?'\nDeadline: '+j.deadline:'')+
+          '\nFor details & to apply: '+applyLink;
+      var ctaLine=lang==='ar'
+        ?'\n\nلمعرفة نسبة توافق سيرتك مع الوظيفة:\nhttps://www.seerah-ai.com'
+        :'\n\nTo see how well your CV matches this role:\nhttps://www.seerah-ai.com';
+
+      // Text-link fallback (works everywhere, including desktop) — the image
+      // URL goes FIRST, on its own, since WhatsApp is far more likely to
+      // render an inline preview when the link isn't buried after other text.
+      var fallbackMsg=(img?img+'\n\n':'')+jobLine+ctaLine;
       waJobBtn.href='https://wa.me/?text='+encodeURIComponent(fallbackMsg);
 
       waJobBtn.addEventListener('click',function(e){
