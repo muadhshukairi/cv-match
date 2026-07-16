@@ -2681,16 +2681,14 @@ function renderJobBoard(){
         ?'المسمى الوظيفي: '+jTitle+
           '\nالشركة: '+(j.company||'—')+
           '\nالموقع: '+(j.location||'—')+
-          (j.deadline?'\nآخر موعد: '+j.deadline:'')+
           '\nللتفاصيل والتقديم: '+applyLink
         :'Job Title: '+jTitle+
           '\nCompany: '+(j.company||'—')+
           '\nLocation: '+(j.location||'—')+
-          (j.deadline?'\nDeadline: '+j.deadline:'')+
           '\nFor details & to apply: '+applyLink;
       var ctaLine=lang==='ar'
-        ?'\n\nلمعرفة نسبة توافق سيرتك مع الوظيفة:\nhttps://www.seerah-ai.com'
-        :'\n\nTo see how well your CV matches this role:\nhttps://www.seerah-ai.com';
+        ?'\n\nلرفع نسبة توافق سيرتك مع الوظيفة:\nhttps://www.seerah-ai.com\nhttps://www.instagram.com/seerah.ai'
+        :'\n\nTo see how well your CV matches this role:\nhttps://www.seerah-ai.com\nhttps://www.instagram.com/seerah.ai';
 
       // Text-link fallback (works everywhere, including desktop) — the image
       // URL goes FIRST, on its own, since WhatsApp is far more likely to
