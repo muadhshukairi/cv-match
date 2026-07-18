@@ -319,17 +319,21 @@ function updateDailyShareButton(){
   if(!ALL_JOBS.length){ btn.style.display='none'; return; }
   btn.style.display='flex';
 
+  // "Today's jobs" means everything posted today or yesterday, however many
+  // that is — not a fixed count. Falls back to the 3 newest only if nothing
+  // was posted in that window, so the button never points at an empty message.
   var sorted=ALL_JOBS.slice().sort(function(a,b){
     var da=resolveJobDate(a), db=resolveJobDate(b);
     return (db?db.getTime():0) - (da?da.getTime():0);
   });
-  var top3=sorted.slice(0,3);
+  var recent=sorted.filter(function(j){ var a=daysAgo(j); return a!==null && a<=1; });
+  var top3=recent.length ? recent : sorted.slice(0,3);
+
   var dateStr=new Date().toLocaleDateString(lang==='ar'?'ar-OM':'en-GB',{day:'numeric',month:'long'});
   var lines=[];
   lines.push(lang==='ar'
     ?'شاهد الوظائف اليومية عبر *seerah-ai.com* 📅 '+dateStr
     :"Check out today's jobs on *seerah-ai.com* 📅 "+dateStr);
-  lines.push('');
 
   top3.forEach(function(job,i){
     var jTitle=lang==='ar'?(job.title_ar||job.title_en):(job.title_en||job.title_ar);
@@ -339,13 +343,11 @@ function updateDailyShareButton(){
     lines.push((lang==='ar'?'الشركة: ':'Company: ')+(job.company||'—'));
     lines.push((lang==='ar'?'رابط الإعلان في سيرة: ':'Job ad link on Seerah: ')+adLink);
     lines.push((lang==='ar'?'للتواصل / التقديم: ':'Apply / Contact: ')+applyLink);
-    lines.push('');
   });
 
   lines.push(lang==='ar'
     ?'✦ حسّن سيرتك الذاتية لرفع نسبة توافقك مع كل وظيفة'
     :'✦ Improve your CV to boost your match with each job');
-  lines.push('');
   lines.push(lang==='ar'?'لمتابعة الوظائف اليومية:':'For daily job updates:');
   lines.push('*www.seerah-ai.com*');
 
