@@ -667,6 +667,10 @@ html,body{overflow-x:hidden;max-width:100vw}
         <div style="width:8px;height:8px;border-radius:50%;background:#10B981;animation:pulse 2s ease infinite"></div>
         <h2 id="t-dailyjobs" style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--t)">Daily Jobs</h2>
       </div>
+      <a id="share-daily-btn" href="#" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;background:rgba(37,211,102,.1);border:1.5px solid #25D366;color:#25D366;padding:7px 14px;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">
+        <svg viewBox="0 0 24 24" fill="#25D366" style="width:14px;height:14px;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2.003c-5.514 0-9.997 4.483-9.997 9.997 0 1.762.464 3.484 1.346 5.001L2 22l5.117-1.341a9.958 9.958 0 004.887 1.246h.004c5.514 0 9.997-4.483 9.997-9.997 0-2.67-1.04-5.18-2.929-7.069a9.935 9.935 0 00-7.072-2.929zm0 18.176a8.16 8.16 0 01-4.16-1.137l-.298-.177-3.037.796.811-2.96-.194-.304a8.15 8.15 0 01-1.253-4.39c0-4.512 3.671-8.183 8.183-8.183a8.13 8.13 0 015.789 2.398 8.13 8.13 0 012.397 5.789c0 4.512-3.674 8.185-8.185 8.185z"/></svg>
+        <span id="t-sharedaily"></span>
+      </a>
     </div>
 
     <!-- Filter pills -->
@@ -947,6 +951,7 @@ var I={
     trustline:'Trusted by {n}+ jobseekers in Oman',
     viewall:'View All Jobs →',
     wachannel:'Join our Oman Jobs WhatsApp Channel',
+    sharedaily:'Share Today\'s Jobs',
     ulbl:'Click to upload your CV',usub:'PDF, DOCX or TXT',
     sample:'Try with a sample engineering CV →',
     newcv:'← New CV',jtitle:'Jobs matched to your profile',
@@ -1002,6 +1007,7 @@ var I={
     trustline:'موثوق من قِبل أكثر من {n} باحث عن عمل في عُمان',
     viewall:'عرض كل الوظائف ←',
     wachannel:'انضم لقناة وظائف عمان على الواتساب',
+    sharedaily:'شارك وظائف اليوم',
     ulbl:'اضغط لرفع سيرتك الذاتية',usub:'PDF أو DOCX أو TXT',
     sample:'← جرّب مع سيرة ذاتية هندسية نموذجية',
     newcv:'← سيرة جديدة',jtitle:'وظائف تناسب سيرتك الذاتية',
@@ -1105,6 +1111,7 @@ function applyText(){
   sx('t-privacy','privacy');
   sx('t-viewall','viewall');
   sx('t-wachannel-lbl','wachannel');
+  sx('t-sharedaily','sharedaily');
   renderValueChecklist();
   renderTrustLine();
 }
@@ -2595,10 +2602,54 @@ async function improveFromModal() {
 /* == End Job Match Modal ============================================== */
 
 /* == Render Jobs Board ═══════════════════════════════════════════════════════ */
+/* ══ Daily Jobs digest — WhatsApp share of today's top 3 postings ═══════════
+   Separate from the per-job share button: this bundles the newest 3 jobs
+   into one structured, labeled message (title/company/ad link/apply link
+   for each), plus a closing CTA. Text-only by design — attaching multiple
+   real images reliably across jobs isn't worth the fragility here, the
+   structured digest itself is the value.
+══════════════════════════════════════════════════════════════════════════ */
+function updateDailyShareButton(jobs){
+  var btn=document.getElementById('share-daily-btn');
+  if(!btn) return;
+  if(!jobs||!jobs.length){ btn.style.display='none'; return; }
+  btn.style.display='flex';
+
+  var top3=jobs.slice(0,3);
+  var dateStr=new Date().toLocaleDateString(lang==='ar'?'ar-OM':'en-GB',{day:'numeric',month:'long'});
+  var lines=[];
+  lines.push(lang==='ar'
+    ?'شاهد الوظائف اليومية عبر *seerah-ai.com* 📅 '+dateStr
+    :"Check out today's jobs on *seerah-ai.com* 📅 "+dateStr);
+  lines.push('');
+
+  top3.forEach(function(job,i){
+    var jTitle=lang==='ar'?(job.title_ar||job.title_en):(job.title_en||job.title_ar);
+    var adLink='https://www.seerah-ai.com/?openJob='+encodeURIComponent(job.id);
+    var applyLink=contactToUrl(job.contact)||(lang==='ar'?'تواصل عبر الوظيفة المنشورة':'See posting for contact details');
+    lines.push('#'+(i+1)+' '+jTitle);
+    lines.push((lang==='ar'?'الشركة: ':'Company: ')+(job.company||'—'));
+    lines.push((lang==='ar'?'رابط الإعلان في سيرة: ':'Job ad link on Seerah: ')+adLink);
+    lines.push((lang==='ar'?'للتواصل / التقديم: ':'Apply / Contact: ')+applyLink);
+    lines.push('');
+  });
+
+  lines.push(lang==='ar'
+    ?'✦ حسّن سيرتك الذاتية لرفع نسبة توافقك مع كل وظيفة'
+    :'✦ Improve your CV to boost your match with each job');
+  lines.push('');
+  lines.push(lang==='ar'?'لمتابعة الوظائف اليومية:':'For daily job updates:');
+  lines.push('*www.seerah-ai.com*');
+
+  btn.href='https://wa.me/?text='+encodeURIComponent(lines.join('\n'));
+  btn.onclick=function(){ fetch('/api/track?event=daily_digest_share').catch(function(){}); };
+}
+
 function renderJobBoard(){
   var filtered=JB_JOBS;
   var el=document.getElementById('jb-cards');
   if(!el) return;
+  updateDailyShareButton(filtered);
   el.style.cssText='display:flex;gap:10px;min-width:max-content;padding:0 32px';
   if(!filtered.length){
     el.innerHTML='<p style="color:var(--tD);padding:40px;font-size:14px;min-width:300px">'+esc(t('nojobs'))+'</p>';

@@ -103,8 +103,16 @@ body[dir="rtl"] .page-title{font-family:'Cairo',sans-serif}
     <span id="wachannel-lbl">انضم لقناة وظائف عمان على الواتساب</span>
   </a>
 
-  <div class="page-title" id="page-title"></div>
-  <div class="page-sub" id="page-sub"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div>
+      <div class="page-title" id="page-title"></div>
+      <div class="page-sub" id="page-sub"></div>
+    </div>
+    <a id="share-daily-btn" href="#" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;background:rgba(37,211,102,.1);border:1.5px solid #25D366;color:#25D366;padding:7px 14px;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">
+      <svg viewBox="0 0 24 24" fill="#25D366" style="width:14px;height:14px;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2.003c-5.514 0-9.997 4.483-9.997 9.997 0 1.762.464 3.484 1.346 5.001L2 22l5.117-1.341a9.958 9.958 0 004.887 1.246h.004c5.514 0 9.997-4.483 9.997-9.997 0-2.67-1.04-5.18-2.929-7.069a9.935 9.935 0 00-7.072-2.929zm0 18.176a8.16 8.16 0 01-4.16-1.137l-.298-.177-3.037.796.811-2.96-.194-.304a8.15 8.15 0 01-1.253-4.39c0-4.512 3.671-8.183 8.183-8.183a8.13 8.13 0 015.789 2.398 8.13 8.13 0 012.397 5.789c0 4.512-3.674 8.185-8.185 8.185z"/></svg>
+      <span id="share-daily-lbl"></span>
+    </a>
+  </div>
 
   <div class="controls">
     <div class="search-box">
@@ -129,6 +137,7 @@ var STR = {
     loading:'Loading jobs…', empty:'No jobs found.', resultCount:'{n} jobs found', totalCount:'{n} total jobs published',
     matchBtn:'Upload CV to Match', omaniOnly:'Omani Only',
     wachannel:'Join our Oman Jobs WhatsApp Channel',
+    sharedaily:'Share Today\'s Jobs',
     waJob:function(job,applyLink){
       return 'Job Title: '+(job.title_en||job.title_ar)+
         '\nCompany: '+(job.company||'—')+
@@ -144,6 +153,7 @@ var STR = {
     loading:'جارٍ تحميل الوظائف…', empty:'لا توجد وظائف.', resultCount:'{n} وظيفة موجودة', totalCount:'{n} إجمالي الوظائف المنشورة',
     matchBtn:'ارفع سيرتك للمطابقة', omaniOnly:'عُمانيين فقط',
     wachannel:'انضم لقناة وظائف عمان على الواتساب',
+    sharedaily:'شارك وظائف اليوم',
     waJob:function(job,applyLink){
       return 'المسمى الوظيفي: '+(job.title_ar||job.title_en)+
         '\nالشركة: '+(job.company||'—')+
@@ -234,6 +244,8 @@ function setLang(l){
   document.getElementById('back-link').textContent = s.backLink;
   document.getElementById('page-title').textContent = s.pageTitle;
   document.getElementById('wachannel-lbl').textContent = s.wachannel;
+  document.getElementById('share-daily-lbl').textContent = s.sharedaily;
+  updateDailyShareButton();
   document.getElementById('search-input').placeholder = s.searchPh;
   document.getElementById('sort-select').innerHTML =
     '<option value="newest">'+s.sortNewest+'</option><option value="oldest">'+s.sortOldest+'</option>';
@@ -296,6 +308,49 @@ function shareJobToWhatsApp(e, jobId){
       window.open(fallbackHref, '_blank', 'noopener'); // real failure — fall back to the link version
     });
   }
+}
+
+// Same digest format as index.html's "Share Today's Jobs" — bundles the
+// newest 3 postings (sorted independently of whatever filter/sort the user
+// currently has applied) into one structured, labeled WhatsApp message.
+function updateDailyShareButton(){
+  var btn=document.getElementById('share-daily-btn');
+  if(!btn) return;
+  if(!ALL_JOBS.length){ btn.style.display='none'; return; }
+  btn.style.display='flex';
+
+  var sorted=ALL_JOBS.slice().sort(function(a,b){
+    var da=resolveJobDate(a), db=resolveJobDate(b);
+    return (db?db.getTime():0) - (da?da.getTime():0);
+  });
+  var top3=sorted.slice(0,3);
+  var dateStr=new Date().toLocaleDateString(lang==='ar'?'ar-OM':'en-GB',{day:'numeric',month:'long'});
+  var lines=[];
+  lines.push(lang==='ar'
+    ?'شاهد الوظائف اليومية عبر *seerah-ai.com* 📅 '+dateStr
+    :"Check out today's jobs on *seerah-ai.com* 📅 "+dateStr);
+  lines.push('');
+
+  top3.forEach(function(job,i){
+    var jTitle=lang==='ar'?(job.title_ar||job.title_en):(job.title_en||job.title_ar);
+    var adLink='https://www.seerah-ai.com/?openJob='+encodeURIComponent(job.id);
+    var applyLink=contactToUrl(job.contact)||(lang==='ar'?'تواصل عبر الوظيفة المنشورة':'See posting for contact details');
+    lines.push('#'+(i+1)+' '+jTitle);
+    lines.push((lang==='ar'?'الشركة: ':'Company: ')+(job.company||'—'));
+    lines.push((lang==='ar'?'رابط الإعلان في سيرة: ':'Job ad link on Seerah: ')+adLink);
+    lines.push((lang==='ar'?'للتواصل / التقديم: ':'Apply / Contact: ')+applyLink);
+    lines.push('');
+  });
+
+  lines.push(lang==='ar'
+    ?'✦ حسّن سيرتك الذاتية لرفع نسبة توافقك مع كل وظيفة'
+    :'✦ Improve your CV to boost your match with each job');
+  lines.push('');
+  lines.push(lang==='ar'?'لمتابعة الوظائف اليومية:':'For daily job updates:');
+  lines.push('*www.seerah-ai.com*');
+
+  btn.href='https://wa.me/?text='+encodeURIComponent(lines.join('\n'));
+  btn.onclick=function(){ fetch('/api/track?event=daily_digest_share').catch(function(){}); };
 }
 
 function applyFilters(){
