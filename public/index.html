@@ -2547,18 +2547,47 @@ async function handleModalCV(file) {
     var jobDesc = [_modalJob.title_en, _modalJob.title_ar, (_modalJob.requirements||[]).join(' ')].join(' ');
     var score = calcMatch(cvText, jobDesc, profile, _modalJob.title_en||_modalJob.title_ar);
 
-    // Show score ring
-    var col = score>=65?'#10B981':score>=40?'#F59E0B':'#EF4444';
+    // Below ~20%, this isn't "a weak candidate" — it's a different field
+    // entirely (e.g. a photographer's CV against a civil engineering role).
+    // Telling someone to "improve their CV" for that is dishonest — no edit
+    // closes that gap — so this tier gets its own honest copy and points
+    // people at the actual right next step (finding jobs that DO fit them)
+    // instead of a nonsensical tailor-for-this-job offer.
+    var isPoorFit = score < 20;
+    var col = score>=65?'#10B981':score>=40?'#F59E0B':score>=20?'#EF4444':'#6B7280';
     var ring = document.getElementById('modal-ring');
     ring.style.background = 'conic-gradient('+col+' '+(score*3.6)+'deg,#1E1535 0deg)';
     document.getElementById('modal-score-num').textContent = score+'%';
     document.getElementById('modal-score-num').style.color = col;
-    var lbl = score>=65?(lang==='ar'?'\u062a\u0648\u0627\u0641\u0642 \u0645\u0645\u062a\u0627\u0632':'Strong Match'):score>=40?(lang==='ar'?'\u062a\u0648\u0627\u0641\u0642 \u062c\u064a\u062f':'Good Match'):(lang==='ar'?'\u062a\u0648\u0627\u0641\u0642 \u0636\u0639\u064a\u0641':'Low Match');
+    var lbl = score>=65?(lang==='ar'?'\u062a\u0648\u0627\u0641\u0642 \u0645\u0645\u062a\u0627\u0632':'Strong Match')
+      :score>=40?(lang==='ar'?'\u062a\u0648\u0627\u0641\u0642 \u062c\u064a\u062f':'Good Match')
+      :score>=20?(lang==='ar'?'\u062a\u0648\u0627\u0641\u0642 \u0636\u0639\u064a\u0641':'Low Match')
+      :(lang==='ar'?'\u0644\u064a\u0633\u062a \u0645\u0646\u0627\u0633\u0628\u0629 \u0644\u062e\u0644\u0641\u064a\u062a\u0643':'Not a Fit for Your Background');
     document.getElementById('modal-score-lbl').textContent = lbl;
     document.getElementById('modal-score-lbl').style.color = col;
-    document.getElementById('modal-score-sub').textContent = (lang==='ar'?'\u0627\u0636\u063a\u0637 \u062a\u062d\u0633\u064a\u0646 \u0644\u062a\u0639\u0632\u064a\u0632 \u0641\u0631\u0635\u062a\u0643':'Click Improve to boost your chances for this role');
+    document.getElementById('modal-score-sub').textContent = isPoorFit
+      ? (lang==='ar'?'\u0647\u0630\u0647 \u0627\u0644\u0648\u0638\u064a\u0641\u0629 \u0641\u064a \u0645\u062c\u0627\u0644 \u0645\u062e\u062a\u0644\u0641 \u0639\u0646 \u062e\u0628\u0631\u062a\u0643 \u0627\u0644\u062d\u0627\u0644\u064a\u0629 \u2014 \u062a\u062d\u0633\u064a\u0646 \u0633\u064a\u0631\u062a\u0643 \u0644\u0646 \u064a\u063a\u064a\u0651\u0631 \u0630\u0644\u0643. \u062c\u0631\u0651\u0628 \u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0648\u0638\u0627\u0626\u0641 \u062a\u0646\u0627\u0633\u0628 \u062e\u0644\u0641\u064a\u062a\u0643 \u0641\u0639\u0644\u0627\u064b.'
+        :"This role is in a different field than your background — editing your CV won't change that. Try finding jobs that actually match your experience instead.")
+      : (lang==='ar'?'\u0627\u0636\u063a\u0637 \u062a\u062d\u0633\u064a\u0646 \u0644\u062a\u0639\u0632\u064a\u0632 \u0641\u0631\u0635\u062a\u0643':'Click Improve to boost your chances for this role');
     document.getElementById('modal-score-area').style.display = '';
     status.textContent = '';
+
+    // Swap the CTA itself for the poor-fit tier — offering to "improve" a
+    // CV for a role in a completely different field isn't a real fix, so
+    // redirect to the actual right next step instead.
+    var improveBtn = document.getElementById('modal-improve-btn');
+    if (improveBtn) {
+      improveBtn.disabled = false;
+      if (isPoorFit) {
+        improveBtn.style.background = 'linear-gradient(135deg,#374151,#4B5563)';
+        improveBtn.innerHTML = lang==='ar' ? '\ud83d\udd0d \u0627\u0628\u062d\u062b \u0639\u0646 \u0648\u0638\u0627\u0626\u0641 \u062a\u0646\u0627\u0633\u0628\u0646\u064a' : '\ud83d\udd0d Find Jobs That Fit Me';
+        improveBtn.onclick = function(){ closeJobModal(); document.getElementById('upload-dropzone').scrollIntoView({behavior:'smooth'}); };
+      } else {
+        improveBtn.style.background = 'linear-gradient(135deg,#6D28D9,#10B981)';
+        improveBtn.innerHTML = '\u2726 ' + (lang==='ar'?'\u062d\u0633\u0651\u0646 \u0633\u064a\u0631\u062a\u064a \u0644\u0647\u0630\u0647 \u0627\u0644\u0648\u0638\u064a\u0641\u0629':'Improve my CV for this job');
+        improveBtn.onclick = function(){ improveFromModal(); };
+      }
+    }
 
   } catch(e) {
     status.textContent = '\u274c ' + (e.message || 'Error processing CV');
