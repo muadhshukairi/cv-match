@@ -338,12 +338,11 @@ function updateDailyShareButton(){
   top3.forEach(function(job,i){
     var jTitle=lang==='ar'?(job.title_ar||job.title_en):(job.title_en||job.title_ar);
     var adLink='https://www.seerah-ai.com/?openJob='+encodeURIComponent(job.id);
-    var applyLink=contactToUrl(job.contact)||(lang==='ar'?'تواصل عبر الوظيفة المنشورة':'See posting for contact details');
+    lines.push('');
     lines.push('#'+(i+1)+' '+jTitle);
     lines.push((lang==='ar'?'الشركة: ':'Company: ')+(job.company||'—'));
+    lines.push((lang==='ar'?'الموقع: ':'Location: ')+(job.location||'—'));
     lines.push((lang==='ar'?'رابط الإعلان في سيرة: ':'Job ad link on Seerah: ')+adLink);
-    lines.push('');
-    lines.push((lang==='ar'?'للتواصل / التقديم: ':'Apply / Contact: ')+applyLink);
   });
 
   lines.push(lang==='ar'
