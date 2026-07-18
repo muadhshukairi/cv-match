@@ -493,8 +493,8 @@ html,body{overflow-x:hidden;max-width:100vw}
       </div>
 
       <!-- Job image -->
-      <div id="modal-img-wrap" style="display:none;border-radius:14px;overflow:hidden;margin-bottom:20px;max-height:260px">
-        <img id="modal-img" style="width:100%;object-fit:cover;display:block">
+      <div id="modal-img-wrap" style="display:none;border-radius:14px;overflow:hidden;margin-bottom:20px;max-height:420px;background:var(--card);align-items:center;justify-content:center">
+        <img id="modal-img" style="width:100%;max-height:420px;object-fit:contain;display:block;cursor:zoom-in" title="Click to view full image">
       </div>
 
       <!-- Job info -->
@@ -2422,6 +2422,19 @@ function resumeJBAuto(){ _jbAutoPaused=false; }
 /* == Job Match Modal ================================================== */
 var _modalJob = null;
 
+/* ══ Shared image lightbox — used by both the Daily Jobs carousel and the
+   job detail modal, so there's one place to maintain this behavior. ══════ */
+function openImageLightbox(imgUrl){
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  var bigImg=document.createElement('img');
+  bigImg.src=imgUrl;
+  bigImg.style.cssText='max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)';
+  overlay.appendChild(bigImg);
+  overlay.addEventListener('click',function(){document.body.removeChild(overlay);});
+  document.body.appendChild(overlay);
+}
+
 function openJobModal(job) {
   _modalJob = job;
   // Populate modal
@@ -2439,9 +2452,11 @@ function openJobModal(job) {
   var imgEl = document.getElementById('modal-img');
   if (job.image_thumb) {
     imgEl.src = job.image_thumb;
-    imgWrap.style.display = '';
+    imgWrap.style.display = 'flex';
+    imgEl.onclick = function(){ openImageLightbox(job.image_thumb); };
   } else {
     imgWrap.style.display = 'none';
+    imgEl.onclick = null;
   }
 
   // Requirements
@@ -2451,11 +2466,16 @@ function openJobModal(job) {
       job.requirements.map(function(r){ return '<div style="font-size:13px;color:#94A3B8;margin-bottom:5px;display:flex;gap:8px"><span style="color:var(--v);flex-shrink:0">\u00b7</span>'+esc(r)+'</div>'; }).join('');
   } else { reqEl.innerHTML = ''; }
 
-  // Contact
+  // Contact — render as a real clickable link (tel:/mailto:/https:) whenever
+  // contactToUrl() can resolve one, instead of always showing plain text.
   var ctEl = document.getElementById('modal-contact');
   if (job.contact) {
     ctEl.style.display = '';
-    ctEl.innerHTML = '<span style="font-weight:700;margin-right:6px">'+(lang==='ar'?'\u0644\u0644\u062a\u0648\u0627\u0635\u0644:':'Contact:')+'</span>'+esc(job.contact);
+    var contactUrl = contactToUrl(job.contact);
+    var contactLabel = '<span style="font-weight:700;margin-right:6px">'+(lang==='ar'?'\u0644\u0644\u062a\u0648\u0627\u0635\u0644:':'Contact:')+'</span>';
+    ctEl.innerHTML = contactLabel + (contactUrl
+      ? '<a href="'+esc(contactUrl)+'" target="_blank" rel="noopener" style="color:var(--v);text-decoration:underline">'+esc(String(job.contact))+'</a>'
+      : esc(String(job.contact)));
   } else { ctEl.style.display = 'none'; }
 
   // Reset upload area
@@ -2635,6 +2655,7 @@ function updateDailyShareButton(jobs){
     lines.push('#'+(i+1)+' '+jTitle);
     lines.push((lang==='ar'?'الشركة: ':'Company: ')+(job.company||'—'));
     lines.push((lang==='ar'?'رابط الإعلان في سيرة: ':'Job ad link on Seerah: ')+adLink);
+    lines.push('');
     lines.push((lang==='ar'?'للتواصل / التقديم: ':'Apply / Contact: ')+applyLink);
   });
 
@@ -2678,14 +2699,7 @@ function renderJobBoard(){
       imgEl.addEventListener('click',function(e){
         e.stopPropagation();
         fetch('/api/track?event=jobboard_image_click&detail='+encodeURIComponent(job.title_en||job.title_ar||job.id||'')).catch(function(){});
-        var overlay=document.createElement('div');
-        overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
-        var bigImg=document.createElement('img');
-        bigImg.src=jobImg;
-        bigImg.style.cssText='max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)';
-        overlay.appendChild(bigImg);
-        overlay.addEventListener('click',function(){document.body.removeChild(overlay);});
-        document.body.appendChild(overlay);
+        openImageLightbox(jobImg);
       });
       imgEl.src=jobImg;
       imgArea.appendChild(imgEl);
