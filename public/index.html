@@ -2667,8 +2667,15 @@ function updateDailyShareButton(jobs){
   // yesterday, however many that is, not a fixed count. Falls back to the
   // 3 newest only on a slow day with nothing in that window, so the button
   // never ends up pointing at an empty message.
-  var recent=jobs.filter(function(j){ var a=jobAgeDays(j); return a!==null && a<=1; });
-  var top3=recent.length ? recent : jobs.slice(0,3);
+  // Sorted explicitly by resolved date (newest first) here rather than
+  // trusting the order jobs arrived in — safer given the known Sheets
+  // date-corruption issue, and guarantees today's jobs always lead.
+  var sorted=jobs.slice().sort(function(a,b){
+    var da=resolveJobDate(a), db=resolveJobDate(b);
+    return (db?db.getTime():0) - (da?da.getTime():0);
+  });
+  var recent=sorted.filter(function(j){ var a=jobAgeDays(j); return a!==null && a<=1; });
+  var top3=recent.length ? recent : sorted.slice(0,3);
 
   var dateStr=new Date().toLocaleDateString(lang==='ar'?'ar-OM':'en-GB',{day:'numeric',month:'long'});
   var lines=[];
