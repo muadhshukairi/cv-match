@@ -372,12 +372,14 @@ function renderJobs() {
     var job = item.job;
     var isDup = item.status === 'duplicate';
     var isPub = item.status === 'published';
+    var isRemoved = item.status === 'removed';
+    var isDiscarded = item.status === 'discarded';
     var thumbSrc = item.croppedUrl || item.imageDataUrl;
     var imgFull = item.imageDataUrl || '';
     var thumb = thumbSrc ? '<img src="'+thumbSrc+'" style="width:80px;min-width:80px;height:100px;object-fit:cover;border-radius:8px;border:1px solid #2D1F4E;flex-shrink:0;cursor:pointer" onclick="openFullImg(this)" data-src="__SRC__" title="Click to view full screenshot">' : '';
     if(imgFull) thumb = thumb.replace('__SRC__', 'IMG_IDX_'+idx);
     window['_img_'+idx] = imgFull;
-    return '<div class="card" style="margin-bottom:14px;opacity:' + (isPub?'.5':'1') + '">' +
+    return '<div class="card" style="margin-bottom:14px;opacity:' + ((isPub||isRemoved||isDiscarded)?'.5':'1') + '">' +
       '<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;flex-wrap:wrap">' + thumb +
       '<div style="flex:1">' +
       (job.qr_url ? '<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:7px 12px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px"><span style="font-size:16px">📱</span><div><div style="font-size:10px;font-weight:700;color:#10B981;margin-bottom:2px">QR CODE LINK</div><a href="'+esc(job.qr_url)+'" target="_blank" style="color:#10B981;word-break:break-all">'+esc(job.qr_url)+'</a></div></div>' :
@@ -389,6 +391,8 @@ function renderJobs() {
         '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">' +
           (isDup ? '<span class="tag tag-dup">⚠ Duplicate — already published</span>' : '') +
           (isPub ? '<span class="tag tag-ok">✓ Published</span>' : '') +
+          (isRemoved ? '<span class="tag" style="background:rgba(107,114,128,.15);color:#9CA3AF;border:1px solid rgba(107,114,128,.3)">🗑️ Removed</span>' : '') +
+          (isDiscarded ? '<span class="tag" style="background:rgba(107,114,128,.15);color:#9CA3AF;border:1px solid rgba(107,114,128,.3)">🚫 Discarded</span>' : '') +
           (job.omani_only ? '<span class="tag tag-omani">🇴🇲 Omani Only</span>' : '') +
         '</div>' +
       '</div>' +
@@ -409,10 +413,13 @@ function renderJobs() {
         '<label style="text-transform:none;letter-spacing:0;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer">' +
           '<input type="checkbox" id="j'+idx+'_om" ' + (job.omani_only?'checked':'') + '> Omani Nationals Only' +
         '</label>' +
-        (isDup || isPub ? '' :
-          '<button class="btn btn-v" style="margin-left:auto" onclick="publishOne(' + idx + ')">Publish this job</button>') +
+        (isDup || isPub || isRemoved || isDiscarded ? '' :
+          '<button class="btn" style="margin-left:auto;background:rgba(239,68,68,.12);color:#EF4444;border:1px solid rgba(239,68,68,.3)" onclick="discardJob(' + idx + ')">🗑️ Remove this Job</button>' +
+          '<button class="btn btn-v" onclick="publishOne(' + idx + ')">Publish this job</button>') +
         (isDup ?
           '<button class="btn btn-o" style="margin-left:auto" onclick="publishOne(' + idx + ',true)">Publish anyway</button>' : '') +
+        (isPub ?
+          '<button class="btn" style="margin-left:auto;background:rgba(239,68,68,.12);color:#EF4444;border:1px solid rgba(239,68,68,.3)" onclick="removeJob(' + idx + ')" id="remove-btn-'+idx+'">🗑️ Remove this Job</button>' : '') +
       '</div>' +
     '</div>';
   }).join('');
@@ -453,6 +460,7 @@ async function publishOne(idx, force) {
     var d = await r.json();
     if (d.ok) {
       allJobs[idx].status = 'published';
+      allJobs[idx].publishedId = d.id;
     } else if (d.reason === 'duplicate' && !force) {
       allJobs[idx].status = 'duplicate';
     } else if (force) {
@@ -493,7 +501,7 @@ async function publishAll() {
         body: JSON.stringify(job),
       });
       var d = await r.json();
-      if (d.ok) { allJobs[i].status = 'published'; published++; }
+      if (d.ok) { allJobs[i].status = 'published'; allJobs[i].publishedId = d.id; published++; }
       else if (d.reason === 'duplicate') { allJobs[i].status = 'duplicate'; duplicates++; }
     } catch(e) {}
   }
@@ -504,6 +512,43 @@ async function publishAll() {
     document.getElementById('publish-msg').textContent =
       published + ' job' + (published>1?'s':'') + ' published!' +
       (duplicates > 0 ? ' (' + duplicates + ' duplicate' + (duplicates>1?'s':'') + ' skipped)' : '');
+  }
+}
+
+// Discards an extracted job from this review list before it's ever
+// published — e.g. the wrong screenshot got uploaded. Unlike removeJob()
+// this never touches the backend, since nothing was written to the sheet
+// yet; it just marks the card so it drops out of the active review flow.
+function discardJob(idx) {
+  var item = allJobs[idx];
+  if (!item) return;
+  item.status = 'discarded';
+  renderJobs();
+}
+
+async function removeJob(idx) {
+  var item = allJobs[idx];
+  if (!item || !item.publishedId) return;
+  var btn = document.getElementById('remove-btn-'+idx);
+  if (btn) { btn.innerHTML = '<span class="spinner"></span> Removing…'; btn.disabled = true; }
+
+  try {
+    var r = await fetch('/api/publish-jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'removeJob', id: item.publishedId }),
+    });
+    var d = await r.json();
+    if (d.ok) {
+      allJobs[idx].status = 'removed';
+      renderJobs();
+    } else {
+      alert('Could not remove this job: ' + (d.reason || 'unknown error'));
+      if (btn) { btn.innerHTML = '🗑️ Remove this Job'; btn.disabled = false; }
+    }
+  } catch(e) {
+    alert('Error: ' + e.message);
+    if (btn) { btn.innerHTML = '🗑️ Remove this Job'; btn.disabled = false; }
   }
 }
 
