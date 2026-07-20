@@ -2675,7 +2675,9 @@ function updateDailyShareButton(jobs){
     return (db?db.getTime():0) - (da?da.getTime():0);
   });
   var recent=sorted.filter(function(j){ var a=jobAgeDays(j); return a!==null && a<=1; });
-  var top3=recent.length ? recent : sorted.slice(0,3);
+  var pool=recent.length ? recent : sorted.slice(0,3);
+  var top3=pool.slice(0,15);
+  var extraCount=pool.length-top3.length;
 
   var dateStr=new Date().toLocaleDateString(lang==='ar'?'ar-OM':'en-GB',{day:'numeric',month:'long'});
   var lines=[];
@@ -2692,6 +2694,13 @@ function updateDailyShareButton(jobs){
     lines.push((lang==='ar'?'الموقع: ':'Location: ')+(job.location||'—'));
     lines.push((lang==='ar'?'رابط الإعلان في سيرة: ':'Job ad link on Seerah: ')+adLink);
   });
+
+  if(extraCount>0){
+    lines.push('');
+    lines.push(lang==='ar'
+      ?'📎 هناك '+extraCount+' وظائف إضافية — لعرض جميع وظائف اليوم:\nhttps://www.seerah-ai.com/jobs.html'
+      :'📎 There are '+extraCount+' more — view all today\'s jobs:\nhttps://www.seerah-ai.com/jobs.html');
+  }
 
   lines.push(lang==='ar'
     ?'✦ حسّن سيرتك الذاتية لرفع نسبة توافقك مع كل وظيفة'
