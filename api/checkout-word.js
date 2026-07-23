@@ -10,13 +10,13 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { cv, name } = req.body || {};
+    const { cv, name, contact, templateId } = req.body || {};
     if (!cv) {
       res.status(400).json({ error: 'No CV data provided' });
       return;
     }
 
-    const docxBuffer = await buildDocx(cv, name || 'Candidate');
+    const docxBuffer = await buildDocx(cv, name || 'Candidate', contact || '', templateId || 'executive');
 
     const safeName = (name || 'CV').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_') || 'CV';
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
@@ -28,11 +28,21 @@ module.exports = async function handler(req, res) {
 };
 
 // ── Build docx in memory using the docx npm package ───────────────────────
-async function buildDocx(cv, candidateName) {
+async function buildDocx(cv, candidateName, contact, templateId) {
   const {
     Document, Packer, Paragraph, TextRun, HeadingLevel,
     AlignmentType, BorderStyle,
   } = require('docx');
+
+  // Same accent-color mapping as the on-site template picker (stColor in
+  // index.html) — so the downloaded Word doc's color actually matches
+  // whichever template the person picked, instead of one hardcoded blue.
+  const templateColors = {
+    executive: '0F1F4B', zurich: 'C0392B', ember: 'B05E3A', slate: '0EA5E9',
+    pearl: '111111', aurora: '2C5364', onyx: '4ADE80', sand: '8B5E3C',
+    prism: '7C3AED', titanium: '52525B',
+  };
+  const accent = templateColors[templateId] || templateColors.executive;
 
   const nameRun = new TextRun({
     text: candidateName,
@@ -44,7 +54,7 @@ async function buildDocx(cv, candidateName) {
   const titleRun = cv.experience && cv.experience[0]
     ? new TextRun({
         text: (cv.experience[0].title || '').split(/[-–—/|]/)[0].trim(),
-        color: '2F5496',
+        color: accent,
         size: 26,
         font: 'Calibri',
         break: 1,
@@ -57,9 +67,9 @@ async function buildDocx(cv, candidateName) {
       heading: HeadingLevel.HEADING_2,
       spacing: { before: 240, after: 80 },
       border: {
-        bottom: { style: BorderStyle.SINGLE, size: 6, color: '2F5496' },
+        bottom: { style: BorderStyle.SINGLE, size: 6, color: accent },
       },
-      run: { color: '2F5496', size: 22, font: 'Calibri', bold: true },
+      run: { color: accent, size: 22, font: 'Calibri', bold: true },
     });
   }
 
@@ -92,8 +102,17 @@ async function buildDocx(cv, candidateName) {
   children.push(new Paragraph({
     children: [nameRun, ...(titleRun ? [titleRun] : [])],
     alignment: AlignmentType.LEFT,
-    spacing: { after: 120 },
+    spacing: { after: contact ? 40 : 120 },
   }));
+
+  // Contact info (location / email / phone) — previously never sent to this
+  // endpoint at all, so it silently never appeared in the downloaded file.
+  if (contact) {
+    children.push(new Paragraph({
+      children: [new TextRun({ text: contact, size: 19, color: '666666', font: 'Calibri' })],
+      spacing: { after: 120 },
+    }));
+  }
 
   // Summary
   if (cv.professional_summary) {
@@ -141,7 +160,7 @@ async function buildDocx(cv, candidateName) {
         {
           id: 'Heading2',
           name: 'Heading 2',
-          run: { bold: true, color: '2F5496', size: 22, font: 'Calibri' },
+          run: { bold: true, color: accent, size: 22, font: 'Calibri' },
         },
       ],
     },
