@@ -87,6 +87,7 @@ Target country: ${country || 'Not specified'}. Experience level: ${level || 'mid
 
     if (!response.ok) {
       const errText = await response.text();
+      console.log('generate AI request failed:', response.status, errText);
       res.status(502).json({ error: 'AI request failed', detail: errText });
       return;
     }

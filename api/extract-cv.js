@@ -56,6 +56,7 @@ ${cvText.slice(0, 7000)}
 
     if (!response.ok) {
       const err = await response.text();
+      console.log('extract-cv AI call failed:', response.status, err);
       res.status(502).json({ error: 'AI call failed', detail: err });
       return;
     }
