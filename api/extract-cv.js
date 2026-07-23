@@ -19,11 +19,14 @@ Examples:
 - CV has civil engineering + project management + site inspection → 3 queries: "Civil Engineer", "Project Manager", "Site Engineer"
 - CV has only one clear field → 1-2 queries
 
+Note: text extracted from a PDF or DOCX can sometimes scramble reading order — a header or sidebar containing the candidate's contact details may end up appearing anywhere in the text below, not necessarily at the very top. Scan the ENTIRE text for email/phone/location before concluding they're absent.
+
 Return ONLY valid JSON, no markdown fences:
 {
   "candidateName": "<full name of the person — look carefully, may be ALL-CAPS or formatted unusually>",
-  "email": "<email address if found, empty string if not>",
-  "phone": "<phone number if found, empty string if not>",
+  "candidateName": "<full name of the person — look carefully, may be ALL-CAPS or formatted unusually>",
+  "email": "<email address if found ANYWHERE in the text, including near icons/symbols like ✉ or @ signs, in a header/footer line, or right after labels like 'Email:' — empty string only if truly absent>",
+  "phone": "<phone number if found ANYWHERE in the text, including near icons like ☎/📞, after labels like 'Phone:', 'Mobile:', 'Tel:', or in an international format like +968 — empty string only if truly absent>",
   "location": "<city and country if found, e.g. Muscat, Oman, empty string if not>",
   "jobTitle": "<their actual current job title from CV>",
   "searchTitle": "<primary broad job title for searching, 2-3 words, sector-agnostic>",

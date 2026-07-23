@@ -35,12 +35,16 @@ async function buildDocx(cv, candidateName, contact, templateId) {
   } = require('docx');
 
   // Same accent-color mapping as the on-site template picker (stColor in
-  // index.html) — so the downloaded Word doc's color actually matches
-  // whichever template the person picked, instead of one hardcoded blue.
+  // index.html), EXCEPT for templates whose site color is so dark (near-
+  // black) it reads as "no color at all" in a plain Word document — those
+  // get a brighter Word-specific equivalent so the template is actually
+  // visually distinguishable on the page, not just technically correct.
   const templateColors = {
-    executive: '0F1F4B', zurich: 'C0392B', ember: 'B05E3A', slate: '0EA5E9',
-    pearl: '111111', aurora: '2C5364', onyx: '4ADE80', sand: '8B5E3C',
-    prism: '7C3AED', titanium: '52525B',
+    executive: '1E3A8A', // site is 0F1F4B (near-black navy) — brightened for Word
+    zurich: 'C0392B', ember: 'B05E3A', slate: '0EA5E9',
+    pearl: '374151',     // site is 111111 (near-black) — brightened for Word
+    aurora: '2C5364', onyx: '15803D', // site is 4ADE80, but that light green fails contrast on white paper — darkened
+    sand: '8B5E3C', prism: '7C3AED', titanium: '52525B',
   };
   const accent = templateColors[templateId] || templateColors.executive;
 
@@ -102,7 +106,7 @@ async function buildDocx(cv, candidateName, contact, templateId) {
   children.push(new Paragraph({
     children: [nameRun, ...(titleRun ? [titleRun] : [])],
     alignment: AlignmentType.LEFT,
-    spacing: { after: contact ? 40 : 120 },
+    spacing: { after: contact ? 40 : 80 },
   }));
 
   // Contact info (location / email / phone) — previously never sent to this
@@ -110,9 +114,18 @@ async function buildDocx(cv, candidateName, contact, templateId) {
   if (contact) {
     children.push(new Paragraph({
       children: [new TextRun({ text: contact, size: 19, color: '666666', font: 'Calibri' })],
-      spacing: { after: 120 },
+      spacing: { after: 100 },
     }));
   }
+
+  // Colored rule under the header — makes the template's accent color
+  // unmistakably visible even before you reach the first section heading,
+  // rather than relying solely on heading-text color to convey it.
+  children.push(new Paragraph({
+    children: [new TextRun({ text: '', size: 2 })],
+    border: { bottom: { style: BorderStyle.SINGLE, size: 16, color: accent } },
+    spacing: { after: 160 },
+  }));
 
   // Summary
   if (cv.professional_summary) {
