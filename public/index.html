@@ -1949,12 +1949,13 @@ function buildCVDoc(tplId){
   var ctLine=contactLine?'<div style="font-size:9.5px;opacity:.6;margin-top:5px;letter-spacing:.3px">'+esc(contactLine)+'</div>':'';
 
   if(tplId==='zurich'){
-    doc.innerHTML='<div class="cv-bar"></div><div class="cv-inner"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role" style="color:'+ac+'">'+esc(role)+'</div>':'')+
+    doc.innerHTML='<div class="cv-bar"></div><div class="cv-inner"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role" style="color:'+ac+'">'+esc(role)+'</div>':'')+ctLine+
       '<div class="cv-rule"></div>'+body+'</div>';return;
   }
   if(tplId==='slate'){
     doc.innerHTML=
       '<div class="cv-sidebar"><div class="cv-name" style="font-family:\'Fraunces\',serif">'+esc(nm)+'</div>'+(role?'<div class="cv-role" style="color:#94a3b8">'+esc(role)+'</div>':'')+
+      (contactLine?'<div style="font-size:9.5px;color:#94a3b8;margin-top:5px;letter-spacing:.3px;line-height:1.5">'+esc(contactLine)+'</div>':'')+
       '<div class="cv-rule" style="border-top:1px solid #334155;height:0;margin:0 0 12px"></div>'+
       '<div class="cv-st" style="color:#38bdf8">'+t('skills')+'</div>'+(cv.skills||[]).map(function(s){return '<span style="font-size:10.5px;color:#e2e8f0;display:block;padding:2px 0;line-height:1.6">· '+esc(s)+'</span>';}).join('')+
       (eduHTML?'<div class="cv-st" style="color:#38bdf8;margin-top:16px">'+t('edu')+'</div>'+eduHTML:'')+'</div>'+
@@ -1962,16 +1963,16 @@ function buildCVDoc(tplId){
       '<div class="cv-st" style="color:#0ea5e9;border-bottom:1px solid #e2e8f0">'+t('exp')+'</div>'+expHTML+'</div>';return;
   }
   if(tplId==='titanium'){
-    doc.innerHTML='<div class="cv-hdr"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<span style="font-size:9.5px;background:#fff;color:#18181b;padding:4px 12px;border-radius:999px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap">'+esc(role)+'</span>':'')+
+    doc.innerHTML='<div class="cv-hdr"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<span style="font-size:9.5px;background:#fff;color:#18181b;padding:4px 12px;border-radius:999px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap">'+esc(role)+'</span>':'')+ctLine+
       '</div><div class="cv-rule"></div><div class="cv-body">'+body+'</div>';return;
   }
   if(tplId==='prism'){
     doc.innerHTML='<div class="cv-hdr"><div style="position:absolute;top:0;right:0;width:120px;height:100%;background:#7c3aed;clip-path:polygon(60px 0,100% 0,100% 100%,0 100%);opacity:.08"></div>'+
-      '<div class="cv-name" style="position:relative">'+esc(nm)+'</div>'+(role?'<div class="cv-role" style="color:#7c3aed;position:relative">'+esc(role)+'</div>':'')+
+      '<div class="cv-name" style="position:relative">'+esc(nm)+'</div>'+(role?'<div class="cv-role" style="color:#7c3aed;position:relative">'+esc(role)+'</div>':'')+ctLine+
       '</div><div class="cv-body">'+body+'</div>';return;
   }
   if(tplId==='ember'||tplId==='sand'){
-    doc.innerHTML='<div class="cv-hdr"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role">'+esc(role)+'</div>':'')+
+    doc.innerHTML='<div class="cv-hdr"><div class="cv-name">'+esc(nm)+'</div>'+(role?'<div class="cv-role">'+esc(role)+'</div>':'')+ctLine+
       '</div><div class="cv-body">'+body+'</div>';return;
   }
   // Default header-body
@@ -2239,9 +2240,13 @@ async function downloadWordFree_actual(){
     if(_addedKw && _addedKw.length){
       cvPayload.skills=(cvPayload.skills||[]).concat(_addedKw.filter(function(k){return (cvPayload.skills||[]).indexOf(k)===-1;}));
     }
+    var contactParts=[];
+    if(cvProfile&&cvProfile.location) contactParts.push(cvProfile.location);
+    if(cvProfile&&cvProfile.email)    contactParts.push(cvProfile.email);
+    if(cvProfile&&cvProfile.phone)    contactParts.push(cvProfile.phone);
     var res=await fetch('/api/checkout-word',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({cv:cvPayload,name:userName||'CV'}),
+      body:JSON.stringify({cv:cvPayload,name:userName||'CV',contact:contactParts.join('  ·  '),templateId:currentTpl}),
     });
     if(!res.ok) throw new Error('Download failed');
     var blob=await res.blob();
