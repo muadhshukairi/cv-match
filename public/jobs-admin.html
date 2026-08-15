@@ -555,6 +555,7 @@ function esc(s) {
 
 /* ══ Auto-scanned pending review ══════════════════════════════════════ */
 var pendingJobs = [];
+var pendingEditing = {}; // { index: true } for cards currently showing the full edit form
 
 async function loadPendingQueue() {
   var btn = document.getElementById('refresh-pending-btn');
@@ -563,6 +564,7 @@ async function loadPendingQueue() {
     var r = await fetch('/api/fetch-rss?action=list');
     var d = await r.json();
     pendingJobs = d.jobs || [];
+    pendingEditing = {};
     renderPendingList();
   } catch (e) {
     document.getElementById('pending-list').innerHTML =
@@ -585,64 +587,102 @@ function renderPendingList() {
     return;
   }
 
-  container.style.cssText = '';
+  container.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px';
   container.innerHTML = pendingJobs.map(function(job, i) {
-    var thumb = job.image_url ?
-      '<img src="'+esc(job.image_url)+'" onclick="window.open(\''+esc(job.image_url)+'\',\'_blank\')" style="width:90px;min-width:90px;height:110px;object-fit:cover;border-radius:8px;border:1px solid #2D1F4E;flex-shrink:0;cursor:pointer" title="Click to view full image" onerror="this.outerHTML=\'<div style=&quot;width:90px;min-width:90px;height:110px;background:#160F2E;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#475569;font-size:10px;text-align:center;padding:6px&quot;>Image unavailable</div>\'">'
-      : '<div style="width:90px;min-width:90px;height:110px;background:#160F2E;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#475569;font-size:10px;text-align:center;padding:6px">No image</div>';
-
-    return '<div class="card" id="pending-card-'+i+'" style="margin-bottom:14px">' +
-      '<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;flex-wrap:wrap">' +
-        '<label style="display:flex;align-items:center;padding-top:2px;cursor:pointer">' +
-          '<input type="checkbox" class="pending-select" data-idx="'+i+'" style="width:16px;height:16px;cursor:pointer">' +
-        '</label>' +
-        thumb +
-        '<div style="flex:1;min-width:200px">' +
-          (job.qr_url ? '<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:7px 12px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px"><span style="font-size:16px">📱</span><div><div style="font-size:10px;font-weight:700;color:#10B981;margin-bottom:2px">QR CODE LINK</div><a href="'+esc(job.qr_url)+'" target="_blank" style="color:#10B981;word-break:break-all">'+esc(job.qr_url)+'</a></div></div>' :
-            (job._qrDecodeFailed ? '<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:7px 12px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px"><span style="font-size:16px">⚠️</span><div style="color:#F59E0B">QR code spotted but couldn\'t be read automatically.</div></div>' : '')) +
-          '<div>' +
-            '<div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">' + esc(job.title_en||'(no title)') + '</div>' +
-            '<div style="font-size:13px;color:#6B7280">' + esc(job.title_ar||'') + ' · ' + esc(job.company||'') + '</div>' +
-          '</div>' +
-          '<div style="font-size:10.5px;color:#6B7280;margin-top:6px">via ' + esc(job.source_account||'') + ' · scanned ' + esc((job.scanned_at||'').slice(0,10)) + '</div>' +
-        '</div>' +
-        (job.omani_only ? '<span class="tag tag-omani" style="flex-shrink:0">🇴🇲 Omani Only</span>' : '') +
-      '</div>' +
-      // Editable fields — same set as the manual upload flow
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">' +
-        '<div><label>Title (English)</label><input id="p'+i+'_ten" value="' + esc(job.title_en||'') + '"></div>' +
-        '<div><label>Title (Arabic)</label><input id="p'+i+'_tar" value="' + esc(job.title_ar||'') + '" dir="rtl"></div>' +
-        '<div><label>Company</label><input id="p'+i+'_co" value="' + esc(job.company||'') + '"></div>' +
-        '<div><label>Location</label><input id="p'+i+'_lo" value="' + esc(job.location||'Oman') + '"></div>' +
-        '<div><label>Type</label><select id="p'+i+'_ty"><option>Full-time</option><option>Part-time</option><option>Internship</option><option>Contract</option></select></div>' +
-        '<div><label>Deadline</label><input id="p'+i+'_dl" value="' + esc(job.deadline||'') + '" placeholder="e.g. 31 Jul 2026"></div>' +
-        '<div style="grid-column:1/-1"><label>Contact' + (!job.contact && job.qr_url ? ' <span style="font-weight:400;color:#10B981;text-transform:none;letter-spacing:0">(auto-filled from QR code)</span>' : '') + '</label><input id="p'+i+'_ct" value="' + esc(job.contact || job.qr_url || '') + '"></div>' +
-        '<div style="grid-column:1/-1"><label>Requirements (one per line)</label><textarea id="p'+i+'_req" rows="3">' + esc((job.requirements||[]).join('\n')) + '</textarea></div>' +
-      '</div>' +
-      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-        '<label style="text-transform:none;letter-spacing:0;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer">' +
-          '<input type="checkbox" id="p'+i+'_om" ' + (job.omani_only?'checked':'') + '> Omani Nationals Only' +
-        '</label>' +
-        '<button class="btn btn-g" style="margin-left:auto" onclick="approvePending('+i+')">✓ Approve &amp; Publish</button>' +
-        '<button class="btn" style="background:none;border:1px solid rgba(239,68,68,.3);color:#EF4444" onclick="rejectPending('+i+')">✕ Reject</button>' +
-      '</div>' +
-    '</div>';
+    return pendingEditing[i] ? renderPendingCardExpanded(job, i) : renderPendingCardCompact(job, i);
   }).join('');
 
-  // Set select dropdown values (can't set via value= attribute on <select> reliably)
   pendingJobs.forEach(function(job, i) {
+    if (!pendingEditing[i]) return;
     var sel = document.getElementById('p'+i+'_ty');
     if (sel) sel.value = job.type || 'Full-time';
   });
+}
+
+function renderPendingCardCompact(job, i) {
+  var thumb = job.image_url ?
+    '<img src="'+esc(job.image_url)+'" onclick="window.open(\''+esc(job.image_url)+'\',\'_blank\')" style="width:100%;height:140px;object-fit:cover;border-radius:8px 8px 0 0;cursor:pointer" title="Click to view full image" onerror="this.outerHTML=\'<div style=&quot;width:100%;height:140px;background:#160F2E;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#475569;font-size:11px&quot;>Image unavailable</div>\'">'
+    : '<div style="width:100%;height:140px;background:#160F2E;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:#475569;font-size:11px">No image</div>';
+
+  return '<div class="card" id="pending-card-'+i+'" style="padding:0;overflow:hidden;display:flex;flex-direction:column">' +
+    '<div style="position:relative">' + thumb +
+      '<label style="position:absolute;top:8px;left:8px;background:rgba(8,6,18,.8);border-radius:6px;padding:3px;display:flex;cursor:pointer">' +
+        '<input type="checkbox" class="pending-select" data-idx="'+i+'" style="width:16px;height:16px;cursor:pointer">' +
+      '</label>' +
+      (job.omani_only ? '<span class="tag tag-omani" style="position:absolute;top:8px;right:8px;font-size:9px">🇴🇲</span>' : '') +
+    '</div>' +
+    '<div style="padding:12px;flex:1;display:flex;flex-direction:column">' +
+      '<div style="font-size:13.5px;font-weight:700;color:#fff;margin-bottom:2px">' + esc(job.title_en||'(no title)') + '</div>' +
+      '<div style="font-size:11.5px;color:#6B7280;margin-bottom:6px">' + esc(job.company||'') + ' · ' + esc(job.location||'Oman') + '</div>' +
+      '<div style="font-size:10px;color:#475569;margin-bottom:8px">via ' + esc(job.source_account||'') + ' · ' + esc((job.scanned_at||'').slice(0,10)) + '</div>' +
+      (job.qr_url ? '<div style="font-size:10.5px;color:#10B981;margin-bottom:8px">📱 QR code found</div>' : '') +
+      '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:auto">' +
+        '<button class="btn btn-g" style="font-size:11px;padding:6px 10px" onclick="approvePending('+i+')">✓ Approve</button>' +
+        '<button class="btn" style="font-size:11px;padding:6px 10px;background:#160F2E;border:1px solid #2D1F4E;color:#94A3B8" onclick="togglePendingEdit('+i+')">✎ Edit</button>' +
+        '<button class="btn" style="font-size:11px;padding:6px 10px;background:none;border:1px solid rgba(239,68,68,.3);color:#EF4444" onclick="rejectPending('+i+')">✕</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderPendingCardExpanded(job, i) {
+  var thumb = job.image_url ?
+    '<img src="'+esc(job.image_url)+'" onclick="window.open(\''+esc(job.image_url)+'\',\'_blank\')" style="width:90px;min-width:90px;height:110px;object-fit:cover;border-radius:8px;border:1px solid #2D1F4E;flex-shrink:0;cursor:pointer" title="Click to view full image" onerror="this.outerHTML=\'<div style=&quot;width:90px;min-width:90px;height:110px;background:#160F2E;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#475569;font-size:10px;text-align:center;padding:6px&quot;>Image unavailable</div>\'">'
+    : '<div style="width:90px;min-width:90px;height:110px;background:#160F2E;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#475569;font-size:10px;text-align:center;padding:6px">No image</div>';
+
+  return '<div class="card" id="pending-card-'+i+'" style="grid-column:1/-1;margin-bottom:0">' +
+    '<div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;flex-wrap:wrap">' +
+      '<label style="display:flex;align-items:center;padding-top:2px;cursor:pointer">' +
+        '<input type="checkbox" class="pending-select" data-idx="'+i+'" style="width:16px;height:16px;cursor:pointer">' +
+      '</label>' +
+      thumb +
+      '<div style="flex:1;min-width:200px">' +
+        (job.qr_url ? '<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:7px 12px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px"><span style="font-size:16px">📱</span><div><div style="font-size:10px;font-weight:700;color:#10B981;margin-bottom:2px">QR CODE LINK</div><a href="'+esc(job.qr_url)+'" target="_blank" style="color:#10B981;word-break:break-all">'+esc(job.qr_url)+'</a></div></div>' :
+          (job._qrDecodeFailed ? '<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:7px 12px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:8px"><span style="font-size:16px">⚠️</span><div style="color:#F59E0B">QR code spotted but couldn\'t be read automatically.</div></div>' : '')) +
+        '<div>' +
+          '<div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px">' + esc(job.title_en||'(no title)') + '</div>' +
+          '<div style="font-size:13px;color:#6B7280">' + esc(job.title_ar||'') + ' · ' + esc(job.company||'') + '</div>' +
+        '</div>' +
+        '<div style="font-size:10.5px;color:#6B7280;margin-top:6px">via ' + esc(job.source_account||'') + ' · scanned ' + esc((job.scanned_at||'').slice(0,10)) + '</div>' +
+      '</div>' +
+      '<button class="btn" style="background:none;border:1px solid #2D1F4E;color:#94A3B8;font-size:11px" onclick="togglePendingEdit('+i+')">▲ Collapse</button>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">' +
+      '<div><label>Title (English)</label><input id="p'+i+'_ten" value="' + esc(job.title_en||'') + '"></div>' +
+      '<div><label>Title (Arabic)</label><input id="p'+i+'_tar" value="' + esc(job.title_ar||'') + '" dir="rtl"></div>' +
+      '<div><label>Company</label><input id="p'+i+'_co" value="' + esc(job.company||'') + '"></div>' +
+      '<div><label>Location</label><input id="p'+i+'_lo" value="' + esc(job.location||'Oman') + '"></div>' +
+      '<div><label>Type</label><select id="p'+i+'_ty"><option>Full-time</option><option>Part-time</option><option>Internship</option><option>Contract</option></select></div>' +
+      '<div><label>Deadline</label><input id="p'+i+'_dl" value="' + esc(job.deadline||'') + '" placeholder="e.g. 31 Jul 2026"></div>' +
+      '<div style="grid-column:1/-1"><label>Contact' + (!job.contact && job.qr_url ? ' <span style="font-weight:400;color:#10B981;text-transform:none;letter-spacing:0">(auto-filled from QR code)</span>' : '') + '</label><input id="p'+i+'_ct" value="' + esc(job.contact || job.qr_url || '') + '"></div>' +
+      '<div style="grid-column:1/-1"><label>Requirements (one per line)</label><textarea id="p'+i+'_req" rows="3">' + esc((job.requirements||[]).join('\n')) + '</textarea></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+      '<label style="text-transform:none;letter-spacing:0;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer">' +
+        '<input type="checkbox" id="p'+i+'_om" ' + (job.omani_only?'checked':'') + '> Omani Nationals Only' +
+      '</label>' +
+      '<button class="btn btn-g" style="margin-left:auto" onclick="approvePending('+i+')">✓ Approve &amp; Publish</button>' +
+      '<button class="btn" style="background:none;border:1px solid rgba(239,68,68,.3);color:#EF4444" onclick="rejectPending('+i+')">✕ Reject</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function togglePendingEdit(i) {
+  if (pendingEditing[i]) { delete pendingEditing[i]; } else { pendingEditing[i] = true; }
+  renderPendingList();
 }
 
 function toggleSelectAllPending(checked) {
   document.querySelectorAll('.pending-select').forEach(function(cb) { cb.checked = checked; });
 }
 
+// Returns edited field values if this card's edit form is open, otherwise
+// null — callers fall back to the original extracted job data in that case.
 function readPendingFields(i) {
+  var el = document.getElementById('p'+i+'_ten');
+  if (!el) return null; // card was never expanded — use original extracted data as-is
   return {
-    title_en: document.getElementById('p'+i+'_ten').value.trim(),
+    title_en: el.value.trim(),
     title_ar: document.getElementById('p'+i+'_tar').value.trim(),
     company:  document.getElementById('p'+i+'_co').value.trim(),
     location: document.getElementById('p'+i+'_lo').value.trim() || 'Oman',
@@ -657,7 +697,8 @@ function readPendingFields(i) {
 async function approvePending(i) {
   var job = pendingJobs[i];
   if (!job) return;
-  var edited = Object.assign({}, job, readPendingFields(i));
+  var fields = readPendingFields(i);
+  var edited = fields ? Object.assign({}, job, fields) : job;
   try {
     var r = await fetch('/api/fetch-rss?action=approve', {
       method: 'POST', headers: {'Content-Type':'application/json'},
@@ -666,6 +707,7 @@ async function approvePending(i) {
     var d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Approve failed');
     pendingJobs.splice(i, 1);
+    pendingEditing = {};
     renderPendingList();
   } catch (e) {
     alert('Could not publish: ' + e.message);
@@ -685,7 +727,8 @@ async function approveSelectedPending() {
     var i = idxs[n];
     var job = pendingJobs[i];
     if (!job) continue;
-    var edited = Object.assign({}, job, readPendingFields(i));
+    var fields = readPendingFields(i);
+    var edited = fields ? Object.assign({}, job, fields) : job;
     try {
       var r = await fetch('/api/fetch-rss?action=approve', {
         method: 'POST', headers: {'Content-Type':'application/json'},
@@ -696,6 +739,7 @@ async function approveSelectedPending() {
     } catch (e) { failed.push(job.title_en + ': ' + e.message); }
   }
   btn.disabled = false;
+  pendingEditing = {};
   renderPendingList();
   if (failed.length) alert('Some jobs failed to publish:\n' + failed.join('\n'));
 }
@@ -710,6 +754,7 @@ async function rejectPending(i) {
       body: JSON.stringify({ id: job.id }),
     });
     pendingJobs.splice(i, 1);
+    pendingEditing = {};
     renderPendingList();
   } catch (e) {
     alert('Could not reject: ' + e.message);
