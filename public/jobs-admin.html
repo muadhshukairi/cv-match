@@ -612,8 +612,12 @@ function renderPendingCardCompact(job, i) {
       (job.omani_only ? '<span class="tag tag-omani" style="position:absolute;top:8px;right:8px;font-size:9px">🇴🇲</span>' : '') +
     '</div>' +
     '<div style="padding:12px;flex:1;display:flex;flex-direction:column">' +
-      '<div style="font-size:13.5px;font-weight:700;color:#fff;margin-bottom:2px">' + esc(job.title_en||'(no title)') + '</div>' +
-      '<div style="font-size:11.5px;color:#6B7280;margin-bottom:6px">' + esc(job.company||'') + ' · ' + esc(job.location||'Oman') + '</div>' +
+      '<div style="font-size:13.5px;font-weight:700;color:#fff;margin-bottom:6px">' + esc(job.title_en||'(no title)') + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px;padding:8px 10px;background:#0A0618;border:1px solid #1E1535;border-radius:8px">' +
+        '<div style="font-size:11px;color:#94A3B8"><span style="color:#6B7280">🏢 </span>' + esc(job.company||'—') + '</div>' +
+        '<div style="font-size:11px;color:#94A3B8;word-break:break-word"><span style="color:#6B7280">☎ </span>' + esc(job.contact || (job.qr_url ? 'via QR code' : '—')) + '</div>' +
+        '<div style="font-size:11px;color:#94A3B8"><span style="color:#6B7280">📍 </span>' + esc(job.location||'Oman') + '</div>' +
+      '</div>' +
       '<div style="font-size:10px;color:#475569;margin-bottom:8px">via ' + esc(job.source_account||'') + ' · ' + esc((job.scanned_at||'').slice(0,10)) + '</div>' +
       (job.qr_url ? '<div style="font-size:10.5px;color:#10B981;margin-bottom:8px">📱 QR code found</div>' : '') +
       '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:auto">' +
