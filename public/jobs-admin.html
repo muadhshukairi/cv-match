@@ -65,6 +65,7 @@
         </label>
         <button class="btn btn-g" onclick="approveSelectedPending()" id="approve-selected-btn" style="font-size:12px;padding:7px 14px">✓ Approve Selected</button>
         <button class="btn" onclick="loadPendingQueue()" id="refresh-pending-btn" style="background:#0F0B1F;border:1px solid #1E1535;color:#94A3B8;font-size:12px;padding:7px 14px;border-radius:8px;cursor:pointer">↻ Refresh</button>
+        <button class="btn" onclick="clearAllPending()" id="clear-all-btn" style="background:none;border:1px solid rgba(239,68,68,.3);color:#EF4444;font-size:12px;padding:7px 14px;border-radius:8px;cursor:pointer">🗑 Clear All</button>
       </div>
     </div>
     <div id="pending-list"><div style="color:#475569;font-size:13px;text-align:center;padding:20px">Loading pending items…</div></div>
@@ -571,6 +572,25 @@ async function loadPendingQueue() {
       '<div style="color:#EF4444;font-size:13px;text-align:center;padding:16px">Could not load pending queue: ' + esc(e.message) + '</div>';
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
+  }
+}
+
+async function clearAllPending() {
+  if (!pendingJobs.length) return;
+  if (!confirm('Clear all ' + pendingJobs.length + ' pending item(s)? This does NOT publish or blacklist them — it just wipes the queue so you can test a fresh scan. This cannot be undone.')) return;
+  var btn = document.getElementById('clear-all-btn');
+  btn.disabled = true;
+  try {
+    var r = await fetch('/api/fetch-rss?action=clearAll', { method: 'POST' });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Clear failed');
+    pendingJobs = [];
+    pendingEditing = {};
+    renderPendingList();
+  } catch (e) {
+    alert('Could not clear queue: ' + e.message);
+  } finally {
+    btn.disabled = false;
   }
 }
 
