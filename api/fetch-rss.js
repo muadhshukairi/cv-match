@@ -34,18 +34,36 @@ const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzo9yLuujndd1KKl1hQ-
 // job may already have been published manually before. Match on normalized
 // title + company so those get caught regardless of which post they came from.
 function jobFingerprint(title, company) {
-  return (title || '').toLowerCase().trim().replace(/\s+/g, ' ') + '|' + (company || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  function norm(s) {
+    return (s || '')
+      .toLowerCase()
+      .replace(/&/g, ' and ')
+      .replace(/[^\w\s]/g, ' ')   // strip punctuation entirely (commas, dashes, slashes, etc.)
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  return norm(title) + '|' + norm(company);
 }
 
 async function getPublishedFingerprints() {
   const set = new Set();
+  // Layer 1: live fetch from the Sheet — catches jobs published manually too.
   try {
     const r = await fetch(SHEETS_URL + '?action=getJobs');
     const jobs = await r.json();
     (Array.isArray(jobs) ? jobs : []).forEach(function (j) {
       set.add(jobFingerprint(j.title_en, j.company));
     });
-  } catch (e) { /* if this fails, we just skip published-dedup for this run rather than blocking the scan */ }
+  } catch (e) { /* if this fails, fall through to layer 2 rather than blocking the scan */ }
+
+  // Layer 2: Redis-backed record, updated instantly on every approval — a fast,
+  // reliable backstop in case the live Sheet fetch above is slow, rate-limited,
+  // or momentarily out of sync.
+  try {
+    const stored = await redisCmd(['SMEMBERS', 'published_fingerprints']);
+    if (Array.isArray(stored)) stored.forEach(function (fp) { set.add(fp); });
+  } catch (e) { /* non-fatal */ }
+
   return set;
 }
 
@@ -112,6 +130,11 @@ async function handleScan(req, res) {
   // Build dedup sets once up front — checked against on every extracted job below.
   const publishedFp = await getPublishedFingerprints();
   const pendingFp = await getPendingFingerprints();
+  let rejectedFp = new Set();
+  try {
+    const stored = await redisCmd(['SMEMBERS', 'rejected_fingerprints']);
+    if (Array.isArray(stored)) rejectedFp = new Set(stored);
+  } catch (e) { /* non-fatal */ }
 
   for (const feed of MONITORED_FEEDS) {
     if (!feed.feedId || feed.feedId.indexOf('PASTE_') === 0) {
@@ -176,6 +199,11 @@ async function handleScan(req, res) {
           if (pendingFp.has(fp)) {
             results.duplicatesSkipped++;
             if (debugEntry) debugEntry.skipped = 'duplicate of already-pending job';
+            continue;
+          }
+          if (rejectedFp.has(fp)) {
+            results.duplicatesSkipped++;
+            if (debugEntry) debugEntry.skipped = 'previously rejected';
             continue;
           }
           pendingFp.add(fp); // catch duplicates within this same run too (e.g. two accounts posting the same ad)
@@ -273,6 +301,9 @@ async function handleApprove(req, res) {
     });
     const d = await r.json();
     await redisCmd(['HDEL', 'pending_jobs', job.id]);
+    try {
+      await redisCmd(['SADD', 'published_fingerprints', jobFingerprint(job.title_en, job.company)]);
+    } catch (e) { /* non-fatal — worst case the live Sheet check in layer 1 still catches it next scan */ }
     res.status(200).json(d);
   } catch (e) {
     res.status(500).json({ error: 'Publish failed', detail: e.message });
@@ -284,6 +315,13 @@ async function handleReject(req, res) {
   const { id } = req.body || {};
   if (!id) { res.status(400).json({ error: 'id is required' }); return; }
   try {
+    try {
+      const raw = await redisCmd(['HGET', 'pending_jobs', id]);
+      if (raw) {
+        const job = JSON.parse(raw);
+        await redisCmd(['SADD', 'rejected_fingerprints', jobFingerprint(job.title_en, job.company)]);
+      }
+    } catch (e) { /* non-fatal — worst case it can resurface and get rejected again */ }
     await redisCmd(['HDEL', 'pending_jobs', id]);
     res.status(200).json({ ok: true });
   } catch (e) {
@@ -407,5 +445,19 @@ If no genuine job vacancies found, return: []`;
   const raw = textBlock ? textBlock.text : '[]';
   const clean = raw.replace(/```(?:json)?|```/gi, '').trim();
   const jobs = JSON.parse(clean);
-  return Array.isArray(jobs) ? jobs : [];
+  const parsedJobs = Array.isArray(jobs) ? jobs : [];
+  return parsedJobs.filter(isLikelyRealJob);
+}
+
+// ── Safety-net filter, independent of the AI's own prompt-following ────────
+// Catches training/scholarship/education posts that occasionally still slip
+// through the extraction prompt's own instruction not to include them.
+const NON_JOB_KEYWORDS = [
+  'bridging program', 'bridge program', 'training program', 'scholarship',
+  'workshop', 'webinar', 'admission', 'registration period', 'coming soon',
+  'برنامج تدريب', 'برنامج تأهيل', 'منحة دراسية', 'ورشة عمل', 'باب التسجيل', 'فتح باب التسجيل',
+];
+function isLikelyRealJob(job) {
+  const text = ((job.title_en || '') + ' ' + (job.title_ar || '')).toLowerCase();
+  return !NON_JOB_KEYWORDS.some(function (kw) { return text.indexOf(kw.toLowerCase()) !== -1; });
 }
