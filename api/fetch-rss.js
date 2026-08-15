@@ -99,6 +99,7 @@ module.exports = async function handler(req, res) {
     if (action === 'list') return await handleList(req, res);
     if (action === 'approve') return await handleApprove(req, res);
     if (action === 'reject') return await handleReject(req, res);
+    if (action === 'clearAll') return await handleClearAll(req, res);
     res.status(400).json({ error: 'Unknown action: ' + action });
   } catch (e) {
     res.status(500).json({ error: 'Unexpected error: ' + e.message });
@@ -181,10 +182,17 @@ async function handleScan(req, res) {
       // Instagram's own CDN links are often short-lived/hotlink-protected, so by
       // the time this gets reviewed later, the raw link may already be dead.
       let permanentImageUrl = post.imageUrl;
-      if (IMGBB_KEY) {
+      if (!IMGBB_KEY) {
+        results.errors.push('IMGBB_API_KEY not configured — using original (possibly short-lived) image link for ' + post.link);
+        if (debugEntry) debugEntry.imgbbStatus = 'skipped — no IMGBB_API_KEY';
+      } else {
         try {
           permanentImageUrl = await uploadToImgBB(post.imageUrl);
-        } catch (e) { /* fall back to the original link rather than failing the whole post */ }
+          if (debugEntry) debugEntry.imgbbStatus = 'uploaded ok';
+        } catch (e) {
+          results.errors.push('Image upload failed for ' + post.link + ': ' + e.message);
+          if (debugEntry) debugEntry.imgbbStatus = 'FAILED — ' + e.message;
+        }
       }
 
       try {
@@ -326,6 +334,23 @@ async function handleReject(req, res) {
     res.status(200).json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'Reject failed', detail: e.message });
+  }
+}
+
+// ── action: clearAll ────────────────────────────────────────────────────
+// Wipes the entire pending queue without publishing or marking as rejected —
+// use this to clear out stale items from before a fix, so the next scan's
+// results can be evaluated cleanly. Does NOT touch published jobs or affect
+// which posts get re-scanned (that's controlled separately by seen_post keys).
+async function handleClearAll(req, res) {
+  try {
+    const raw = await redisCmd(['HGETALL', 'pending_jobs']);
+    let count = 0;
+    if (Array.isArray(raw)) count = raw.length / 2;
+    await redisCmd(['DEL', 'pending_jobs']);
+    res.status(200).json({ ok: true, cleared: count });
+  } catch (e) {
+    res.status(500).json({ error: 'Clear failed', detail: e.message });
   }
 }
 
