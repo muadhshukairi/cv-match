@@ -353,7 +353,14 @@ async function extractJobsFromImage(imageUrl) {
 
   const prompt = `You are a job listing extractor. Read this image carefully — it may contain one or multiple Instagram job posts.
 
-For EACH job listing you find, return:
+CRITICAL — only extract genuine, currently-open JOB VACANCIES someone can apply for right now. Do NOT extract:
+- Training programs, bridging/transitional academic programs, or scholarships (even if they mention "registration" or have a deadline)
+- Course announcements, workshops, webinars, or educational program admissions
+- General career-advice, motivational, or "coming soon" / "stay tuned" posts with no actual role attached
+- Company announcements, awards, or news that don't include an open position
+If the post is any of the above rather than an actual job opening, return an empty array for it — do not force it into a job listing.
+
+For EACH genuine job listing you find, return:
 - title_en: English job title
 - title_ar: Arabic job title
 - company: company name
@@ -368,7 +375,7 @@ For EACH job listing you find, return:
 Return ONLY valid JSON array, no fences:
 [{"title_en":"...","title_ar":"...","company":"...","location":"...","type":"Full-time","deadline":null,"requirements":[],"contact":"...","omani_only":false,"qr_url":null}]
 
-If no jobs found, return: []`;
+If no genuine job vacancies found, return: []`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
