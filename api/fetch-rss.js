@@ -26,11 +26,47 @@ const MONITORED_FEEDS = [
   { name: '@omanhsecareers', feedId: 'BHokj8GSJA7gil5r' },
 ];
 
-const MAX_DAYS = 3; // only scan posts from the last N days per run
+const MAX_DAYS = 1; // only scan posts from the last N days per run
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzo9yLuujndd1KKl1hQ-yd8Av_GgL7yJ_8m_IcZycsr1nMe9BTfO2ZqYQgCqiKjMFzV/exec';
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+// ── Duplicate detection by actual job content, not just source post ────────
+// The same ad often gets reposted across multiple monitored accounts, or a
+// job may already have been published manually before. Match on normalized
+// title + company so those get caught regardless of which post they came from.
+function jobFingerprint(title, company) {
+  return (title || '').toLowerCase().trim().replace(/\s+/g, ' ') + '|' + (company || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+async function getPublishedFingerprints() {
+  const set = new Set();
+  try {
+    const r = await fetch(SHEETS_URL + '?action=getJobs');
+    const jobs = await r.json();
+    (Array.isArray(jobs) ? jobs : []).forEach(function (j) {
+      set.add(jobFingerprint(j.title_en, j.company));
+    });
+  } catch (e) { /* if this fails, we just skip published-dedup for this run rather than blocking the scan */ }
+  return set;
+}
+
+async function getPendingFingerprints() {
+  const set = new Set();
+  try {
+    const raw = await redisCmd(['HGETALL', 'pending_jobs']);
+    if (Array.isArray(raw)) {
+      for (let i = 0; i < raw.length; i += 2) {
+        try {
+          const job = JSON.parse(raw[i + 1]);
+          set.add(jobFingerprint(job.title_en, job.company));
+        } catch (e) { /* skip malformed entry */ }
+      }
+    }
+  } catch (e) { /* non-fatal */ }
+  return set;
+}
+
+const REDIS_URL = (process.env.UPSTASH_REDIS_REST_URL || '').trim();
+const REDIS_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || '').trim();
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const IMGBB_KEY = process.env.IMGBB_API_KEY;
 
@@ -68,8 +104,14 @@ async function redisCmd(args) {
 async function handleScan(req, res) {
   if (!ANTHROPIC_KEY) { res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY' }); return; }
 
-  const results = { feedsScanned: 0, postsFound: 0, newPosts: 0, jobsExtracted: 0, errors: [] };
+  const debug = (req.query && req.query.debug === '1');
+  const results = { feedsScanned: 0, postsFound: 0, newPosts: 0, jobsExtracted: 0, duplicatesSkipped: 0, errors: [] };
+  if (debug) results.debugPosts = [];
   const cutoff = Date.now() - MAX_DAYS * 24 * 60 * 60 * 1000;
+
+  // Build dedup sets once up front — checked against on every extracted job below.
+  const publishedFp = await getPublishedFingerprints();
+  const pendingFp = await getPendingFingerprints();
 
   for (const feed of MONITORED_FEEDS) {
     if (!feed.feedId || feed.feedId.indexOf('PASTE_') === 0) {
@@ -87,29 +129,64 @@ async function handleScan(req, res) {
     results.postsFound += posts.length;
 
     for (const post of posts) {
-      if (!post.imageUrl || !post.link) continue;
-      if (post.pubDateMs && post.pubDateMs < cutoff) continue;
+      let debugEntry = null;
+      if (debug) {
+        debugEntry = {
+          feed: feed.name, link: post.link, hasImage: !!post.imageUrl,
+          pubDate: post.pubDate || '(none)', pubDateMs: post.pubDateMs || null,
+          ageDays: post.pubDateMs ? Math.round((Date.now() - post.pubDateMs) / 86400000 * 10) / 10 : null,
+        };
+        results.debugPosts.push(debugEntry);
+      }
+
+      if (!post.imageUrl || !post.link) { if (debugEntry) debugEntry.skipped = 'no image or link'; continue; }
+      if (post.pubDateMs && post.pubDateMs < cutoff) { if (debugEntry) debugEntry.skipped = 'older than MAX_DAYS'; continue; }
 
       let alreadySeen;
       try {
         alreadySeen = await redisCmd(['GET', 'seen_post:' + post.link]);
       } catch (e) {
         results.errors.push('Redis check failed for ' + post.link + ': ' + e.message);
+        if (debugEntry) debugEntry.skipped = 'redis check error';
         continue;
       }
-      if (alreadySeen) continue;
+      if (alreadySeen) { if (debugEntry) debugEntry.skipped = 'already marked seen'; continue; }
 
       results.newPosts++;
+
+      // Upload to permanent storage ONCE per post (not per job extracted from it) —
+      // Instagram's own CDN links are often short-lived/hotlink-protected, so by
+      // the time this gets reviewed later, the raw link may already be dead.
+      let permanentImageUrl = post.imageUrl;
+      if (IMGBB_KEY) {
+        try {
+          permanentImageUrl = await uploadToImgBB(post.imageUrl);
+        } catch (e) { /* fall back to the original link rather than failing the whole post */ }
+      }
+
       try {
         const jobs = await extractJobsFromImage(post.imageUrl);
         for (const job of jobs) {
+          const fp = jobFingerprint(job.title_en, job.company);
+          if (publishedFp.has(fp)) {
+            results.duplicatesSkipped++;
+            if (debugEntry) debugEntry.skipped = 'duplicate of already-published job';
+            continue;
+          }
+          if (pendingFp.has(fp)) {
+            results.duplicatesSkipped++;
+            if (debugEntry) debugEntry.skipped = 'duplicate of already-pending job';
+            continue;
+          }
+          pendingFp.add(fp); // catch duplicates within this same run too (e.g. two accounts posting the same ad)
+
           const id = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
           const record = Object.assign({}, job, {
             id: id,
             source_account: feed.name,
             post_link: post.link,
             caption: (post.caption || '').slice(0, 500),
-            image_url: post.imageUrl,
+            image_url: permanentImageUrl,
             scanned_at: new Date().toISOString(),
           });
           await redisCmd(['HSET', 'pending_jobs', id, JSON.stringify(record)]);
@@ -152,24 +229,28 @@ async function handleList(req, res) {
 }
 
 // ── action: approve ─────────────────────────────────────────────────────
+// ── Upload an image URL to permanent ImgBB storage ────────────────────────
+async function uploadToImgBB(sourceUrl) {
+  const imgRes = await fetch(sourceUrl);
+  if (!imgRes.ok) throw new Error('Could not download source image: HTTP ' + imgRes.status);
+  const buf = Buffer.from(await imgRes.arrayBuffer());
+  const base64 = buf.toString('base64');
+  const form = new URLSearchParams();
+  form.append('image', base64);
+  form.append('name', 'seerah-autoscan-' + Date.now());
+  const up = await fetch('https://api.imgbb.com/1/upload?key=' + IMGBB_KEY, { method: 'POST', body: form });
+  const upData = await up.json();
+  if (!upData.success) throw new Error('ImgBB upload failed');
+  return upData.data.display_url || upData.data.url;
+}
+
 async function handleApprove(req, res) {
   const job = req.body || {};
   if (!job.id) { res.status(400).json({ error: 'id is required' }); return; }
 
-  let imageUrl = '';
-  if (job.image_url && IMGBB_KEY) {
-    try {
-      const imgRes = await fetch(job.image_url);
-      const buf = Buffer.from(await imgRes.arrayBuffer());
-      const base64 = buf.toString('base64');
-      const form = new URLSearchParams();
-      form.append('image', base64);
-      form.append('name', 'seerah-autoscan-' + Date.now());
-      const up = await fetch('https://api.imgbb.com/1/upload?key=' + IMGBB_KEY, { method: 'POST', body: form });
-      const upData = await up.json();
-      if (upData.success) imageUrl = upData.data.display_url || upData.data.url;
-    } catch (e) { /* publish without image rather than failing entirely */ }
-  }
+  // job.image_url is already an ImgBB-hosted permanent link from scan time
+  // (uploaded once when the post was first found) — no need to re-upload here.
+  const imageUrl = job.image_url || '';
 
   try {
     const r = await fetch(SHEETS_URL, {
